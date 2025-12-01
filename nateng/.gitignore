@@ -1,0 +1,28 @@
+# Node / package
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+package-lock.json
+
+# Next.js / build
+.next/
+out/
+dist/
+
+# local DB, Prisma, env
+dev.db
+*.sqlite
+.env
+.env.local
+.prisma/
+
+# IDE / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Optional: VS Code settings and logs
+.history/
+logs/
+*.log

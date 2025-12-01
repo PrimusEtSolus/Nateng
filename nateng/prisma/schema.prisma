@@ -1,0 +1,69 @@
+// SQLite schema for local development. Run `npx prisma migrate dev --name init` to create the DB
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Use a plain string for role to avoid enum compatibility issues with this connector
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  role      String
+  createdAt DateTime @default(now())
+  // relations
+  products  Product[] @relation("FarmerProducts")
+  listings  Listing[] @relation("SellerListings")
+  ordersAsBuyer Order[] @relation("BuyerOrders")
+  ordersAsSeller Order[] @relation("SellerOrders")
+}
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  name      String
+  description String?
+  farmerId  Int
+  farmer    User     @relation(fields: [farmerId], references: [id], name: "FarmerProducts")
+  createdAt DateTime @default(now())
+  listings  Listing[]
+}
+
+model Listing {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id])
+  sellerId   Int
+  seller     User     @relation(fields: [sellerId], references: [id], name: "SellerListings")
+  priceCents Int
+  quantity   Int      @default(0)
+  available  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  orderItems OrderItem[]
+}
+
+model Order {
+  id         Int      @id @default(autoincrement())
+  buyerId    Int
+  buyer      User     @relation(fields: [buyerId], references: [id], name: "BuyerOrders")
+  sellerId   Int
+  seller     User     @relation(fields: [sellerId], references: [id], name: "SellerOrders")
+  totalCents Int
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  items      OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id])
+  listingId Int
+  listing   Listing @relation(fields: [listingId], references: [id])
+  quantity  Int
+  priceCents Int
+}
