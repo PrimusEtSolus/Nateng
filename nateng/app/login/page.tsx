@@ -109,10 +109,15 @@ export default function LoginPage() {
 
             <div className="text-sm text-muted-foreground text-center space-y-1 pt-4 border-t">
               <p className="font-medium">Demo Accounts:</p>
-              <p>farmer@email.com / farmer</p>
-              <p>buyer@email.com / buyer</p>
-              <p>business@email.com / business</p>
-              <p>reseller@email.com / reseller</p>
+              <p>buyer1@email.com / buyer1password</p>
+              <p>buyer2@email.com / buyer2password</p>
+              <p>buyer3@email.com / buyer3password</p>
+              <p>farmer1@email.com / farmer1password</p>
+              <p>farmer2@email.com / farmer2password</p>
+              <p>reseller1@email.com / reseller1password</p>
+              <p>reseller2@email.com / reseller2password</p>
+              <p>reseller3@email.com / reseller3password</p>
+              <p>business1@email.com / business1password</p>
             </div>
           </form>
 

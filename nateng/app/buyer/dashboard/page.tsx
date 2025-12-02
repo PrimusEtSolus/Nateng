@@ -110,9 +110,14 @@ export default function BuyerDashboardPage() {
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <h3 className="font-semibold text-foreground">{product.name}</h3>
+                    {/* Reseller info so buyers can see who they are ordering from */}
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <MapPin className="w-3 h-3" />
-                      {product.farmerLocation}
+                      Sold by {product.resellerName} • {product.resellerLocation}
+                    </p>
+                    {/* Farmer source information */}
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      From farmer {product.farmerName} ({product.farmerLocation})
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
