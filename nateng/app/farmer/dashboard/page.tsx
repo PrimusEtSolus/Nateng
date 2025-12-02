@@ -1,24 +1,22 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { mockCrops, mockWholesaleOrders, type Crop, type WholesaleOrder } from "@/lib/mock-data"
+import { mockCrops, mockWholesaleOrders } from "@/lib/mock-data"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { Package, TrendingUp, Leaf, DollarSign, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react"
 import Link from "next/link"
 
 export default function FarmerDashboardPage() {
   const [user, setUser] = useState<User | null>(null)
-  const [crops] = useState<Crop[]>(mockCrops)
-  const [orders] = useState<WholesaleOrder[]>(mockWholesaleOrders)
 
   useEffect(() => {
     setUser(getCurrentUser())
   }, [])
 
-  const pendingOrders = orders.filter((o) => o.status === "pending").length
-  const totalRevenue = orders.filter((o) => o.status === "completed").reduce((sum, o) => sum + o.total, 0)
-  const totalCrops = crops.length
-  const availableStock = crops.reduce((sum, c) => sum + c.harvestQuantity, 0)
+  const pendingOrders = mockWholesaleOrders.filter((o) => o.status === "pending").length
+  const totalRevenue = mockWholesaleOrders.filter((o) => o.status === "completed").reduce((sum, o) => sum + o.total, 0)
+  const totalCrops = mockCrops.length
+  const availableStock = mockCrops.reduce((sum, c) => sum + c.harvestQuantity, 0)
 
   const stats = [
     {
@@ -55,7 +53,7 @@ export default function FarmerDashboardPage() {
     },
   ]
 
-  const recentOrders = orders.slice(0, 4)
+  const recentOrders = mockWholesaleOrders.slice(0, 4)
 
   return (
     <div className="p-8">
@@ -181,7 +179,7 @@ export default function FarmerDashboardPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-border p-6">
             <h3 className="font-semibold text-foreground mb-4">Your Crops</h3>
             <div className="space-y-3">
-              {crops.slice(0, 4).map((crop) => (
+              {mockCrops.slice(0, 4).map((crop) => (
                 <div key={crop.id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted">

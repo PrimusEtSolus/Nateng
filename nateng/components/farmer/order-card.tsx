@@ -1,13 +1,14 @@
-import type { Order } from "@/lib/mock-data"
+import type { WholesaleOrder } from "@/lib/mock-data"
 
 interface OrderCardProps {
-  order: Order
+  order: WholesaleOrder
 }
 
 const statusColors = {
   pending: { bg: "bg-yellow-300", text: "pending" },
   confirmed: { bg: "bg-indigo-400", text: "confirmed" },
   ready: { bg: "bg-green-400", text: "ready" },
+  completed: { bg: "bg-green-500", text: "completed" },
   rejected: { bg: "bg-red-400", text: "rejected" },
 }
 

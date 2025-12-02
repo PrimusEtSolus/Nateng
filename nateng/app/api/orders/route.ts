@@ -1,56 +1,97 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
-  const orders = await prisma.order.findMany({
-    include: { items: { include: { listing: { include: { product: true } } } }, buyer: true, seller: true },
-    orderBy: { createdAt: 'desc' },
-  });
-  return NextResponse.json(orders);
+export async function GET(req: Request) {
+  try {
+    const params = new URL(req.url).searchParams;
+    const buyerId = params.get('buyerId');
+    const sellerId = params.get('sellerId');
+    const status = params.get('status');
+
+    const where: any = {};
+    if (buyerId) where.buyerId = Number(buyerId);
+    if (sellerId) where.sellerId = Number(sellerId);
+    if (status) where.status = status;
+
+    const orders = await prisma.order.findMany({
+      where: Object.keys(where).length > 0 ? where : undefined,
+      include: {
+        items: { include: { listing: { include: { product: { include: { farmer: true } } } } } },
+        buyer: { select: { id: true, name: true, email: true, role: true } },
+        seller: { select: { id: true, name: true, email: true, role: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return NextResponse.json(orders);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { buyerId, sellerId, items } = body; // items: [{ listingId, quantity }]
-  if (!buyerId || !sellerId || !Array.isArray(items) || items.length === 0) {
-    return NextResponse.json({ error: 'missing fields' }, { status: 400 });
-  }
+  try {
+    const body = await req.json();
+    const { buyerId, sellerId, items } = body; // items: [{ listingId, quantity }]
+    if (!buyerId || !sellerId || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'missing fields: buyerId, sellerId, items' }, { status: 400 });
+    }
 
-  // simple transactional create: check quantities, decrement, create order
-  const connect = await prisma.$transaction(async (tx: any) => {
-    let totalCents = 0;
-    const createdOrder = await tx.order.create({
-      data: {
-        buyerId: Number(buyerId),
-        sellerId: Number(sellerId),
-        totalCents: 0,
-      },
-    });
-
-    for (const it of items) {
-      const listing = await tx.listing.findUnique({ where: { id: Number(it.listingId) } });
-      if (!listing) throw new Error(`listing ${it.listingId} not found`);
-      if (listing.quantity < Number(it.quantity)) throw new Error(`insufficient quantity for listing ${it.listingId}`);
-
-      const itemTotal = Number(it.quantity) * listing.priceCents;
-      totalCents += itemTotal;
-
-      await tx.orderItem.create({
+    // Transactional create: check quantities, decrement, create order
+    const createdOrder = await prisma.$transaction(async (tx: any) => {
+      let totalCents = 0;
+      const order = await tx.order.create({
         data: {
-          orderId: createdOrder.id,
-          listingId: listing.id,
-          quantity: Number(it.quantity),
-          priceCents: listing.priceCents,
+          buyerId: Number(buyerId),
+          sellerId: Number(sellerId),
+          totalCents: 0,
+          status: 'PENDING',
         },
       });
 
-      await tx.listing.update({ where: { id: listing.id }, data: { quantity: listing.quantity - Number(it.quantity) } });
-    }
+      for (const it of items) {
+        const listing = await tx.listing.findUnique({ where: { id: Number(it.listingId) } });
+        if (!listing) throw new Error(`listing ${it.listingId} not found`);
+        if (listing.quantity < Number(it.quantity)) {
+          throw new Error(`insufficient quantity for listing ${it.listingId}. Available: ${listing.quantity}, Requested: ${it.quantity}`);
+        }
 
-    await tx.order.update({ where: { id: createdOrder.id }, data: { totalCents } });
+        const itemTotal = Number(it.quantity) * listing.priceCents;
+        totalCents += itemTotal;
 
-    return createdOrder;
-  });
+        await tx.orderItem.create({
+          data: {
+            orderId: order.id,
+            listingId: listing.id,
+            quantity: Number(it.quantity),
+            priceCents: listing.priceCents,
+          },
+        });
 
-  return NextResponse.json(connect, { status: 201 });
+        await tx.listing.update({
+          where: { id: listing.id },
+          data: { quantity: listing.quantity - Number(it.quantity) },
+        });
+      }
+
+      await tx.order.update({
+        where: { id: order.id },
+        data: { totalCents },
+      });
+
+      return order;
+    });
+
+    const fullOrder = await prisma.order.findUnique({
+      where: { id: createdOrder.id },
+      include: {
+        items: { include: { listing: { include: { product: true } } } },
+        buyer: true,
+        seller: true,
+      },
+    });
+
+    return NextResponse.json(fullOrder, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

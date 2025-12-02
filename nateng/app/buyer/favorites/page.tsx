@@ -51,7 +51,7 @@ export default function BuyerFavoritesPage() {
                   <p className="text-xl font-bold text-buyer">₱{product.pricePerKg}/kg</p>
                   <Button
                     className="bg-buyer hover:bg-buyer/90"
-                    onClick={() => addToCart(product.id, 1, product.pricePerKg)}
+                    onClick={() => addToCart(product, 1)}
                   >
                     <ShoppingCart className="w-4 h-4 mr-2" />
                     Add
