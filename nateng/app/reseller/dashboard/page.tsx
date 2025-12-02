@@ -1,16 +1,33 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { mockWholesaleOrders, getWholesaleCrops, mockRetailProducts } from "@/lib/mock-data"
+import {
+  mockWholesaleOrders,
+  getWholesaleCrops,
+  mockRetailProducts,
+  type WholesaleOrder,
+  type RetailProduct,
+} from "@/lib/mock-data"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { Package, TrendingUp, ShoppingBag, DollarSign, ArrowUpRight, Store, Users } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function ResellerDashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const orders = mockWholesaleOrders.filter((o) => o.buyerId === "reseller-1")
   const crops = getWholesaleCrops()
   const myProducts = mockRetailProducts.filter((p) => p.resellerId === "reseller-1")
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<RetailProduct | null>(null)
+  const [selectedWholesaleOrder, setSelectedWholesaleOrder] = useState<WholesaleOrder | null>(null)
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -103,7 +120,16 @@ export default function ResellerDashboardPage() {
             {myProducts.slice(0, 4).map((product) => (
               <div
                 key={product.id}
-                className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedInventoryItem(product)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    setSelectedInventoryItem(product)
+                  }
+                }}
               >
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted">
@@ -177,7 +203,19 @@ export default function ResellerDashboardPage() {
             <h3 className="font-semibold text-foreground mb-4">Wholesale Orders</h3>
             <div className="space-y-3">
               {orders.slice(0, 3).map((order) => (
-                <div key={order.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-3 bg-muted/50 rounded-xl cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedWholesaleOrder(order)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      setSelectedWholesaleOrder(order)
+                    }
+                  }}
+                >
                   <div>
                     <p className="font-medium text-sm">{order.crop}</p>
                     <p className="text-xs text-muted-foreground">
@@ -210,6 +248,102 @@ export default function ResellerDashboardPage() {
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={!!selectedInventoryItem}
+        onOpenChange={(open) => {
+          if (!open) setSelectedInventoryItem(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          {selectedInventoryItem && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedInventoryItem.name}</DialogTitle>
+                <DialogDescription>
+                  Retail listing • sourced from {selectedInventoryItem.farmerName}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="rounded-2xl border border-border overflow-hidden">
+                  <img
+                    src={selectedInventoryItem.image || "/placeholder.svg"}
+                    alt={selectedInventoryItem.name}
+                    className="w-full h-64 object-cover"
+                  />
+                </div>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Available</span>
+                    <strong>{selectedInventoryItem.availableKg} kg</strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Price (kg)</span>
+                    <strong>₱{selectedInventoryItem.pricePerKg}</strong>
+                  </div>
+                  <p className="text-muted-foreground">{selectedInventoryItem.description}</p>
+                  <div className="rounded-xl bg-muted/60 p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Source farmer</p>
+                    <p className="font-semibold">{selectedInventoryItem.farmerName}</p>
+                    <p className="text-xs text-muted-foreground">{selectedInventoryItem.farmerLocation}</p>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="sm:justify-between sm:flex-row">
+                <Button variant="outline" onClick={() => setSelectedInventoryItem(null)}>
+                  Close
+                </Button>
+                <Button asChild className="bg-teal-600 hover:bg-teal-500 text-white">
+                  <Link href="/reseller/inventory">Manage inventory</Link>
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!selectedWholesaleOrder}
+        onOpenChange={(open) => {
+          if (!open) setSelectedWholesaleOrder(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          {selectedWholesaleOrder && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Wholesale order {selectedWholesaleOrder.id}</DialogTitle>
+                <DialogDescription>
+                  {selectedWholesaleOrder.crop} from {selectedWholesaleOrder.farmerName}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="rounded-xl bg-muted/60 p-4">
+                  <p className="text-xs uppercase text-muted-foreground">Quantity</p>
+                  <p className="font-semibold">
+                    {selectedWholesaleOrder.quantity}
+                    {selectedWholesaleOrder.unit}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-muted/60 p-4">
+                  <p className="text-xs uppercase text-muted-foreground">Total</p>
+                  <p className="font-semibold">₱{selectedWholesaleOrder.total.toLocaleString()}</p>
+                </div>
+              </div>
+              <DialogFooter className="sm:justify-between sm:flex-row">
+                <Button variant="outline" onClick={() => setSelectedWholesaleOrder(null)}>
+                  Close
+                </Button>
+                <Button asChild className="bg-teal-600 hover:bg-teal-500 text-white">
+                  <Link href="/reseller/orders">View full order</Link>
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

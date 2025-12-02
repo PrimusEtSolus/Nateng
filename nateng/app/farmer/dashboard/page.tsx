@@ -1,13 +1,24 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { mockCrops, mockWholesaleOrders } from "@/lib/mock-data"
+import { mockCrops, mockWholesaleOrders, type WholesaleOrder, type Crop } from "@/lib/mock-data"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { Package, TrendingUp, Leaf, DollarSign, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function FarmerDashboardPage() {
   const [user, setUser] = useState<User | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<WholesaleOrder | null>(null)
+  const [selectedCrop, setSelectedCrop] = useState<Crop | null>(null)
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -107,7 +118,19 @@ export default function FarmerDashboardPage() {
           </div>
           <div className="divide-y divide-border">
             {recentOrders.map((order) => (
-              <div key={order.id} className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors">
+              <div
+                key={order.id}
+                className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-farmer focus-visible:ring-offset-2"
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedOrder(order)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault()
+                    setSelectedOrder(order)
+                  }
+                }}
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-farmer-bg rounded-xl flex items-center justify-center">
                     <Package className="w-6 h-6 text-farmer" />
@@ -180,7 +203,19 @@ export default function FarmerDashboardPage() {
             <h3 className="font-semibold text-foreground mb-4">Your Crops</h3>
             <div className="space-y-3">
               {mockCrops.slice(0, 4).map((crop) => (
-                <div key={crop.id} className="flex items-center justify-between">
+                <div
+                  key={crop.id}
+                  className="flex items-center justify-between cursor-pointer rounded-xl p-2 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-farmer focus-visible:ring-offset-2"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedCrop(crop)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      setSelectedCrop(crop)
+                    }
+                  }}
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted">
                       <img
@@ -214,6 +249,94 @@ export default function FarmerDashboardPage() {
           </div>
         </div>
       </div>
+
+      <Dialog
+        open={!!selectedOrder}
+        onOpenChange={(open) => {
+          if (!open) setSelectedOrder(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          {selectedOrder && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Order from {selectedOrder.buyerName}</DialogTitle>
+                <DialogDescription>
+                  {selectedOrder.crop} • {selectedOrder.quantity}
+                  {selectedOrder.unit} needed by buyer ({selectedOrder.buyerType})
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="rounded-xl bg-muted/60 p-4">
+                  <p className="text-xs text-muted-foreground uppercase">Status</p>
+                  <p className="font-semibold capitalize">{selectedOrder.status}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{selectedOrder.orderDate}</p>
+                </div>
+                <div className="rounded-xl bg-muted/60 p-4">
+                  <p className="text-xs text-muted-foreground uppercase">Total value</p>
+                  <p className="font-semibold">₱{selectedOrder.total.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ₱{selectedOrder.pricePerUnit}/{selectedOrder.unit}
+                  </p>
+                </div>
+              </div>
+              <DialogFooter className="sm:justify-between sm:flex-row">
+                <Button variant="outline" onClick={() => setSelectedOrder(null)}>
+                  Close
+                </Button>
+                <Button asChild className="bg-farmer hover:bg-farmer/90 text-white">
+                  <Link href="/farmer/orders">Open order manager</Link>
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!selectedCrop}
+        onOpenChange={(open) => {
+          if (!open) setSelectedCrop(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-xl">
+          {selectedCrop && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedCrop.name} inventory</DialogTitle>
+                <DialogDescription>
+                  {selectedCrop.harvestQuantity}
+                  {selectedCrop.unit} harvested • Status {selectedCrop.status.replace("_", " ")}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p className="text-muted-foreground">{selectedCrop.description}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl bg-muted/60 p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Wholesale price</p>
+                    <p className="font-semibold">₱{selectedCrop.wholesalePrice}/{selectedCrop.unit}</p>
+                  </div>
+                  <div className="rounded-xl bg-muted/60 p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Minimum order</p>
+                    <p className="font-semibold">
+                      {selectedCrop.minOrderQty}
+                      {selectedCrop.unit}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter className="sm:justify-between sm:flex-row">
+                <Button variant="outline" onClick={() => setSelectedCrop(null)}>
+                  Close
+                </Button>
+                <Button asChild className="bg-farmer hover:bg-farmer/90 text-white">
+                  <Link href="/farmer/crops">Go to crop manager</Link>
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

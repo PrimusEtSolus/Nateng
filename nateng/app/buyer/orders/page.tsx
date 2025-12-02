@@ -7,7 +7,8 @@ import { Package, Truck, CheckCircle, Clock, Eye, MapPin, Phone, Star } from "lu
 interface Order {
   id: string
   items: { name: string; quantity: number; price: number; image: string }[]
-  farmer: { name: string; location: string; phone: string }
+  reseller: { name: string; location: string; phone: string }
+  farmer: { name: string; location: string }
   total: number
   status: "processing" | "confirmed" | "in_transit" | "delivered"
   orderDate: string
@@ -23,7 +24,8 @@ const mockOrders: Order[] = [
       { name: "Fresh Highland Tomatoes", quantity: 5, price: 75, image: "/ripe-tomatoes.png" },
       { name: "Crisp Benguet Cabbage", quantity: 3, price: 50, image: "/fresh-cabbage.png" },
     ],
-    farmer: { name: "Juan Dela Cruz", location: "La Trinidad, Benguet", phone: "+63 917 123 4567" },
+    reseller: { name: "Highland Fresh Reseller", location: "Baguio City, Benguet", phone: "+63 917 123 4567" },
+    farmer: { name: "Juan Dela Cruz", location: "La Trinidad, Benguet" },
     total: 525,
     status: "delivered",
     orderDate: "2024-11-25",
@@ -32,7 +34,8 @@ const mockOrders: Order[] = [
   {
     id: "ORD-2024-002",
     items: [{ name: "Sweet Highland Carrots", quantity: 2, price: 55, image: "/bunch-of-carrots.png" }],
-    farmer: { name: "Pedro Farmer", location: "Atok, Benguet", phone: "+63 918 234 5678" },
+    reseller: { name: "Mountain Harvest Reseller", location: "La Trinidad, Benguet", phone: "+63 918 234 5678" },
+    farmer: { name: "Pedro Farmer", location: "Atok, Benguet" },
     total: 110,
     status: "in_transit",
     orderDate: "2024-11-30",
@@ -45,7 +48,8 @@ const mockOrders: Order[] = [
       { name: "Colorful Bell Peppers", quantity: 1, price: 140, image: "/colorful-bell-peppers.png" },
       { name: "Fresh Iceberg Lettuce", quantity: 2, price: 95, image: "/fresh-lettuce.png" },
     ],
-    farmer: { name: "Maria Farmer", location: "Buguias, Benguet", phone: "+63 919 345 6789" },
+    reseller: { name: "Cordillera Veggies Reseller", location: "Baguio City, Benguet", phone: "+63 919 345 6789" },
+    farmer: { name: "Maria Farmer", location: "Buguias, Benguet" },
     total: 330,
     status: "confirmed",
     orderDate: "2024-12-01",
@@ -54,7 +58,8 @@ const mockOrders: Order[] = [
   {
     id: "ORD-2024-004",
     items: [{ name: "Purple Eggplant", quantity: 3, price: 65, image: "/single-ripe-eggplant.png" }],
-    farmer: { name: "Juan Dela Cruz", location: "La Trinidad, Benguet", phone: "+63 917 123 4567" },
+    reseller: { name: "Highland Fresh Reseller", location: "Baguio City, Benguet", phone: "+63 917 123 4567" },
+    farmer: { name: "Juan Dela Cruz", location: "La Trinidad, Benguet" },
     total: 195,
     status: "processing",
     orderDate: "2024-12-01",
@@ -160,9 +165,12 @@ export default function BuyerOrdersPage() {
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-foreground">
-                          {order.items.length} item{order.items.length > 1 ? "s" : ""} from {order.farmer.name}
+                          {order.items.length} item{order.items.length > 1 ? "s" : ""} from{" "}
+                          {order.reseller.name}
                         </p>
-                        <p className="text-sm text-muted-foreground">{order.farmer.location}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Reseller · {order.reseller.location}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-buyer">₱{order.total.toLocaleString()}</p>
@@ -234,16 +242,33 @@ export default function BuyerOrdersPage() {
                 ))}
               </div>
 
-              {/* Farmer Info */}
+              {/* Seller & Farmer Info */}
               <div className="border-t border-border pt-4 mb-4">
-                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide mb-3">Farmer</h4>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <span className="text-emerald-700 font-medium">{selectedOrder.farmer.name.charAt(0)}</span>
+                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide mb-3">
+                  Seller & Farmer
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <span className="text-emerald-700 font-medium">
+                        {selectedOrder.reseller.name.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">
+                        {selectedOrder.reseller.name} <span className="text-xs text-muted-foreground">(Reseller)</span>
+                      </p>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> {selectedOrder.reseller.location}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium">{selectedOrder.farmer.name}</p>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <div className="ml-1 border-l border-border pl-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-1">
+                      Source Farmer
+                    </p>
+                    <p className="text-sm font-medium">{selectedOrder.farmer.name}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> {selectedOrder.farmer.location}
                     </p>
                   </div>
@@ -263,12 +288,12 @@ export default function BuyerOrdersPage() {
                 {selectedOrder.status === "delivered" && (
                   <Button className="w-full bg-buyer hover:bg-buyer/90">
                     <Star className="w-4 h-4 mr-2" />
-                    Leave a Review
+                    Rate Your Order
                   </Button>
                 )}
                 <Button variant="outline" className="w-full bg-transparent">
                   <Phone className="w-4 h-4 mr-2" />
-                  Contact Farmer
+                  Contact Reseller
                 </Button>
               </div>
             </div>

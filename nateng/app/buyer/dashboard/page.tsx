@@ -7,12 +7,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Heart, Star, MapPin, ShoppingCart, Plus, Minus } from "lucide-react"
 import Link from "next/link"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function BuyerDashboardPage() {
   const [products] = useState<RetailProduct[]>(mockRetailProducts)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [favorites, setFavorites] = useState<string[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<RetailProduct | null>(null)
   const { addToCart, items } = useCart()
 
   const filteredProducts = products.filter((p) => {
@@ -81,7 +90,16 @@ export default function BuyerDashboardPage() {
           return (
             <div
               key={product.id}
-              className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden hover:shadow-lg transition-all group"
+              className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden hover:shadow-lg transition-all group cursor-pointer focus-visible:ring-2 focus-visible:ring-buyer focus-visible:ring-offset-2"
+              onClick={() => setSelectedProduct(product)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  setSelectedProduct(product)
+                }
+              }}
             >
               <div className="aspect-square bg-muted relative overflow-hidden">
                 <img
@@ -90,7 +108,10 @@ export default function BuyerDashboardPage() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <button
-                  onClick={() => toggleFavorite(product.id)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleFavorite(product.id)
+                  }}
                   className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
                 >
                   <Heart
@@ -140,7 +161,10 @@ export default function BuyerDashboardPage() {
                         size="icon"
                         variant="outline"
                         className="h-8 w-8 bg-transparent"
-                        onClick={() => addToCart(product, -1)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          addToCart(product, -1)
+                        }}
                       >
                         <Minus className="w-4 h-4" />
                       </Button>
@@ -148,7 +172,10 @@ export default function BuyerDashboardPage() {
                       <Button
                         size="icon"
                         className="h-8 w-8 bg-buyer hover:bg-buyer-light"
-                        onClick={() => addToCart(product, 1)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          addToCart(product, 1)
+                        }}
                       >
                         <Plus className="w-4 h-4" />
                       </Button>
@@ -157,7 +184,10 @@ export default function BuyerDashboardPage() {
                     <Button
                       size="sm"
                       className="bg-buyer hover:bg-buyer-light text-white gap-1"
-                      onClick={() => addToCart(product, 1)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        addToCart(product, 1)
+                      }}
                     >
                       <Plus className="w-4 h-4" />
                       Add
@@ -177,6 +207,96 @@ export default function BuyerDashboardPage() {
           <p className="text-muted-foreground">Try a different search or category</p>
         </div>
       )}
+
+      <Dialog
+        open={!!selectedProduct}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedProduct(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          {selectedProduct && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedProduct.name}</DialogTitle>
+                <DialogDescription>
+                  Retail transaction via {selectedProduct.resellerName} with produce sourced from{" "}
+                  {selectedProduct.farmerName}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="rounded-2xl border border-border overflow-hidden">
+                  <img
+                    src={selectedProduct.image || "/placeholder.svg"}
+                    alt={selectedProduct.name}
+                    className="w-full h-64 object-cover"
+                  />
+                </div>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Seller</p>
+                    <p className="font-medium">{selectedProduct.resellerName}</p>
+                    <p className="text-muted-foreground flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {selectedProduct.resellerLocation}
+                    </p>
+                    <p className="text-xs mt-1 text-muted-foreground">
+                      This reseller consolidates produce and handles delivery to buyers.
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Source Farmer</p>
+                    <p className="font-medium">{selectedProduct.farmerName}</p>
+                    <p className="text-muted-foreground flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {selectedProduct.farmerLocation}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-xl bg-muted/60 p-3">
+                      <p className="text-xs text-muted-foreground">Available</p>
+                      <p className="font-semibold">{selectedProduct.availableKg} kg</p>
+                    </div>
+                    <div className="rounded-xl bg-muted/60 p-3">
+                      <p className="text-xs text-muted-foreground">Minimum Order</p>
+                      <p className="font-semibold">{selectedProduct.minOrderKg} kg</p>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">{selectedProduct.description}</p>
+                </div>
+              </div>
+
+              <DialogFooter className="sm:justify-between sm:flex-row">
+                <div>
+                  <p className="text-2xl font-bold text-buyer">₱{selectedProduct.pricePerKg}</p>
+                  <p className="text-xs text-muted-foreground">per kilogram</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setSelectedProduct(null)}>
+                    Close
+                  </Button>
+                  <Button
+                    className="bg-buyer hover:bg-buyer-light text-white"
+                    onClick={() => {
+                      addToCart(selectedProduct, 1)
+                      setSelectedProduct(null)
+                    }}
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    Add 1 kg to cart
+                  </Button>
+                </div>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
