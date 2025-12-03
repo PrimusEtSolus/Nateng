@@ -1,19 +1,32 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+import { useState } from "react"
 
 export function ContactForm() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setIsSubmitting(true)
+    
     const formData = new FormData(e.currentTarget)
     const name = formData.get("name") as string
     const email = formData.get("email") as string
+    const message = formData.get("message") as string
     
-    // Show success message (in production, send to backend)
-    alert(`Thank you for contacting us, ${name}! We'll get back to you at ${email} soon.`)
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Show success message
+    toast.success("Message sent successfully!", {
+      description: `Thank you ${name}! We'll get back to you at ${email} soon.`,
+    })
     
     // Reset form
     e.currentTarget.reset()
+    setIsSubmitting(false)
   }
 
   return (
@@ -50,8 +63,12 @@ export function ContactForm() {
           required
         ></textarea>
       </div>
-      <Button className="w-full bg-[#31E672] hover:bg-[#28c85d] text-gray-900 font-semibold">
-        Send Message
+      <Button 
+        type="submit"
+        className="w-full bg-[#31E672] hover:bg-[#28c85d] text-gray-900 font-semibold"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Sending..." : "Send Message"}
       </Button>
     </form>
   )

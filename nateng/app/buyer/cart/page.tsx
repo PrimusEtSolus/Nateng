@@ -26,7 +26,7 @@ export default function BuyerCartPage() {
     )
   }
 
-  const deliveryFee = 50
+  const deliveryFee = totalPrice >= 500 ? 0 : 50
   const grandTotal = totalPrice + deliveryFee
 
   return (
@@ -38,7 +38,11 @@ export default function BuyerCartPage() {
         </div>
         <Button
           variant="outline"
-          onClick={clearCart}
+          onClick={() => {
+            if (confirm("Are you sure you want to clear your cart?")) {
+              clearCart()
+            }
+          }}
           className="text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
         >
           <Trash2 className="w-4 h-4 mr-2" />
@@ -49,58 +53,73 @@ export default function BuyerCartPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
-          {items.map((item) => (
-            <div key={item.product.id} className="bg-white rounded-2xl border border-border p-4 shadow-sm flex gap-4">
-              <div className="w-24 h-24 rounded-xl overflow-hidden bg-muted flex-shrink-0">
-                <img
-                  src={item.product.image || "/placeholder.svg"}
-                  alt={item.product.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-foreground">{item.product.name}</h3>
-                    <p className="text-sm text-muted-foreground">{item.product.farmerName}</p>
-                  </div>
-                  <button
-                    onClick={() => removeFromCart(item.product.id)}
-                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </button>
+          {items.map((item, index) => {
+            // Support both old format (product) and new format (listingId)
+            const itemId = item.listingId || item.product?.id || index
+            const productName = item.productName || item.product?.name || "Product"
+            const sellerName = item.sellerName || item.product?.farmerName || "Seller"
+            const pricePerKg = item.priceCents ? item.priceCents / 100 : (item.product?.pricePerKg || 0)
+            const totalPrice = pricePerKg * item.quantity
+
+            return (
+              <div key={itemId} className="bg-white rounded-2xl border border-border p-4 shadow-sm flex gap-4 hover:shadow-md transition-all card-hover">
+                <div className="w-24 h-24 rounded-xl overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
+                  {item.product?.image ? (
+                    <img
+                      src={item.product.image}
+                      alt={productName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <ShoppingCart className="w-8 h-8 text-muted-foreground" />
+                  )}
                 </div>
-                <div className="flex items-end justify-between mt-3">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      className="h-8 w-8 bg-transparent"
-                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-foreground">{productName}</h3>
+                      <p className="text-sm text-muted-foreground">Sold by {sellerName}</p>
+                    </div>
+                    <button
+                      onClick={() => removeFromCart(itemId)}
+                      className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                      aria-label="Remove item"
                     >
-                      <Minus className="w-4 h-4" />
-                    </Button>
-                    <span className="w-12 text-center font-medium">{item.quantity}kg</span>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      className="h-8 w-8 bg-transparent"
-                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </button>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-buyer">
-                      ₱{(item.product.pricePerKg * item.quantity).toLocaleString()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">₱{item.product.pricePerKg}/kg</p>
+                  <div className="flex items-end justify-between mt-3">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8 bg-transparent"
+                        onClick={() => updateQuantity(itemId, item.quantity - 1)}
+                        disabled={item.quantity <= 1}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <span className="w-12 text-center font-medium">{item.quantity}kg</span>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8 bg-transparent"
+                        onClick={() => updateQuantity(itemId, item.quantity + 1)}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-buyer">
+                        ₱{totalPrice.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground">₱{pricePerKg.toFixed(2)}/kg</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Order Summary */}

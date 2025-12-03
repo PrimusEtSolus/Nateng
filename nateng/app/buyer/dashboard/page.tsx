@@ -2,11 +2,16 @@
 
 import { useState } from "react"
 import { useFetch } from "@/hooks/use-fetch"
+import { useDebounce } from "@/hooks/use-debounce"
 import { useCart } from "@/lib/cart-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Heart, Star, MapPin, ShoppingCart, Plus, Minus, Loader2 } from "lucide-react"
+import { Search, Heart, Star, MapPin, ShoppingCart, Plus, Minus, Loader2, Filter } from "lucide-react"
 import Link from "next/link"
+import { ProductGridSkeleton, ProductCardSkeleton } from "@/components/loading-skeletons"
+import { EmptyState } from "@/components/empty-state"
+import { ProductImage } from "@/components/product-image"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -44,22 +49,37 @@ interface Listing {
 
 export default function BuyerDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const debouncedSearchTerm = useDebounce(searchTerm, 300)
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [favorites, setFavorites] = useState<number[]>([])
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
+  const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name" | "quantity">("name")
   const { addToCart, items } = useCart()
 
   // Fetch available listings
-  const { data: listings, loading: listingsLoading } = useFetch<Listing[]>('/api/listings?available=true')
+  const { data: listings, loading: listingsLoading, error: listingsError } = useFetch<Listing[]>('/api/listings?available=true')
 
   // Extract unique product names for categories (simplified)
   const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
 
   const filteredListings = listings?.filter((listing) => {
-    const matchesSearch = listing.product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch = listing.product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
     // Category filtering would need product.category field - simplified for now
     const matchesCategory = selectedCategory === "All" || true
     return matchesSearch && matchesCategory && listing.available && listing.quantity > 0
+  }).sort((a, b) => {
+    switch (sortBy) {
+      case "price-asc":
+        return a.priceCents - b.priceCents
+      case "price-desc":
+        return b.priceCents - a.priceCents
+      case "name":
+        return a.product.name.localeCompare(b.product.name)
+      case "quantity":
+        return b.quantity - a.quantity
+      default:
+        return 0
+    }
   }) || []
 
   const toggleFavorite = (id: number) => {
@@ -72,13 +92,28 @@ export default function BuyerDashboardPage() {
   }
 
   const handleAddToCart = (listing: Listing, quantity: number) => {
+    const newQuantity = quantity > 0 ? quantity : 1
+    const currentItem = items.find((i) => i.listingId === listing.id)
+    const totalQuantity = (currentItem?.quantity || 0) + newQuantity
+
+    if (totalQuantity > listing.quantity) {
+      toast.error("Insufficient stock", {
+        description: `Only ${listing.quantity}kg available`,
+      })
+      return
+    }
+
     addToCart({
       listingId: listing.id,
       sellerId: listing.sellerId,
       productName: listing.product.name,
       sellerName: listing.seller.name,
-      quantity: quantity,
+      quantity: newQuantity,
       priceCents: listing.priceCents,
+    })
+
+    toast.success("Added to cart", {
+      description: `${newQuantity}kg of ${listing.product.name} added`,
     })
   }
 
@@ -99,15 +134,32 @@ export default function BuyerDashboardPage() {
       </div>
 
       {/* Search & Filters */}
-      <div className="flex flex-wrap gap-4 mb-8">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            placeholder="Search fresh produce..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      <div className="space-y-4 mb-8">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              placeholder="Search fresh produce..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                const options = ["price-asc", "price-desc", "name", "quantity"] as const
+                const currentIndex = options.indexOf(sortBy)
+                setSortBy(options[(currentIndex + 1) % options.length])
+              }}
+            >
+              <Filter className="w-4 h-4" />
+              Sort: {sortBy === "price-asc" ? "Price ↑" : sortBy === "price-desc" ? "Price ↓" : sortBy === "name" ? "Name" : "Stock"}
+            </Button>
+          </div>
         </div>
         <div className="flex gap-2 flex-wrap">
           {productCategories.map((cat) => (
@@ -122,15 +174,28 @@ export default function BuyerDashboardPage() {
             </Button>
           ))}
         </div>
+        {debouncedSearchTerm && (
+          <p className="text-sm text-muted-foreground">
+            Found {filteredListings.length} result{filteredListings.length !== 1 ? 's' : ''} for "{debouncedSearchTerm}"
+          </p>
+        )}
       </div>
 
-      {/* Loading State */}
-      {listingsLoading && (
-        <div className="text-center py-12">
-          <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-4 animate-spin" />
-          <p className="text-muted-foreground">Loading products...</p>
-        </div>
+      {/* Error State */}
+      {listingsError && (
+        <EmptyState
+          icon={ShoppingCart}
+          title="Failed to load products"
+          description="There was an error loading the products. Please try again."
+          action={{
+            label: "Retry",
+            onClick: () => window.location.reload(),
+          }}
+        />
       )}
+
+      {/* Loading State */}
+      {listingsLoading && <ProductGridSkeleton count={8} />}
 
       {/* Products Grid */}
       {!listingsLoading && (
@@ -154,8 +219,12 @@ export default function BuyerDashboardPage() {
                 }
               }}
             >
-              <div className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center">
-                <ShoppingCart className="w-16 h-16 text-muted-foreground" />
+              <div className="aspect-square bg-muted relative overflow-hidden group">
+                <ProductImage
+                  src={null}
+                  alt={listing.product.name}
+                  className="w-full h-full"
+                />
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
@@ -246,12 +315,24 @@ export default function BuyerDashboardPage() {
         </div>
       )}
 
-      {!listingsLoading && filteredListings.length === 0 && (
-        <div className="text-center py-12">
-          <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="font-medium text-lg mb-1">No products found</h3>
-          <p className="text-muted-foreground">Try a different search or category</p>
-        </div>
+      {!listingsLoading && !listingsError && filteredListings.length === 0 && (
+        <EmptyState
+          icon={Search}
+          title={debouncedSearchTerm ? "No products found" : "No products available"}
+          description={
+            debouncedSearchTerm
+              ? `No products match "${debouncedSearchTerm}". Try a different search term.`
+              : "There are no products available at the moment. Check back later!"
+          }
+          action={
+            debouncedSearchTerm
+              ? {
+                  label: "Clear search",
+                  onClick: () => setSearchTerm(""),
+                }
+              : undefined
+          }
+        />
       )}
 
       <Dialog
@@ -274,8 +355,12 @@ export default function BuyerDashboardPage() {
               </DialogHeader>
 
               <div className="grid gap-6 sm:grid-cols-2">
-                <div className="rounded-2xl border border-border overflow-hidden flex items-center justify-center bg-muted h-64">
-                  <ShoppingCart className="w-24 h-24 text-muted-foreground" />
+                <div className="rounded-2xl border border-border overflow-hidden bg-muted h-64">
+                  <ProductImage
+                    src={null}
+                    alt={selectedListing.product.name}
+                    className="w-full h-full"
+                  />
                 </div>
                 <div className="space-y-4 text-sm">
                   <div>

@@ -37,6 +37,8 @@ export default function FarmerOrdersPage() {
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
   const [schedulingOrderId, setSchedulingOrderId] = useState<number | null>(null)
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false)
+  const [cancelOrderId, setCancelOrderId] = useState<number | null>(null)
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -52,13 +54,29 @@ export default function FarmerOrdersPage() {
     setUpdatingStatus(orderId)
     try {
       await ordersAPI.updateStatus(orderId, newStatus)
-      toast.success(`Order status updated to ${newStatus}`)
+      toast.success(`Order status updated to ${newStatus}`, {
+        description: `Order #${orderId} is now ${newStatus.toLowerCase()}`,
+      })
       refetchOrders()
     } catch (error: any) {
-      toast.error(error.message || "Failed to update order status")
+      toast.error("Failed to update order status", {
+        description: error.message || "Please try again",
+      })
     } finally {
       setUpdatingStatus(null)
     }
+  }
+
+  const handleCancelOrder = (orderId: number) => {
+    setCancelOrderId(orderId)
+    setCancelDialogOpen(true)
+  }
+
+  const confirmCancelOrder = async () => {
+    if (!cancelOrderId) return
+    await updateOrderStatus(cancelOrderId, "CANCELLED")
+    setCancelDialogOpen(false)
+    setCancelOrderId(null)
   }
 
   // Map database statuses to display
@@ -136,7 +154,7 @@ export default function FarmerOrdersPage() {
               size="sm"
               variant="outline"
               className="gap-1 text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
-              onClick={() => updateOrderStatus(order.id, "CANCELLED")}
+              onClick={() => handleCancelOrder(order.id)}
               disabled={isUpdating}
             >
               <X className="w-4 h-4" />
@@ -291,6 +309,18 @@ export default function FarmerOrdersPage() {
           </div>
         ))}
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        title="Cancel Order"
+        description={`Are you sure you want to cancel order #${cancelOrderId}? This action cannot be undone.`}
+        confirmLabel="Cancel Order"
+        cancelLabel="Keep Order"
+        onConfirm={confirmCancelOrder}
+        variant="destructive"
+      />
     </div>
   )
 }

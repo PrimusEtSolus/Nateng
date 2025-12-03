@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ArrowLeft, CreditCard, Wallet, Building2, CheckCircle, MapPin, Truck, Loader2 } from "lucide-react"
+import { ArrowLeft, CreditCard, Wallet, Building2, CheckCircle, MapPin, Truck, Loader2, ShoppingCart } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
@@ -257,24 +257,35 @@ export default function BuyerCheckoutPage() {
               <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
 
               <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                {items.map((item) => (
-                  <div key={item.product.id} className="flex gap-3">
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                      <img
-                        src={item.product.image || "/placeholder.svg"}
-                        alt={item.product.name}
-                        className="w-full h-full object-cover"
-                      />
+                {items.map((item, index) => {
+                  const itemId = item.listingId || item.product?.id || index
+                  const productName = item.productName || item.product?.name || "Product"
+                  const pricePerKg = item.priceCents ? item.priceCents / 100 : (item.product?.pricePerKg || 0)
+                  const itemTotal = pricePerKg * item.quantity
+
+                  return (
+                    <div key={itemId} className="flex gap-3">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
+                        {item.product?.image ? (
+                          <img
+                            src={item.product.image}
+                            alt={productName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <ShoppingCart className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{productName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.quantity}kg x ₱{pricePerKg.toFixed(2)}
+                        </p>
+                      </div>
+                      <p className="text-sm font-medium">₱{itemTotal.toLocaleString()}</p>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.product.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.quantity}kg x ₱{item.product.pricePerKg}
-                      </p>
-                    </div>
-                    <p className="text-sm font-medium">₱{(item.product.pricePerKg * item.quantity).toLocaleString()}</p>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               <div className="border-t border-border pt-4 space-y-2 mb-6">

@@ -1,4 +1,5 @@
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Leaf, ShoppingCart, Store, TrendingUp, Users, Truck } from "lucide-react"
@@ -31,8 +32,8 @@ export default function HomePage() {
 
         {/* Features Section */}
         <section className="py-16 grid md:grid-cols-3 gap-8">
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center transition-all duration-300 hover:scale-105 hover:bg-white/30 card-hover">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-300 hover:scale-110">
               <Leaf className="w-8 h-8 text-[#064E3B]" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">For Farmers</h3>
@@ -41,8 +42,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center transition-all duration-300 hover:scale-105 hover:bg-white/30 card-hover">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-300 hover:scale-110">
               <Store className="w-8 h-8 text-[#064E3B]" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">For Markets</h3>
@@ -51,8 +52,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center transition-all duration-300 hover:scale-105 hover:bg-white/30 card-hover">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-300 hover:scale-110">
               <ShoppingCart className="w-8 h-8 text-[#064E3B]" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">For Buyers</h3>
@@ -63,8 +64,8 @@ export default function HomePage() {
         </section>
 
         {/* Stats Section */}
-        <section className="py-16">
-          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl">
+        <section className="py-16 animate-fade-in">
+          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl transition-all duration-300 hover:shadow-2xl">
             <h2 className="text-2xl md:text-3xl font-semibold text-[#064E3B] text-center mb-12">Growing Together</h2>
             <div className="grid md:grid-cols-3 gap-8 text-center">
               <div>
@@ -94,17 +95,7 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#064E3B] text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Leaf className="w-6 h-6" />
-              <span className="text-xl font-semibold">NatengHub</span>
-            </div>
-            <p className="text-white/70 text-sm">2024 NatengHub. Connecting Benguet Farmers to the World.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

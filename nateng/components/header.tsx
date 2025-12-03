@@ -13,19 +13,19 @@ export function Header() {
     <header className="w-full bg-[#059669]/60 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 md:h-24">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 transition-transform hover:scale-105">
             <Logo size="md" variant="light" />
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-lg font-semibold text-[#064E3B] hover:text-white transition-colors">
+            <Link href="/" className="text-lg font-semibold text-[#064E3B] hover:text-white transition-all duration-200 hover:scale-105">
               Home
             </Link>
-            <Link href="/about" className="text-lg font-semibold text-[#064E3B] hover:text-white transition-colors">
+            <Link href="/about" className="text-lg font-semibold text-[#064E3B] hover:text-white transition-all duration-200 hover:scale-105">
               About
             </Link>
-            <Link href="/contact" className="text-lg font-semibold text-[#064E3B] hover:text-white transition-colors">
+            <Link href="/contact" className="text-lg font-semibold text-[#064E3B] hover:text-white transition-all duration-200 hover:scale-105">
               Contact
             </Link>
           </nav>
@@ -45,30 +45,55 @@ export function Header() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="md:hidden p-2 text-[#064E3B]" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <button 
+            className="md:hidden p-2 text-[#064E3B] hover:bg-white/20 rounded-lg transition-colors" 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden pb-4 space-y-4">
+          <div className="md:hidden pb-4 space-y-4 animate-fade-in">
             <nav className="flex flex-col gap-2">
-              <Link href="/" className="text-lg font-semibold text-[#064E3B] py-2">
+              <Link 
+                href="/" 
+                className="text-lg font-semibold text-[#064E3B] py-2 hover:text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 Home
               </Link>
-              <Link href="/about" className="text-lg font-semibold text-[#064E3B] py-2">
+              <Link 
+                href="/about" 
+                className="text-lg font-semibold text-[#064E3B] py-2 hover:text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 About
               </Link>
-              <Link href="/contact" className="text-lg font-semibold text-[#064E3B] py-2">
+              <Link 
+                href="/contact" 
+                className="text-lg font-semibold text-[#064E3B] py-2 hover:text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 Contact
               </Link>
             </nav>
             <div className="flex flex-col gap-2 pt-2">
-              <Button variant="ghost" className="bg-white/45 text-white font-semibold" asChild>
+              <Button 
+                variant="ghost" 
+                className="bg-white/45 text-white font-semibold" 
+                asChild
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 <Link href="/login">Sign In</Link>
               </Button>
-              <Button className="bg-white text-[#31E672] font-semibold" asChild>
+              <Button 
+                className="bg-white text-[#31E672] font-semibold" 
+                asChild
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 <Link href="/signup">Sign Up</Link>
               </Button>
             </div>

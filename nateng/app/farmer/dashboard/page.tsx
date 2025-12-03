@@ -7,6 +7,10 @@ import { productsAPI, listingsAPI, ordersAPI } from "@/lib/api-client"
 import { Package, TrendingUp, Leaf, DollarSign, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { StatCardSkeleton, OrderCardSkeleton } from "@/components/loading-skeletons"
+import { EmptyState } from "@/components/empty-state"
+import { toast } from "sonner"
 import {
   Dialog,
   DialogContent,
@@ -124,9 +128,24 @@ export default function FarmerDashboardPage() {
 
   if (productsLoading || listingsLoading || ordersLoading) {
     return (
-      <div className="p-8">
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Loading dashboard...</p>
+      <div className="p-8 space-y-8">
+        <div>
+          <Skeleton className="h-10 w-64 mb-2" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Skeleton className="h-64 w-full rounded-2xl" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-48 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
+          </div>
         </div>
       </div>
     )
@@ -145,7 +164,7 @@ export default function FarmerDashboardPage() {
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="bg-white rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow"
+            className="bg-white rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-all duration-200 hover:scale-[1.02]"
           >
             <div className="flex items-start justify-between">
               <div className={`p-3 rounded-xl ${stat.color}`}>
@@ -183,10 +202,19 @@ export default function FarmerDashboardPage() {
             </Link>
           </div>
           <div className="divide-y divide-border">
-            {recentOrders.map((order) => (
+            {recentOrders.length === 0 ? (
+              <div className="p-8">
+                <EmptyState
+                  icon={Package}
+                  title="No orders yet"
+                  description="Your recent orders will appear here once buyers start placing orders."
+                />
+              </div>
+            ) : (
+              recentOrders.map((order) => (
               <div
                 key={order.id}
-                className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-farmer focus-visible:ring-offset-2"
+                className="p-4 flex items-center justify-between hover:bg-muted/30 transition-all duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-farmer focus-visible:ring-offset-2 hover:translate-x-1"
                 role="button"
                 tabIndex={0}
                 onClick={() => setSelectedOrder(order)}
@@ -226,7 +254,8 @@ export default function FarmerDashboardPage() {
                   </span>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -267,7 +296,18 @@ export default function FarmerDashboardPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-border p-6">
             <h3 className="font-semibold text-foreground mb-4">Your Products</h3>
             <div className="space-y-3">
-              {farmerProducts.slice(0, 4).map((product) => {
+              {farmerProducts.length === 0 ? (
+                <EmptyState
+                  icon={Leaf}
+                  title="No products yet"
+                  description="Add your first crop to start selling on NatengHub."
+                  action={{
+                    label: "Add Crop",
+                    onClick: () => window.location.href = "/farmer/crops",
+                  }}
+                />
+              ) : (
+                farmerProducts.slice(0, 4).map((product) => {
                 const productListings = listings?.filter((l) => l.productId === product.id) || []
                 const totalQuantity = productListings.reduce((sum, l) => sum + (l.available ? l.quantity : 0), 0)
                 const hasAvailable = productListings.some((l) => l.available && l.quantity > 0)
@@ -310,9 +350,7 @@ export default function FarmerDashboardPage() {
                     </span>
                   </div>
                 )
-              })}
-              {farmerProducts.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">No products yet. Add your first crop!</p>
+                })
               )}
             </div>
           </div>

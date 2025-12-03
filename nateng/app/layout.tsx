@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Nunito_Sans, Source_Serif_4 } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
 const nunitoSans = Nunito_Sans({
@@ -35,6 +36,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {children}
+        <Toaster />
         <Analytics />
       </body>
     </html>
