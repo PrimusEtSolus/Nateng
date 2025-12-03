@@ -11,15 +11,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Eye, EyeOff, Building2 } from "lucide-react"
 import { businessTypes } from "@/lib/mock-data"
+import { register, getRedirectPath } from "@/lib/auth"
+import { toast } from "sonner"
 
 export default function BusinessSignupPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const [formData, setFormData] = useState({
-    email: "",
     businessName: "",
+    email: "",
     businessType: "",
     password: "",
     confirmPassword: "",
@@ -27,16 +30,35 @@ export default function BusinessSignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match")
+    setError("")
+    
+    if (!formData.businessName) {
+      setError("Business name is required")
       return
     }
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+    
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters")
+      return
+    }
+    
     setIsLoading(true)
 
-    setTimeout(() => {
-      router.push("/login")
+    try {
+      const user = await register(formData.businessName, formData.email, formData.password, "business")
+      if (user) {
+        toast.success("Account created successfully!")
+        router.push(getRedirectPath(user.role))
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to create account. Please try again.")
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -63,6 +85,11 @@ export default function BusinessSignupPage() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-center">
+                {error}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email Address

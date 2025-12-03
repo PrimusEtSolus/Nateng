@@ -1,20 +1,41 @@
 "use client"
 
-import { mockUsers, type User, type UserRole } from "./mock-data"
+import type { UserRole } from "./mock-data"
 
 const AUTH_KEY = "natenghub_user"
 
-export type { User }
+export interface User {
+  id: number
+  name: string
+  email: string
+  role: UserRole
+  createdAt?: string
+}
 
-export function login(email: string, password: string): User | null {
-  const user = mockUsers.find((u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password)
-  if (user) {
-    if (typeof window !== "undefined") {
+export async function login(email: string, password: string): Promise<User | null> {
+  try {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+
+    if (!response.ok) {
+      return null
+    }
+
+    const data = await response.json()
+    const user = data.user
+
+    if (user && typeof window !== "undefined") {
       localStorage.setItem(AUTH_KEY, JSON.stringify(user))
     }
+
     return user
+  } catch (error) {
+    console.error('Login error:', error)
+    return null
   }
-  return null
 }
 
 export function logout(): void {
@@ -34,6 +55,33 @@ export function getCurrentUser(): User | null {
     }
   }
   return null
+}
+
+export async function register(name: string, email: string, password: string, role: UserRole): Promise<User | null> {
+  try {
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, role }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Registration failed')
+    }
+
+    const data = await response.json()
+    const user = data.user
+
+    if (user && typeof window !== "undefined") {
+      localStorage.setItem(AUTH_KEY, JSON.stringify(user))
+    }
+
+    return user
+  } catch (error: any) {
+    console.error('Registration error:', error)
+    throw error
+  }
 }
 
 export function getRedirectPath(role: UserRole): string {

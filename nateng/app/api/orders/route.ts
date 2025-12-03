@@ -90,6 +90,28 @@ export async function POST(req: Request) {
       },
     });
 
+    // Create notification for seller
+    await prisma.notification.create({
+      data: {
+        userId: Number(sellerId),
+        type: 'order_placed',
+        title: 'New Order Received',
+        message: `You have received a new order from ${fullOrder?.buyer.name || 'a buyer'}`,
+        link: `/orders/${createdOrder.id}`,
+      },
+    });
+
+    // Create notification for buyer
+    await prisma.notification.create({
+      data: {
+        userId: Number(buyerId),
+        type: 'order_placed',
+        title: 'Order Placed',
+        message: `Your order has been placed successfully. Total: ₱${(totalCents / 100).toFixed(2)}`,
+        link: `/orders/${createdOrder.id}`,
+      },
+    });
+
     return NextResponse.json(fullOrder, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

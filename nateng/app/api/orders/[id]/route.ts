@@ -51,6 +51,52 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       },
     });
 
+    // Create notifications based on status change
+    const statusMessages: Record<string, { buyer: string; seller: string }> = {
+      CONFIRMED: {
+        buyer: 'Your order has been confirmed by the seller',
+        seller: 'You have confirmed the order',
+      },
+      SHIPPED: {
+        buyer: 'Your order has been shipped',
+        seller: 'You have marked the order as shipped',
+      },
+      DELIVERED: {
+        buyer: 'Your order has been delivered',
+        seller: 'You have marked the order as delivered',
+      },
+      CANCELLED: {
+        buyer: 'Your order has been cancelled',
+        seller: 'The order has been cancelled',
+      },
+    };
+
+    if (statusMessages[status]) {
+      const messages = statusMessages[status];
+      
+      // Notify buyer
+      await prisma.notification.create({
+        data: {
+          userId: order.buyerId,
+          type: `order_${status.toLowerCase()}`,
+          title: `Order ${status}`,
+          message: messages.buyer,
+          link: `/orders/${order.id}`,
+        },
+      });
+
+      // Notify seller
+      await prisma.notification.create({
+        data: {
+          userId: order.sellerId,
+          type: `order_${status.toLowerCase()}`,
+          title: `Order ${status}`,
+          message: messages.seller,
+          link: `/orders/${order.id}`,
+        },
+      });
+    }
+
     return NextResponse.json(order);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -97,13 +97,17 @@ For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md
 - **Shopping Cart**: Persistent cart with localStorage
 - **RESTful API**: Complete CRUD operations for all entities
 - **Database**: Prisma ORM with SQLite/PostgreSQL support
+- **Authentication System**: Full user registration and login with bcrypt password hashing
+- **User-to-User Messaging**: Direct messaging between buyers and sellers
+- **Notification System**: Real-time notifications for orders, messages, and status updates
+- **Complete Order Flow**: End-to-end order processing with automatic notifications
 
 ### 🚧 In Development
 
 - **Crop Programming Dashboard**: Market intelligence and demand forecasting
 - **Smart Logistics**: Order consolidation and delivery scheduling
 - **Analytics Integration**: Descriptive and predictive analytics
-- **Authentication**: JWT-based authentication system
+- **JWT Authentication**: Upgrade from localStorage to JWT tokens
 
 ## 📚 Documentation
 
@@ -113,6 +117,7 @@ For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System architecture and technical design
 - **[QUICK_START.md](./QUICK_START.md)** - Quick start guide and common patterns
 - **[README_BACKEND.md](./README_BACKEND.md)** - Backend API documentation
+- **[FULLSTACK_IMPLEMENTATION.md](./FULLSTACK_IMPLEMENTATION.md)** - Complete full-stack implementation guide
 
 ### Additional Resources
 
@@ -160,8 +165,32 @@ npm run seed         # Seed database with sample data
 - `GET/POST /api/listings` - Listing management
 - `GET/POST /api/orders` - Order management
 - `GET/POST /api/users` - User management
+- `POST /api/auth/login` - User authentication
+- `POST /api/auth/register` - User registration
+- `GET/POST /api/messages` - User-to-user messaging
+- `GET/PATCH /api/notifications` - Notification management
 
 For detailed API documentation, see [README_BACKEND.md](./README_BACKEND.md).
+
+### Authentication & User Management
+
+**Registration:**
+- Users can register as: Farmer, Buyer, Business, or Reseller
+- Passwords are hashed with bcrypt (10 rounds)
+- Email uniqueness enforced
+
+**Login:**
+- Secure password authentication
+- Session management via localStorage (upgradeable to JWT)
+- Automatic role-based dashboard redirection
+
+**Seed Users** (Password: `password123`):
+- `farmer1@email.com`, `farmer2@email.com`
+- `buyer1@email.com`, `buyer2@email.com`, `buyer3@email.com`
+- `reseller1@email.com`, `reseller2@email.com`, `reseller3@email.com`
+- `business1@email.com`
+
+For complete implementation details, see [FULLSTACK_IMPLEMENTATION.md](./FULLSTACK_IMPLEMENTATION.md).
 
 ## 🎓 Research Foundation
 

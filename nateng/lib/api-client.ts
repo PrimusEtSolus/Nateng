@@ -80,3 +80,27 @@ export const usersAPI = {
   delete: (id: number) => apiCall(`/api/users/${id}`, { method: 'DELETE' }),
   getByRole: (role: string) => apiCall(`/api/users?role=${role}`),
 };
+
+// Messages API
+export const messagesAPI = {
+  getAll: (userId: number, conversationWith?: number) => {
+    const params = new URLSearchParams();
+    params.append('userId', userId.toString());
+    if (conversationWith) params.append('conversationWith', conversationWith.toString());
+    return apiCall(`/api/messages?${params}`);
+  },
+  send: (data: { senderId: number; receiverId: number; content: string; orderId?: number }) =>
+    apiCall('/api/messages', { method: 'POST', body: data }),
+};
+
+// Notifications API
+export const notificationsAPI = {
+  getAll: (userId: number, unreadOnly?: boolean) => {
+    const params = new URLSearchParams();
+    params.append('userId', userId.toString());
+    if (unreadOnly) params.append('unreadOnly', 'true');
+    return apiCall(`/api/notifications?${params}`);
+  },
+  markAsRead: (notificationId: number) =>
+    apiCall('/api/notifications', { method: 'PATCH', body: { notificationId, read: true } }),
+};

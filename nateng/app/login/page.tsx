@@ -27,15 +27,18 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
-    setTimeout(() => {
-      const user = login(formData.email, formData.password)
+    try {
+      const user = await login(formData.email, formData.password)
       if (user) {
         router.push(getRedirectPath(user.role))
       } else {
         setError("Invalid email or password")
+        setIsLoading(false)
       }
+    } catch (err: any) {
+      setError(err.message || "Login failed. Please try again.")
       setIsLoading(false)
-    }, 500)
+    }
   }
 
   return (

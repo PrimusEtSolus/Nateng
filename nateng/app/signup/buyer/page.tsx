@@ -10,13 +10,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Eye, EyeOff } from "lucide-react"
+import { register, getRedirectPath } from "@/lib/auth"
+import { toast } from "sonner"
 
 export default function BuyerSignupPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -24,17 +28,35 @@ export default function BuyerSignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match")
+    setError("")
+    
+    if (!formData.name) {
+      setError("Name is required")
       return
     }
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+    
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters")
+      return
+    }
+    
     setIsLoading(true)
 
-    // Simulate signup - will be replaced with actual auth
-    setTimeout(() => {
-      router.push("/login")
+    try {
+      const user = await register(formData.name, formData.email, formData.password, "buyer")
+      if (user) {
+        toast.success("Account created successfully!")
+        router.push(getRedirectPath(user.role))
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to create account. Please try again.")
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -53,6 +75,26 @@ export default function BuyerSignupPage() {
           <h1 className="text-2xl md:text-3xl font-semibold text-center text-foreground mb-8">Buyer Form</h1>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-center">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-lg text-foreground">
+                Full Name
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Enter your full name"
+                className="h-14 bg-muted border-border text-lg"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-lg text-foreground">
                 Email Address / Mobile Number

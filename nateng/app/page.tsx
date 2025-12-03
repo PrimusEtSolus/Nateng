@@ -22,7 +22,7 @@ export default function HomePage() {
           <div className="mt-10">
             <Button
               size="lg"
-              className="bg-white text-[#10B981] font-semibold text-xl px-8 py-6 rounded-xl shadow-lg hover:bg-white/90 hover:scale-105 transition-all"
+              className="bg-white text-[#10B981] font-semibold text-xl px-8 py-6 rounded-xl shadow-lg hover:bg-white/90"
               asChild
             >
               <Link href="/signup">Start Buying</Link>
@@ -32,8 +32,8 @@ export default function HomePage() {
 
         {/* Features Section */}
         <section className="py-16 grid md:grid-cols-3 gap-8">
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center transition-all duration-300 hover:scale-105 hover:bg-white/30 card-hover">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-300 hover:scale-110">
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
               <Leaf className="w-8 h-8 text-[#064E3B]" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">For Farmers</h3>
@@ -42,8 +42,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center transition-all duration-300 hover:scale-105 hover:bg-white/30 card-hover">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-300 hover:scale-110">
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
               <Store className="w-8 h-8 text-[#064E3B]" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">For Markets</h3>
@@ -52,8 +52,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center transition-all duration-300 hover:scale-105 hover:bg-white/30 card-hover">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-300 hover:scale-110">
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 text-center">
+            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
               <ShoppingCart className="w-8 h-8 text-[#064E3B]" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">For Buyers</h3>
@@ -64,8 +64,8 @@ export default function HomePage() {
         </section>
 
         {/* Stats Section */}
-        <section className="py-16 animate-fade-in">
-          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl transition-all duration-300 hover:shadow-2xl">
+        <section className="py-16">
+          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl">
             <h2 className="text-2xl md:text-3xl font-semibold text-[#064E3B] text-center mb-12">Growing Together</h2>
             <div className="grid md:grid-cols-3 gap-8 text-center">
               <div>

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -12,11 +13,15 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.user.deleteMany();
 
+  // Hash passwords for seed users
+  const defaultPassword = await bcrypt.hash("password123", 10);
+
   // Create farmers
   const farmer1 = await prisma.user.create({
     data: {
       name: "Maria Santos",
-      email: "maria@farm.com",
+      email: "farmer1@email.com",
+      password: defaultPassword,
       role: "farmer",
     },
   });
@@ -24,7 +29,8 @@ async function main() {
   const farmer2 = await prisma.user.create({
     data: {
       name: "Juan Dela Cruz",
-      email: "juan@farm.com",
+      email: "farmer2@email.com",
+      password: defaultPassword,
       role: "farmer",
     },
   });
@@ -33,7 +39,8 @@ async function main() {
   const business1 = await prisma.user.create({
     data: {
       name: "Green Valley Restaurant",
-      email: "contact@greenvalley.com",
+      email: "business1@email.com",
+      password: defaultPassword,
       role: "business",
     },
   });
@@ -41,7 +48,8 @@ async function main() {
   const reseller1 = await prisma.user.create({
     data: {
       name: "Highland Markets Reseller",
-      email: "reseller@highland.com",
+      email: "reseller1@email.com",
+      password: defaultPassword,
       role: "reseller",
     },
   });
@@ -50,8 +58,45 @@ async function main() {
   const buyer1 = await prisma.user.create({
     data: {
       name: "Alberto Garcia",
-      email: "buyer1@example.com",
+      email: "buyer1@email.com",
+      password: defaultPassword,
       role: "buyer",
+    },
+  });
+
+  const buyer2 = await prisma.user.create({
+    data: {
+      name: "Carmen Reyes",
+      email: "buyer2@email.com",
+      password: defaultPassword,
+      role: "buyer",
+    },
+  });
+
+  const buyer3 = await prisma.user.create({
+    data: {
+      name: "Roberto Tan",
+      email: "buyer3@email.com",
+      password: defaultPassword,
+      role: "buyer",
+    },
+  });
+
+  const reseller2 = await prisma.user.create({
+    data: {
+      name: "Market Stall 2",
+      email: "reseller2@email.com",
+      password: defaultPassword,
+      role: "reseller",
+    },
+  });
+
+  const reseller3 = await prisma.user.create({
+    data: {
+      name: "Market Stall 3",
+      email: "reseller3@email.com",
+      password: defaultPassword,
+      role: "reseller",
     },
   });
 

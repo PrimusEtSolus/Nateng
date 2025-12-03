@@ -14,6 +14,7 @@ model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
+  password  String   // Hashed password
   role      String
   createdAt DateTime @default(now())
   // relations
@@ -21,6 +22,9 @@ model User {
   listings  Listing[] @relation("SellerListings")
   ordersAsBuyer Order[] @relation("BuyerOrders")
   ordersAsSeller Order[] @relation("SellerOrders")
+  messagesSent Message[] @relation("SenderMessages")
+  messagesReceived Message[] @relation("ReceiverMessages")
+  notifications Notification[]
 }
 
 model Product {
@@ -75,4 +79,28 @@ model OrderItem {
   listing   Listing @relation(fields: [listingId], references: [id])
   quantity  Int
   priceCents Int
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  senderId  Int
+  sender    User     @relation(fields: [senderId], references: [id], name: "SenderMessages")
+  receiverId Int
+  receiver  User     @relation(fields: [receiverId], references: [id], name: "ReceiverMessages")
+  orderId   Int?     // Optional: message related to an order
+  content   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // "order_placed", "order_confirmed", "order_shipped", "order_delivered", "message"
+  title     String
+  message   String
+  link      String?  // Optional link to related page
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

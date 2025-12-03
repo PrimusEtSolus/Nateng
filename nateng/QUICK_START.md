@@ -91,10 +91,17 @@ console.log(`Total: ₱${getTotalPrice() / 100}`);
 
 | Role | Email | Password |
 |------|-------|----------|
-| Farmer | maria@farm.com | use mock login |
-| Buyer | buyer1@example.com | use mock login |
-| Business | contact@greenvalley.com | use mock login |
-| Reseller | reseller@highland.com | use mock login |
+| Farmer | farmer1@email.com | password123 |
+| Farmer | farmer2@email.com | password123 |
+| Buyer | buyer1@email.com | password123 |
+| Buyer | buyer2@email.com | password123 |
+| Buyer | buyer3@email.com | password123 |
+| Business | business1@email.com | password123 |
+| Reseller | reseller1@email.com | password123 |
+| Reseller | reseller2@email.com | password123 |
+| Reseller | reseller3@email.com | password123 |
+
+**Note:** All seed users use the password `password123`. For production, users will set their own passwords during registration.
 
 ## 🗺️ Navigation
 
@@ -187,6 +194,10 @@ curl http://localhost:3000/api/orders?buyerId=1&status=PENDING
 ✅ Role-based portals
 ✅ Inventory management
 ✅ Order tracking
+✅ **Complete Authentication System** - Registration and login with bcrypt
+✅ **User-to-User Messaging** - Direct communication between buyers and sellers
+✅ **Real-time Notifications** - Automatic notifications for orders and messages
+✅ **Complete Order Flow** - End-to-end order processing with status updates
 
 ## 🎯 Next Feature Ideas
 
