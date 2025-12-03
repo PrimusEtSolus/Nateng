@@ -186,7 +186,6 @@ export default function BusinessInventoryPage() {
   }
 
   const handleAddStock = () => {
-    console.log("handleAddStock", { newItemName, newItemQuantity, newItemReorderLevel })
     if (!newItemName || !newItemQuantity || !newItemReorderLevel) return
 
     const qty = Number(newItemQuantity)
@@ -582,7 +581,6 @@ export default function BusinessInventoryPage() {
       <Dialog
         open={isAddStockOpen}
         onOpenChange={(open) => {
-          console.log("add stock dialog open change", open)
           setIsAddStockOpen(open)
           if (!open) {
             setNewItemName("")
