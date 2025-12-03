@@ -1,15 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  mockWholesaleOrders,
-  getWholesaleCrops,
-  mockRetailProducts,
-  type WholesaleOrder,
-  type RetailProduct,
-} from "@/lib/mock-data"
 import { getCurrentUser, type User } from "@/lib/auth"
-import { Package, TrendingUp, ShoppingBag, DollarSign, ArrowUpRight, Store, Users } from "lucide-react"
+import { useFetch } from "@/hooks/use-fetch"
+import { Package, TrendingUp, ShoppingBag, DollarSign, ArrowUpRight, Store, Users, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,33 +15,96 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+interface Listing {
+  id: number
+  productId: number
+  sellerId: number
+  priceCents: number
+  quantity: number
+  available: boolean
+  product: {
+    id: number
+    name: string
+    description: string | null
+    farmer: {
+      id: number
+      name: string
+      email: string
+    }
+  }
+  seller: {
+    id: number
+    name: string
+    role: string
+  }
+}
+
+interface Order {
+  id: number
+  buyerId: number
+  sellerId: number
+  totalCents: number
+  status: string
+  createdAt: string
+  items: Array<{
+    id: number
+    quantity: number
+    listing: {
+      id: number
+      product: {
+        id: number
+        name: string
+      }
+    }
+  }>
+  seller: {
+    id: number
+    name: string
+  }
+}
+
 export default function ResellerDashboardPage() {
   const [user, setUser] = useState<User | null>(null)
-  const orders = mockWholesaleOrders.filter((o) => o.buyerId === "reseller-1")
-  const crops = getWholesaleCrops()
-  const myProducts = mockRetailProducts.filter((p) => p.resellerId === "reseller-1")
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState<RetailProduct | null>(null)
-  const [selectedWholesaleOrder, setSelectedWholesaleOrder] = useState<WholesaleOrder | null>(null)
+  const [selectedInventoryItem, setSelectedInventoryItem] = useState<Listing | null>(null)
+  const [selectedWholesaleOrder, setSelectedWholesaleOrder] = useState<Order | null>(null)
 
   useEffect(() => {
     setUser(getCurrentUser())
   }, [])
 
-  const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "confirmed").length
-  const totalSpent = orders.filter((o) => o.status === "completed").reduce((sum, o) => sum + o.total, 0)
-  const totalSales = myProducts.reduce((sum, p) => sum + p.soldCount * p.pricePerKg, 0)
+  // Fetch reseller's listings (inventory)
+  const { data: myListings, loading: listingsLoading } = useFetch<Listing[]>(
+    user ? `/api/listings?sellerId=${user.id}` : '',
+    { skip: !user }
+  )
+
+  // Fetch reseller's orders (as buyer - wholesale orders from farmers)
+  const { data: wholesaleOrders, loading: ordersLoading } = useFetch<Order[]>(
+    user ? `/api/orders?buyerId=${user.id}` : '',
+    { skip: !user }
+  )
+
+  // Fetch reseller's sales (as seller - orders from buyers)
+  const { data: salesOrders, loading: salesLoading } = useFetch<Order[]>(
+    user ? `/api/orders?sellerId=${user.id}` : '',
+    { skip: !user }
+  )
+
+  const pendingOrders = wholesaleOrders?.filter((o) => o.status === "PENDING" || o.status === "CONFIRMED").length || 0
+  const totalSpent = wholesaleOrders?.filter((o) => o.status === "DELIVERED").reduce((sum, o) => sum + o.totalCents, 0) || 0
+  const totalSales = salesOrders?.filter((o) => o.status === "DELIVERED").reduce((sum, o) => sum + o.totalCents, 0) || 0
 
   const stats = [
     {
       label: "Total Revenue",
-      value: `₱${totalSales.toLocaleString()}`,
+      value: `₱${(totalSales / 100).toLocaleString()}`,
       change: "+12.5%",
       icon: DollarSign,
       color: "bg-emerald-500",
     },
     {
       label: "Products Listed",
-      value: myProducts.length.toString(),
+      value: (myListings?.length || 0).toString(),
       change: "In stock",
       icon: Store,
       color: "bg-teal-500",
@@ -116,41 +173,48 @@ export default function ResellerDashboardPage() {
               Manage all
             </Link>
           </div>
-          <div className="divide-y divide-border">
-            {myProducts.slice(0, 4).map((product) => (
-              <div
-                key={product.id}
-                className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelectedInventoryItem(product)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault()
-                    setSelectedInventoryItem(product)
-                  }
-                }}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted">
-                    <img
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
+          {listingsLoading ? (
+            <div className="p-8 text-center">
+              <Loader2 className="w-6 h-6 text-muted-foreground mx-auto animate-spin" />
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {myListings?.slice(0, 4).map((listing) => (
+                <div
+                  key={listing.id}
+                  className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedInventoryItem(listing)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      setSelectedInventoryItem(listing)
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted flex items-center justify-center">
+                      <Package className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">{listing.product.name}</p>
+                      <p className="text-sm text-muted-foreground">{listing.quantity}kg available</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-foreground">{product.name}</p>
-                    <p className="text-sm text-muted-foreground">{product.availableKg}kg available</p>
+                  <div className="text-right">
+                    <p className="font-semibold text-foreground">₱{(listing.priceCents / 100).toFixed(2)}/kg</p>
+                    <p className="text-sm text-muted-foreground">{listing.available ? "Active" : "Inactive"}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold text-foreground">₱{product.pricePerKg}/kg</p>
-                  <p className="text-sm text-muted-foreground">{product.soldCount} sold</p>
+              ))}
+              {(!myListings || myListings.length === 0) && (
+                <div className="p-8 text-center text-muted-foreground">
+                  <p>No inventory yet. Buy wholesale to get started!</p>
                 </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Quick Actions & Wholesale */}
@@ -201,44 +265,56 @@ export default function ResellerDashboardPage() {
           {/* Pending Wholesale Orders */}
           <div className="bg-white rounded-2xl shadow-sm border border-border p-6">
             <h3 className="font-semibold text-foreground mb-4">Wholesale Orders</h3>
-            <div className="space-y-3">
-              {orders.slice(0, 3).map((order) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-xl cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedWholesaleOrder(order)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault()
-                      setSelectedWholesaleOrder(order)
-                    }
-                  }}
-                >
-                  <div>
-                    <p className="font-medium text-sm">{order.crop}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {order.quantity}
-                      {order.unit} from {order.farmerName}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      order.status === "pending"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : order.status === "confirmed"
-                          ? "bg-blue-100 text-blue-700"
-                          : order.status === "ready"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
-                    }`}
+            {ordersLoading ? (
+              <div className="p-4 text-center">
+                <Loader2 className="w-5 h-5 text-muted-foreground mx-auto animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {wholesaleOrders?.slice(0, 3).map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-xl cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedWholesaleOrder(order)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        setSelectedWholesaleOrder(order)
+                      }
+                    }}
                   >
-                    {order.status}
-                  </span>
-                </div>
-              ))}
-            </div>
+                    <div>
+                      <p className="font-medium text-sm">
+                        {order.items.map((item) => item.listing.product.name).join(", ")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.items.reduce((sum, item) => sum + item.quantity, 0)}kg from {order.seller.name}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        order.status === "PENDING"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : order.status === "CONFIRMED"
+                            ? "bg-blue-100 text-blue-700"
+                            : order.status === "SHIPPED"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {order.status}
+                    </span>
+                  </div>
+                ))}
+                {(!wholesaleOrders || wholesaleOrders.length === 0) && (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    <p>No wholesale orders yet</p>
+                  </div>
+                )}
+              </div>
+            )}
             <Link
               href="/reseller/orders"
               className="block text-center text-sm font-medium text-teal-600 mt-4 hover:text-teal-700"
@@ -259,34 +335,30 @@ export default function ResellerDashboardPage() {
           {selectedInventoryItem && (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedInventoryItem.name}</DialogTitle>
+                <DialogTitle>{selectedInventoryItem.product.name}</DialogTitle>
                 <DialogDescription>
-                  Retail listing • sourced from {selectedInventoryItem.farmerName}
+                  Retail listing • sourced from {selectedInventoryItem.product.farmer.name}
                 </DialogDescription>
               </DialogHeader>
 
               <div className="grid gap-6 sm:grid-cols-2">
-                <div className="rounded-2xl border border-border overflow-hidden">
-                  <img
-                    src={selectedInventoryItem.image || "/placeholder.svg"}
-                    alt={selectedInventoryItem.name}
-                    className="w-full h-64 object-cover"
-                  />
+                <div className="rounded-2xl border border-border overflow-hidden bg-muted flex items-center justify-center h-64">
+                  <Package className="w-24 h-24 text-muted-foreground" />
                 </div>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Available</span>
-                    <strong>{selectedInventoryItem.availableKg} kg</strong>
+                    <strong>{selectedInventoryItem.quantity} kg</strong>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Price (kg)</span>
-                    <strong>₱{selectedInventoryItem.pricePerKg}</strong>
+                    <strong>₱{(selectedInventoryItem.priceCents / 100).toFixed(2)}</strong>
                   </div>
-                  <p className="text-muted-foreground">{selectedInventoryItem.description}</p>
+                  <p className="text-muted-foreground">{selectedInventoryItem.product.description || "Fresh produce"}</p>
                   <div className="rounded-xl bg-muted/60 p-4">
                     <p className="text-xs uppercase text-muted-foreground">Source farmer</p>
-                    <p className="font-semibold">{selectedInventoryItem.farmerName}</p>
-                    <p className="text-xs text-muted-foreground">{selectedInventoryItem.farmerLocation}</p>
+                    <p className="font-semibold">{selectedInventoryItem.product.farmer.name}</p>
+                    <p className="text-xs text-muted-foreground">{selectedInventoryItem.product.farmer.email}</p>
                   </div>
                 </div>
               </div>
@@ -314,22 +386,32 @@ export default function ResellerDashboardPage() {
           {selectedWholesaleOrder && (
             <>
               <DialogHeader>
-                <DialogTitle>Wholesale order {selectedWholesaleOrder.id}</DialogTitle>
+                <DialogTitle>Wholesale Order #{selectedWholesaleOrder.id}</DialogTitle>
                 <DialogDescription>
-                  {selectedWholesaleOrder.crop} from {selectedWholesaleOrder.farmerName}
+                  {selectedWholesaleOrder.items.map((item) => item.listing.product.name).join(", ")} from {selectedWholesaleOrder.seller.name}
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="rounded-xl bg-muted/60 p-4">
-                  <p className="text-xs uppercase text-muted-foreground">Quantity</p>
-                  <p className="font-semibold">
-                    {selectedWholesaleOrder.quantity}
-                    {selectedWholesaleOrder.unit}
-                  </p>
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl bg-muted/60 p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Total Quantity</p>
+                    <p className="font-semibold">
+                      {selectedWholesaleOrder.items.reduce((sum, item) => sum + item.quantity, 0)}kg
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-muted/60 p-4">
+                    <p className="text-xs uppercase text-muted-foreground">Total</p>
+                    <p className="font-semibold">₱{(selectedWholesaleOrder.totalCents / 100).toLocaleString()}</p>
+                  </div>
                 </div>
                 <div className="rounded-xl bg-muted/60 p-4">
-                  <p className="text-xs uppercase text-muted-foreground">Total</p>
-                  <p className="font-semibold">₱{selectedWholesaleOrder.total.toLocaleString()}</p>
+                  <p className="text-xs uppercase text-muted-foreground mb-2">Items</p>
+                  {selectedWholesaleOrder.items.map((item) => (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span>{item.listing.product.name} x {item.quantity}kg</span>
+                      <span>₱{(item.priceCents * item.quantity / 100).toLocaleString()}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
               <DialogFooter className="sm:justify-between sm:flex-row">

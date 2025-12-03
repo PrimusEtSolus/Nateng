@@ -2,21 +2,26 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useCart } from "@/lib/cart-context"
 import { useRouter } from "next/navigation"
+import { getCurrentUser } from "@/lib/auth"
+import { ordersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ArrowLeft, CreditCard, Wallet, Building2, CheckCircle, MapPin, Truck } from "lucide-react"
+import { ArrowLeft, CreditCard, Wallet, Building2, CheckCircle, MapPin, Truck, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 export default function BuyerCheckoutPage() {
   const { items, totalPrice, clearCart } = useCart()
   const router = useRouter()
+  const [user, setUser] = useState<any>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
+  const [placedOrderId, setPlacedOrderId] = useState<number | null>(null)
   const [paymentMethod, setPaymentMethod] = useState("cod")
   const [formData, setFormData] = useState({
     fullName: "",
@@ -26,18 +31,75 @@ export default function BuyerCheckoutPage() {
     notes: "",
   })
 
+  useEffect(() => {
+    setUser(getCurrentUser())
+  }, [])
+
   const deliveryFee = totalPrice >= 500 ? 0 : 50
   const grandTotal = totalPrice + deliveryFee
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!user) {
+      toast.error("Please log in to place an order")
+      router.push("/login")
+      return
+    }
+
+    if (items.length === 0) {
+      toast.error("Your cart is empty")
+      return
+    }
+
     setIsProcessing(true)
 
-    // Simulate order processing
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      // Group items by seller (following architecture - one order per seller)
+      const itemsBySeller = items.reduce((acc, item) => {
+        if (!item.listingId || !item.sellerId) {
+          throw new Error("Invalid cart item: missing listingId or sellerId")
+        }
+        
+        const sellerId = item.sellerId
+        
+        if (!acc[sellerId]) {
+          acc[sellerId] = []
+        }
+        
+        acc[sellerId].push({
+          listingId: item.listingId,
+          quantity: item.quantity,
+        })
+        
+        return acc
+      }, {} as Record<number, Array<{ listingId: number; quantity: number }>>)
 
-    setOrderPlaced(true)
-    clearCart()
+      // Create orders for each seller (following architecture)
+      const orderPromises = Object.entries(itemsBySeller).map(([sellerId, orderItems]) =>
+        ordersAPI.create({
+          buyerId: user.id,
+          sellerId: Number(sellerId),
+          items: orderItems,
+        })
+      )
+
+      const orders = await Promise.all(orderPromises)
+      
+      // Use the first order ID for display (or show all if multiple)
+      setPlacedOrderId(orders[0]?.id || null)
+      setOrderPlaced(true)
+      clearCart()
+      
+      if (orders.length > 1) {
+        toast.success(`${orders.length} orders placed successfully!`)
+      } else {
+        toast.success("Order placed successfully!")
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to place order. Please try again.")
+      setIsProcessing(false)
+    }
   }
 
   if (orderPlaced) {
@@ -53,7 +115,7 @@ export default function BuyerCheckoutPage() {
           </p>
           <div className="bg-muted p-4 rounded-xl mb-6">
             <p className="text-sm text-muted-foreground">Order Reference</p>
-            <p className="text-xl font-mono font-bold">#ORD-{Date.now().toString().slice(-8)}</p>
+            <p className="text-xl font-mono font-bold">#ORD-{placedOrderId || Date.now().toString().slice(-8)}</p>
           </div>
           <div className="flex gap-4 justify-center">
             <Link href="/buyer/orders">
@@ -233,10 +295,13 @@ export default function BuyerCheckoutPage() {
               <Button
                 type="submit"
                 className="w-full bg-buyer hover:bg-buyer-light text-white h-12 gap-2"
-                disabled={isProcessing}
+                disabled={isProcessing || !user}
               >
                 {isProcessing ? (
-                  "Processing..."
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Processing...
+                  </>
                 ) : (
                   <>
                     Place Order

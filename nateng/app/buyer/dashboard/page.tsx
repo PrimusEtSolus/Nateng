@@ -74,6 +74,7 @@ export default function BuyerDashboardPage() {
   const handleAddToCart = (listing: Listing, quantity: number) => {
     addToCart({
       listingId: listing.id,
+      sellerId: listing.sellerId,
       productName: listing.product.name,
       sellerName: listing.seller.name,
       quantity: quantity,

@@ -7,6 +7,7 @@ export interface CartItem {
   // Support both old format (RetailProduct) and new format (Listing)
   product?: RetailProduct
   listingId?: number
+  sellerId?: number
   productName: string
   sellerName: string
   quantity: number

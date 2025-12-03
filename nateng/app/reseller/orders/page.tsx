@@ -1,17 +1,56 @@
 "use client"
 
-import { mockWholesaleOrders } from "@/lib/mock-data"
-import { Package, Clock, CheckCircle, Truck, XCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { getCurrentUser } from "@/lib/auth"
+import { useFetch } from "@/hooks/use-fetch"
+import { Package, Clock, CheckCircle, Truck, XCircle, Loader2 } from "lucide-react"
+
+interface Order {
+  id: number
+  buyerId: number
+  sellerId: number
+  totalCents: number
+  status: string
+  createdAt: string
+  items: Array<{
+    id: number
+    quantity: number
+    priceCents: number
+    listing: {
+      id: number
+      product: {
+        id: number
+        name: string
+      }
+    }
+  }>
+  seller: {
+    id: number
+    name: string
+    role: string
+    email: string
+  }
+}
 
 export default function ResellerOrdersPage() {
-  const orders = mockWholesaleOrders.filter((o) => o.buyerId === "reseller-1")
+  const [user, setUser] = useState<any>(null)
 
-  const statusConfig = {
-    pending: { icon: Clock, color: "bg-yellow-100 text-yellow-700", label: "Pending" },
-    confirmed: { icon: CheckCircle, color: "bg-blue-100 text-blue-700", label: "Confirmed" },
-    ready: { icon: Truck, color: "bg-green-100 text-green-700", label: "Ready for Pickup" },
-    completed: { icon: CheckCircle, color: "bg-gray-100 text-gray-700", label: "Completed" },
-    rejected: { icon: XCircle, color: "bg-red-100 text-red-700", label: "Rejected" },
+  useEffect(() => {
+    setUser(getCurrentUser())
+  }, [])
+
+  // Fetch reseller's orders (as buyer - wholesale orders from farmers)
+  const { data: orders, loading: ordersLoading } = useFetch<Order[]>(
+    user ? `/api/orders?buyerId=${user.id}` : '',
+    { skip: !user }
+  )
+
+  const statusConfig: Record<string, { icon: any; color: string; label: string }> = {
+    PENDING: { icon: Clock, color: "bg-yellow-100 text-yellow-700", label: "Pending" },
+    CONFIRMED: { icon: CheckCircle, color: "bg-blue-100 text-blue-700", label: "Confirmed" },
+    SHIPPED: { icon: Truck, color: "bg-green-100 text-green-700", label: "Shipped" },
+    DELIVERED: { icon: CheckCircle, color: "bg-gray-100 text-gray-700", label: "Delivered" },
+    CANCELLED: { icon: XCircle, color: "bg-red-100 text-red-700", label: "Cancelled" },
   }
 
   return (
@@ -22,54 +61,79 @@ export default function ResellerOrdersPage() {
         <p className="text-muted-foreground mt-1">Track your wholesale orders from farmers</p>
       </div>
 
-      {/* Orders List */}
-      <div className="space-y-4">
-        {orders.map((order) => {
-          const status = statusConfig[order.status]
-          const StatusIcon = status.icon
+      {/* Loading State */}
+      {ordersLoading && (
+        <div className="text-center py-12">
+          <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-4 animate-spin" />
+          <p className="text-muted-foreground">Loading orders...</p>
+        </div>
+      )}
 
-          return (
-            <div
-              key={order.id}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 bg-teal-50 rounded-xl flex items-center justify-center">
-                    <Package className="w-8 h-8 text-teal-600" />
+      {/* Orders List */}
+      {!ordersLoading && (
+        <div className="space-y-4">
+          {orders && orders.length > 0 ? (
+            orders.map((order) => {
+              const status = statusConfig[order.status] || statusConfig.PENDING
+              const StatusIcon = status.icon
+              const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
+
+              return (
+                <div
+                  key={order.id}
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="w-16 h-16 bg-teal-50 rounded-xl flex items-center justify-center">
+                        <Package className="w-8 h-8 text-teal-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg text-foreground">
+                          {order.items.map((item) => item.listing.product.name).join(", ")}
+                        </h3>
+                        <p className="text-muted-foreground">
+                          {totalQuantity}kg from {order.seller.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Order #{order.id} - {new Date(order.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-foreground">₱{(order.totalCents / 100).toLocaleString()}</p>
+                      <span
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium mt-2 ${status.color}`}
+                      >
+                        <StatusIcon className="w-4 h-4" />
+                        {status.label}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-foreground">{order.crop}</h3>
-                    <p className="text-muted-foreground">
-                      {order.quantity}
-                      {order.unit} from {order.farmerName}
+                  <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      <span className="font-medium">Items:</span>
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Order #{order.id} - {order.orderDate}
-                    </p>
+                    <div className="space-y-1">
+                      {order.items.map((item) => (
+                        <div key={item.id} className="flex justify-between text-sm">
+                          <span>{item.listing.product.name} x {item.quantity}kg</span>
+                          <span className="font-medium">₱{(item.priceCents * item.quantity / 100).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-foreground">₱{order.total.toLocaleString()}</p>
-                  <span
-                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium mt-2 ${status.color}`}
-                  >
-                    <StatusIcon className="w-4 h-4" />
-                    {status.label}
-                  </span>
-                </div>
-              </div>
-              {order.notes && (
-                <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-medium">Note:</span> {order.notes}
-                  </p>
-                </div>
-              )}
+              )
+            })
+          ) : (
+            <div className="bg-white rounded-2xl p-12 text-center border border-border">
+              <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
+              <p className="text-muted-foreground">No orders yet. Buy wholesale to get started!</p>
             </div>
-          )
-        })}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

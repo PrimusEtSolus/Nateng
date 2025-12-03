@@ -1,16 +1,67 @@
 "use client"
 
-import { useState } from "react"
-import { mockRetailProducts } from "@/lib/mock-data"
-import { Search, Plus, Edit2, Trash2, Package } from "lucide-react"
+import { useState, useEffect } from "react"
+import { getCurrentUser } from "@/lib/auth"
+import { useFetch } from "@/hooks/use-fetch"
+import { listingsAPI } from "@/lib/api-client"
+import { Search, Plus, Edit2, Trash2, Package, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
+
+interface Listing {
+  id: number
+  productId: number
+  sellerId: number
+  priceCents: number
+  quantity: number
+  available: boolean
+  product: {
+    id: number
+    name: string
+    description: string | null
+    farmer: {
+      id: number
+      name: string
+      email: string
+    }
+  }
+  seller: {
+    id: number
+    name: string
+    role: string
+  }
+}
 
 export default function ResellerInventoryPage() {
+  const [user, setUser] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const products = mockRetailProducts.filter((p) => p.resellerId === "reseller-1")
 
-  const filteredProducts = products.filter((product) => product.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  useEffect(() => {
+    setUser(getCurrentUser())
+  }, [])
+
+  // Fetch reseller's listings (inventory)
+  const { data: listings, loading: listingsLoading, refetch: refetchListings } = useFetch<Listing[]>(
+    user ? `/api/listings?sellerId=${user.id}` : '',
+    { skip: !user }
+  )
+
+  const filteredListings = listings?.filter((listing) => 
+    listing.product.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || []
+
+  const handleDeleteListing = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this listing?")) return
+    
+    try {
+      await listingsAPI.delete(id)
+      toast.success("Listing deleted successfully")
+      refetchListings()
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete listing")
+    }
+  }
 
   return (
     <div className="p-8">
@@ -37,69 +88,92 @@ export default function ResellerInventoryPage() {
         />
       </div>
 
+      {/* Loading State */}
+      {listingsLoading && (
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-12 text-center">
+          <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-4 animate-spin" />
+          <p className="text-muted-foreground">Loading inventory...</p>
+        </div>
+      )}
+
       {/* Products Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Product</th>
-              <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Category</th>
-              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Stock</th>
-              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Retail Price</th>
-              <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Sold</th>
-              <th className="text-center px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {filteredProducts.map((product) => (
-              <tr key={product.id} className="hover:bg-muted/30 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">{product.name}</p>
-                      <p className="text-sm text-muted-foreground">from {product.farmerName}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="px-2 py-1 bg-teal-50 text-teal-700 text-xs font-medium rounded-full">
-                    {product.category}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <Package className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">{product.availableKg}kg</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <span className="font-semibold text-teal-600">₱{product.pricePerKg}/kg</span>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <span className="text-muted-foreground">{product.soldCount} units</span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center justify-center gap-2">
-                    <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                      <Edit2 className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                    <button className="p-2 hover:bg-red-50 rounded-lg transition-colors">
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </button>
-                  </div>
-                </td>
+      {!listingsLoading && (
+        <div className="bg-white rounded-2xl shadow-sm border border-border overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Product</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Source</th>
+                <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Stock</th>
+                <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Retail Price</th>
+                <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Status</th>
+                <th className="text-center px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filteredListings.map((listing) => (
+                <tr key={listing.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                        <Package className="w-6 h-6 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{listing.product.name}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {listing.product.description || "Fresh produce"}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div>
+                      <p className="text-sm font-medium">{listing.product.farmer.name}</p>
+                      <p className="text-xs text-muted-foreground">Farmer</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium">{listing.quantity}kg</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="font-semibold text-teal-600">₱{(listing.priceCents / 100).toFixed(2)}/kg</span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      listing.available ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+                    }`}>
+                      {listing.available ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+                        <Edit2 className="w-4 h-4 text-muted-foreground" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteListing(listing.id)}
+                        className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredListings.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                    {searchQuery ? "No products found matching your search" : "No inventory yet. Buy wholesale to get started!"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
