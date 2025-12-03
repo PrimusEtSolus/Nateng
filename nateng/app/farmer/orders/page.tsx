@@ -5,8 +5,10 @@ import { getCurrentUser } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { ordersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
-import { Package, Check, X, Truck, Clock, Building2, User, Loader2 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Package, Check, X, Truck, Clock, Building2, User, Loader2, Calendar } from "lucide-react"
 import { toast } from "sonner"
+import { DeliveryScheduler } from "@/components/delivery-scheduler"
 
 interface Order {
   id: number
@@ -33,6 +35,8 @@ interface Order {
 export default function FarmerOrdersPage() {
   const [user, setUser] = useState<any>(null)
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
+  const [schedulingOrderId, setSchedulingOrderId] = useState<number | null>(null)
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false)
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -141,21 +145,65 @@ export default function FarmerOrdersPage() {
         )}
 
         {order.status === "CONFIRMED" && (
-          <Button
-            size="sm"
-            className="w-full bg-green-600 hover:bg-green-700 text-white gap-1"
-            onClick={() => updateOrderStatus(order.id, "SHIPPED")}
-            disabled={isUpdating}
-          >
-            {isUpdating ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <Truck className="w-4 h-4" />
-                Mark as Shipped
-              </>
-            )}
-          </Button>
+          <div className="space-y-2">
+            <Dialog open={scheduleDialogOpen && schedulingOrderId === order.id} onOpenChange={(open) => {
+              setScheduleDialogOpen(open)
+              if (!open) setSchedulingOrderId(null)
+            }}>
+              <DialogTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full gap-1"
+                  onClick={() => {
+                    setSchedulingOrderId(order.id)
+                    setScheduleDialogOpen(true)
+                  }}
+                >
+                  <Calendar className="w-4 h-4" />
+                  Schedule Delivery
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Schedule Delivery - Order #{order.id}</DialogTitle>
+                </DialogHeader>
+                <DeliveryScheduler
+                  orderId={order.id}
+                  onSchedule={async (scheduleData) => {
+                    try {
+                      const response = await fetch(`/api/orders/${order.id}/schedule`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(scheduleData),
+                      })
+                      if (!response.ok) throw new Error('Failed to schedule delivery')
+                      toast.success("Delivery scheduled successfully!")
+                      setScheduleDialogOpen(false)
+                      setSchedulingOrderId(null)
+                    } catch (error: any) {
+                      toast.error(error.message || "Failed to schedule delivery")
+                    }
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+            <Button
+              size="sm"
+              className="w-full bg-green-600 hover:bg-green-700 text-white gap-1"
+              onClick={() => updateOrderStatus(order.id, "SHIPPED")}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Truck className="w-4 h-4" />
+                  Mark as Shipped
+                </>
+              )}
+            </Button>
+          </div>
         )}
 
         {order.status === "SHIPPED" && (

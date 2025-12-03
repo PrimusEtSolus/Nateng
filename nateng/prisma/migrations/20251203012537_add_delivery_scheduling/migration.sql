@@ -1,0 +1,9 @@
+-- AlterTable
+ALTER TABLE "Order" ADD COLUMN "deliveryAddress" TEXT;
+ALTER TABLE "Order" ADD COLUMN "exemptionType" TEXT;
+ALTER TABLE "Order" ADD COLUMN "isCBD" BOOLEAN DEFAULT false;
+ALTER TABLE "Order" ADD COLUMN "isExempt" BOOLEAN DEFAULT false;
+ALTER TABLE "Order" ADD COLUMN "route" TEXT;
+ALTER TABLE "Order" ADD COLUMN "scheduledDate" DATETIME;
+ALTER TABLE "Order" ADD COLUMN "scheduledTime" TEXT;
+ALTER TABLE "Order" ADD COLUMN "truckWeightKg" INTEGER;

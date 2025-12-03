@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Logo } from "@/components/logo"
-import { LayoutDashboard, Leaf, Package, BarChart3, Settings, LogOut, ChevronRight } from "lucide-react"
+import { LayoutDashboard, Leaf, Package, BarChart3, Settings, LogOut, ChevronRight, Truck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { logout, getCurrentUser } from "@/lib/auth"
 import { useEffect, useState } from "react"
@@ -14,6 +14,7 @@ const navItems = [
   { name: "My Crops", href: "/farmer/crops", icon: Leaf },
   { name: "Bulk Orders", href: "/farmer/orders", icon: Package },
   { name: "Analytics", href: "/farmer/analytics", icon: BarChart3 },
+  { name: "Logistics", href: "/logistics/dashboard", icon: Truck },
 ]
 
 export function FarmerSidebar() {

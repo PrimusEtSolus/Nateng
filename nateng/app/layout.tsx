@@ -30,7 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${nunitoSans.className} ${sourceSerif.variable} font-sans antialiased`}>
+      <body 
+        className={`${nunitoSans.className} ${sourceSerif.variable} font-sans antialiased`}
+        suppressHydrationWarning
+      >
         {children}
         <Analytics />
       </body>

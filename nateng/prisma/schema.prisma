@@ -47,15 +47,24 @@ model Listing {
 }
 
 model Order {
-  id         Int      @id @default(autoincrement())
-  buyerId    Int
-  buyer      User     @relation(fields: [buyerId], references: [id], name: "BuyerOrders")
-  sellerId   Int
-  seller     User     @relation(fields: [sellerId], references: [id], name: "SellerOrders")
-  totalCents Int
-  status     String   @default("PENDING")
-  createdAt  DateTime @default(now())
-  items      OrderItem[]
+  id             Int       @id @default(autoincrement())
+  buyerId        Int
+  buyer          User      @relation(fields: [buyerId], references: [id], name: "BuyerOrders")
+  sellerId       Int
+  seller         User      @relation(fields: [sellerId], references: [id], name: "SellerOrders")
+  totalCents     Int
+  status         String    @default("PENDING")
+  createdAt      DateTime  @default(now())
+  items          OrderItem[]
+  // Delivery scheduling fields for truck ban compliance
+  scheduledDate  DateTime? // Scheduled delivery date
+  scheduledTime  String?   // Scheduled delivery time (HH:mm format)
+  route          String?   // Delivery route (e.g., "Kennon Road", "Quirino Highway")
+  isCBD          Boolean?  @default(false) // Whether delivery is within Central Business District
+  truckWeightKg  Int?      // Gross weight capacity of truck in kg (4500+ triggers ban)
+  deliveryAddress String?  // Delivery address
+  isExempt       Boolean?  @default(false) // Whether vehicle is exempt from truck ban
+  exemptionType  String?  // Type of exemption (e.g., "water_delivery", "government", "emergency")
 }
 
 model OrderItem {
