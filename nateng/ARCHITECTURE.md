@@ -1,5 +1,40 @@
 # NatengHub Architecture Diagram
 
+## Architectural Framework
+
+NatengHub implements a **multi-actor ecosystem architecture** designed to facilitate collaboration between farmers, resellers, businesses, and consumers. This framework addresses the information requirements for crop supply forecasting and truck ban-compliant delivery scheduling, as outlined in the project objectives.
+
+### Multi-Actor Ecosystem
+
+The system architecture supports four primary actor types, each with distinct roles and capabilities:
+
+1. **Farmers**: Primary producers who create products and listings
+   - Access to crop programming dashboards
+   - Market intelligence and demand forecasting
+   - Product and inventory management
+
+2. **Resellers**: Wholesale traders acting as intermediate hubs
+   - Bulk purchasing capabilities
+   - Inventory management
+   - Wholesale trading operations
+
+3. **Businesses**: Restaurants, hotels, and institutions
+   - Bulk order management
+   - Inventory tracking
+   - Order consolidation support
+
+4. **Consumers/Buyers**: Individual end-users
+   - Product browsing and purchasing
+   - Shopping cart functionality
+   - Order tracking
+
+### Technology Integration
+
+- **Data Analytics Layer**: Descriptive and predictive analytics for demand forecasting and crop programming
+- **Hub-and-Spoke Logistics**: Dynamic order consolidation for efficient delivery
+- **Smart Scheduling**: Truck ban-compliant delivery scheduling system
+- **Web-Based Collaboration**: Digital platform enabling collective action and value chain integration
+
 ## System Architecture
 
 ```
@@ -278,6 +313,97 @@ App
 
 ---
 
+## Analytics and Logistics Architecture (Planned)
+
+### Data Analytics Layer
+
+```
+┌────────────────────────────────────────────────────────────┐
+│              Analytics & Intelligence Module                 │
+├────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │         Descriptive Analytics                        │   │
+│  │  - Historical sales data                            │   │
+│  │  - Market trends visualization                      │   │
+│  │  - Supply/demand patterns                           │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                        ↓                                     │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │         Predictive Analytics                        │   │
+│  │  - Demand forecasting                               │   │
+│  │  - Crop programming recommendations                 │   │
+│  │  - Price prediction                                 │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                        ↓                                     │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │         Crop Programming Dashboard                   │   │
+│  │  - Market intelligence for farmers                   │   │
+│  │  - Department of Agriculture insights               │   │
+│  │  - Production planning recommendations               │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+└────────────────────────────────────────────────────────────┘
+```
+
+### Hub-and-Spoke Logistics Model
+
+```
+┌────────────────────────────────────────────────────────────┐
+│              Smart Logistics Module                         │
+├────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │   Buyer 1    │  │   Buyer 2    │  │   Buyer 3    │    │
+│  │  (Small      │  │  (Business)  │  │  (Consumer)  │    │
+│  │   Order)     │  │              │  │              │    │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │
+│         │                  │                  │             │
+│         └──────────────────┴──────────────────┘             │
+│                            │                                │
+│                            ↓                                │
+│         ┌─────────────────────────────────────┐            │
+│         │    Order Consolidation Hub           │            │
+│         │  - Dynamic order grouping           │            │
+│         │  - Route optimization                │            │
+│         │  - Bulk delivery preparation        │            │
+│         └─────────────────┬───────────────────┘            │
+│                           │                                 │
+│                           ↓                                 │
+│         ┌─────────────────────────────────────┐            │
+│         │   Smart Scheduling System            │            │
+│         │  - Truck ban compliance              │            │
+│         │  - Transport window optimization    │            │
+│         │  - Delivery route planning          │            │
+│         └─────────────────┬───────────────────┘            │
+│                           │                                 │
+│                           ↓                                 │
+│         ┌─────────────────────────────────────┐            │
+│         │      Delivery Execution              │            │
+│         │  - Consolidated deliveries          │            │
+│         │  - Real-time tracking               │            │
+│         │  - Status updates                   │            │
+│         └─────────────────────────────────────┘            │
+│                                                             │
+└────────────────────────────────────────────────────────────┘
+```
+
+### Information Requirements Architecture
+
+The system addresses two key information requirements:
+
+1. **Crop Supply Forecasting**
+   - Aggregates planting data across municipalities
+   - Generates demand forecasting visualizations
+   - Provides market intelligence to farmers and DA
+   - Reduces post-harvest losses through better planning
+
+2. **Truck Ban-Compliant Delivery Scheduling**
+   - Aligns delivery bookings with permissible transport hours
+   - Digitizes scheduling process
+   - Mitigates fines and delays
+   - Optimizes delivery routes within constraints
+
 **This architecture ensures**:
 - ✅ Scalability
 - ✅ Data consistency
@@ -286,3 +412,6 @@ App
 - ✅ Responsive UI
 - ✅ Offline cart support
 - ✅ Fast API response
+- 🚧 Analytics integration (planned)
+- 🚧 Smart logistics (planned)
+- 🚧 Predictive modeling (planned)

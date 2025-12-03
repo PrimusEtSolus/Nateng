@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { mockCrops, mockWholesaleOrders, type WholesaleOrder, type Crop } from "@/lib/mock-data"
 import { getCurrentUser, type User } from "@/lib/auth"
+import { useFetch } from "@/hooks/use-fetch"
+import { productsAPI, listingsAPI, ordersAPI } from "@/lib/api-client"
 import { Package, TrendingUp, Leaf, DollarSign, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -15,19 +16,74 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+interface Product {
+  id: number
+  name: string
+  description: string | null
+  farmerId: number
+  listings: Array<{
+    id: number
+    quantity: number
+    priceCents: number
+    available: boolean
+  }>
+}
+
+interface Order {
+  id: number
+  buyerId: number
+  sellerId: number
+  totalCents: number
+  status: string
+  createdAt: string
+  buyer: { id: number; name: string; email: string; role: string }
+  items: Array<{
+    id: number
+    quantity: number
+    priceCents: number
+    listing: {
+      id: number
+      product: {
+        id: number
+        name: string
+      }
+    }
+  }>
+}
+
 export default function FarmerDashboardPage() {
   const [user, setUser] = useState<User | null>(null)
-  const [selectedOrder, setSelectedOrder] = useState<WholesaleOrder | null>(null)
-  const [selectedCrop, setSelectedCrop] = useState<Crop | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     setUser(getCurrentUser())
   }, [])
 
-  const pendingOrders = mockWholesaleOrders.filter((o) => o.status === "pending").length
-  const totalRevenue = mockWholesaleOrders.filter((o) => o.status === "completed").reduce((sum, o) => sum + o.total, 0)
-  const totalCrops = mockCrops.length
-  const availableStock = mockCrops.reduce((sum, c) => sum + c.harvestQuantity, 0)
+  // Fetch farmer's products
+  const { data: products, loading: productsLoading, refetch: refetchProducts } = useFetch<Product[]>(
+    user ? `/api/products` : '',
+    { skip: !user }
+  )
+
+  // Fetch farmer's listings
+  const { data: listings, loading: listingsLoading } = useFetch<any[]>(
+    user ? `/api/listings?sellerId=${user.id}` : '',
+    { skip: !user }
+  )
+
+  // Fetch farmer's orders (as seller)
+  const { data: orders, loading: ordersLoading, refetch: refetchOrders } = useFetch<Order[]>(
+    user ? `/api/orders?sellerId=${user.id}` : '',
+    { skip: !user }
+  )
+
+  const farmerProducts = products?.filter((p) => p.farmerId === user?.id) || []
+  const pendingOrders = orders?.filter((o) => o.status === "PENDING") || []
+  const completedOrders = orders?.filter((o) => o.status === "DELIVERED") || []
+  const totalRevenue = completedOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
+  const totalCrops = farmerProducts.length
+  const availableStock = listings?.reduce((sum, l) => sum + (l.available ? l.quantity : 0), 0) || 0
 
   const stats = [
     {
@@ -64,7 +120,17 @@ export default function FarmerDashboardPage() {
     },
   ]
 
-  const recentOrders = mockWholesaleOrders.slice(0, 4)
+  const recentOrders = orders?.slice(0, 4) || []
+
+  if (productsLoading || listingsLoading || ordersLoading) {
+    return (
+      <div className="p-8">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8">
@@ -136,22 +202,21 @@ export default function FarmerDashboardPage() {
                     <Package className="w-6 h-6 text-farmer" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">{order.buyerName}</p>
+                    <p className="font-medium text-foreground">{order.buyer.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {order.crop} - {order.quantity}
-                      {order.unit}
+                      {order.items.map((item) => `${item.listing.product.name} (${item.quantity}kg)`).join(", ")}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-foreground">₱{order.total.toLocaleString()}</p>
+                  <p className="font-semibold text-foreground">₱{(order.totalCents / 100).toLocaleString()}</p>
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                      order.status === "pending"
+                      order.status === "PENDING"
                         ? "bg-yellow-100 text-yellow-700"
-                        : order.status === "confirmed"
+                        : order.status === "CONFIRMED"
                           ? "bg-blue-100 text-blue-700"
-                          : order.status === "ready"
+                          : order.status === "SHIPPED"
                             ? "bg-green-100 text-green-700"
                             : "bg-gray-100 text-gray-700"
                     }`}
@@ -198,53 +263,57 @@ export default function FarmerDashboardPage() {
             </div>
           </div>
 
-          {/* Top Crops */}
+          {/* Top Products */}
           <div className="bg-white rounded-2xl shadow-sm border border-border p-6">
-            <h3 className="font-semibold text-foreground mb-4">Your Crops</h3>
+            <h3 className="font-semibold text-foreground mb-4">Your Products</h3>
             <div className="space-y-3">
-              {mockCrops.slice(0, 4).map((crop) => (
-                <div
-                  key={crop.id}
-                  className="flex items-center justify-between cursor-pointer rounded-xl p-2 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-farmer focus-visible:ring-offset-2"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedCrop(crop)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault()
-                      setSelectedCrop(crop)
-                    }
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={crop.image || "/placeholder.svg"}
-                        alt={crop.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{crop.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {crop.harvestQuantity}
-                        {crop.unit}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      crop.status === "available"
-                        ? "bg-green-100 text-green-700"
-                        : crop.status === "low_stock"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-700"
-                    }`}
+              {farmerProducts.slice(0, 4).map((product) => {
+                const productListings = listings?.filter((l) => l.productId === product.id) || []
+                const totalQuantity = productListings.reduce((sum, l) => sum + (l.available ? l.quantity : 0), 0)
+                const hasAvailable = productListings.some((l) => l.available && l.quantity > 0)
+                
+                return (
+                  <div
+                    key={product.id}
+                    className="flex items-center justify-between cursor-pointer rounded-xl p-2 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-farmer focus-visible:ring-offset-2"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedProduct(product)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        setSelectedProduct(product)
+                      }
+                    }}
                   >
-                    {crop.status.replace("_", " ")}
-                  </span>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                        <Leaf className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {totalQuantity}kg available
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        hasAvailable
+                          ? "bg-green-100 text-green-700"
+                          : totalQuantity === 0
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
+                      }`}
+                    >
+                      {hasAvailable ? "available" : "out of stock"}
+                    </span>
+                  </div>
+                )
+              })}
+              {farmerProducts.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No products yet. Add your first crop!</p>
+              )}
             </div>
           </div>
         </div>
@@ -260,24 +329,38 @@ export default function FarmerDashboardPage() {
           {selectedOrder && (
             <>
               <DialogHeader>
-                <DialogTitle>Order from {selectedOrder.buyerName}</DialogTitle>
+                <DialogTitle>Order from {selectedOrder.buyer.name}</DialogTitle>
                 <DialogDescription>
-                  {selectedOrder.crop} • {selectedOrder.quantity}
-                  {selectedOrder.unit} needed by buyer ({selectedOrder.buyerType})
+                  {selectedOrder.items.map((item) => `${item.listing.product.name} (${item.quantity}kg)`).join(", ")} • Buyer: {selectedOrder.buyer.role}
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="rounded-xl bg-muted/60 p-4">
-                  <p className="text-xs text-muted-foreground uppercase">Status</p>
-                  <p className="font-semibold capitalize">{selectedOrder.status}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{selectedOrder.orderDate}</p>
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl bg-muted/60 p-4">
+                    <p className="text-xs text-muted-foreground uppercase">Status</p>
+                    <p className="font-semibold">{selectedOrder.status}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(selectedOrder.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-muted/60 p-4">
+                    <p className="text-xs text-muted-foreground uppercase">Total value</p>
+                    <p className="font-semibold">₱{(selectedOrder.totalCents / 100).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {selectedOrder.items.length} item{selectedOrder.items.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
                 </div>
                 <div className="rounded-xl bg-muted/60 p-4">
-                  <p className="text-xs text-muted-foreground uppercase">Total value</p>
-                  <p className="font-semibold">₱{selectedOrder.total.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    ₱{selectedOrder.pricePerUnit}/{selectedOrder.unit}
-                  </p>
+                  <p className="text-xs text-muted-foreground uppercase mb-2">Order Items</p>
+                  <div className="space-y-2">
+                    {selectedOrder.items.map((item) => (
+                      <div key={item.id} className="flex justify-between text-sm">
+                        <span>{item.listing.product.name} x {item.quantity}kg</span>
+                        <span className="font-medium">₱{(item.priceCents * item.quantity / 100).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
               <DialogFooter className="sm:justify-between sm:flex-row">
@@ -294,39 +377,37 @@ export default function FarmerDashboardPage() {
       </Dialog>
 
       <Dialog
-        open={!!selectedCrop}
+        open={!!selectedProduct}
         onOpenChange={(open) => {
-          if (!open) setSelectedCrop(null)
+          if (!open) setSelectedProduct(null)
         }}
       >
         <DialogContent className="sm:max-w-xl">
-          {selectedCrop && (
+          {selectedProduct && (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedCrop.name} inventory</DialogTitle>
+                <DialogTitle>{selectedProduct.name}</DialogTitle>
                 <DialogDescription>
-                  {selectedCrop.harvestQuantity}
-                  {selectedCrop.unit} harvested • Status {selectedCrop.status.replace("_", " ")}
+                  Product details and listings
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 text-sm">
-                <p className="text-muted-foreground">{selectedCrop.description}</p>
+                <p className="text-muted-foreground">{selectedProduct.description || "No description"}</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-xl bg-muted/60 p-4">
-                    <p className="text-xs uppercase text-muted-foreground">Wholesale price</p>
-                    <p className="font-semibold">₱{selectedCrop.wholesalePrice}/{selectedCrop.unit}</p>
+                    <p className="text-xs uppercase text-muted-foreground">Listings</p>
+                    <p className="font-semibold">{selectedProduct.listings.length}</p>
                   </div>
                   <div className="rounded-xl bg-muted/60 p-4">
-                    <p className="text-xs uppercase text-muted-foreground">Minimum order</p>
+                    <p className="text-xs uppercase text-muted-foreground">Available Stock</p>
                     <p className="font-semibold">
-                      {selectedCrop.minOrderQty}
-                      {selectedCrop.unit}
+                      {selectedProduct.listings.reduce((sum, l) => sum + (l.available ? l.quantity : 0), 0)}kg
                     </p>
                   </div>
                 </div>
               </div>
               <DialogFooter className="sm:justify-between sm:flex-row">
-                <Button variant="outline" onClick={() => setSelectedCrop(null)}>
+                <Button variant="outline" onClick={() => setSelectedProduct(null)}>
                   Close
                 </Button>
                 <Button asChild className="bg-farmer hover:bg-farmer/90 text-white">

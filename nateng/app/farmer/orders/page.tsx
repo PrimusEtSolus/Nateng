@@ -1,118 +1,201 @@
 "use client"
 
-import { useState } from "react"
-import { mockWholesaleOrders, type WholesaleOrder } from "@/lib/mock-data"
+import { useState, useEffect } from "react"
+import { getCurrentUser } from "@/lib/auth"
+import { useFetch } from "@/hooks/use-fetch"
+import { ordersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
-import { Package, Check, X, Truck, Clock, Building2, User } from "lucide-react"
+import { Package, Check, X, Truck, Clock, Building2, User, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+
+interface Order {
+  id: number
+  buyerId: number
+  sellerId: number
+  totalCents: number
+  status: string
+  createdAt: string
+  buyer: { id: number; name: string; email: string; role: string }
+  items: Array<{
+    id: number
+    quantity: number
+    priceCents: number
+    listing: {
+      id: number
+      product: {
+        id: number
+        name: string
+      }
+    }
+  }>
+}
 
 export default function FarmerOrdersPage() {
-  const [orders, setOrders] = useState<WholesaleOrder[]>(mockWholesaleOrders)
+  const [user, setUser] = useState<any>(null)
+  const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
 
-  const updateOrderStatus = (orderId: string, newStatus: WholesaleOrder["status"]) => {
-    setOrders(orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)))
+  useEffect(() => {
+    setUser(getCurrentUser())
+  }, [])
+
+  // Fetch farmer's orders (as seller)
+  const { data: orders, loading: ordersLoading, refetch: refetchOrders } = useFetch<Order[]>(
+    user ? `/api/orders?sellerId=${user.id}` : '',
+    { skip: !user }
+  )
+
+  const updateOrderStatus = async (orderId: number, newStatus: string) => {
+    setUpdatingStatus(orderId)
+    try {
+      await ordersAPI.updateStatus(orderId, newStatus)
+      toast.success(`Order status updated to ${newStatus}`)
+      refetchOrders()
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update order status")
+    } finally {
+      setUpdatingStatus(null)
+    }
   }
 
-  const pendingOrders = orders.filter((o) => o.status === "pending")
-  const confirmedOrders = orders.filter((o) => o.status === "confirmed")
-  const readyOrders = orders.filter((o) => o.status === "ready")
-  const completedOrders = orders.filter((o) => o.status === "completed")
+  // Map database statuses to display
+  const pendingOrders = orders?.filter((o) => o.status === "PENDING") || []
+  const confirmedOrders = orders?.filter((o) => o.status === "CONFIRMED") || []
+  const shippedOrders = orders?.filter((o) => o.status === "SHIPPED") || []
+  const deliveredOrders = orders?.filter((o) => o.status === "DELIVERED") || []
 
-  const OrderCard = ({ order }: { order: WholesaleOrder }) => (
-    <div className="bg-white rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          {order.buyerType === "business" ? (
-            <Building2 className="w-4 h-4 text-business" />
-          ) : (
-            <User className="w-4 h-4 text-buyer" />
-          )}
-          <span className="font-medium text-sm">{order.buyerName}</span>
-        </div>
-        <span
-          className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-            order.status === "pending"
-              ? "bg-yellow-100 text-yellow-700"
-              : order.status === "confirmed"
-                ? "bg-blue-100 text-blue-700"
-                : order.status === "ready"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-700"
-          }`}
-        >
-          {order.status}
-        </span>
-      </div>
+  const OrderCard = ({ order }: { order: Order }) => {
+    const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
+    const isUpdating = updatingStatus === order.id
 
-      <div className="space-y-1.5 text-sm mb-3">
-        <p className="font-medium text-foreground">{order.crop}</p>
-        <div className="flex justify-between text-muted-foreground">
-          <span>Quantity</span>
-          <span className="font-medium text-foreground">
-            {order.quantity}
-            {order.unit}
+    return (
+      <div className="bg-white rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            {order.buyer.role === "business" ? (
+              <Building2 className="w-4 h-4 text-business" />
+            ) : (
+              <User className="w-4 h-4 text-buyer" />
+            )}
+            <span className="font-medium text-sm">{order.buyer.name}</span>
+          </div>
+          <span
+            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+              order.status === "PENDING"
+                ? "bg-yellow-100 text-yellow-700"
+                : order.status === "CONFIRMED"
+                  ? "bg-blue-100 text-blue-700"
+                  : order.status === "SHIPPED"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-700"
+            }`}
+          >
+            {order.status}
           </span>
         </div>
-        <div className="flex justify-between text-muted-foreground">
-          <span>Total</span>
-          <span className="font-semibold text-farmer">₱{order.total.toLocaleString()}</span>
+
+        <div className="space-y-1.5 text-sm mb-3">
+          <p className="font-medium text-foreground">
+            {order.items.map((item) => `${item.listing.product.name} (${item.quantity}kg)`).join(", ")}
+          </p>
+          <div className="flex justify-between text-muted-foreground">
+            <span>Total Quantity</span>
+            <span className="font-medium text-foreground">{totalQuantity}kg</span>
+          </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>Total</span>
+            <span className="font-semibold text-farmer">₱{(order.totalCents / 100).toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>Items</span>
+            <span className="font-medium text-foreground">{order.items.length}</span>
+          </div>
         </div>
+
+        {order.status === "PENDING" && (
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="flex-1 bg-farmer hover:bg-farmer-light text-white gap-1"
+              onClick={() => updateOrderStatus(order.id, "CONFIRMED")}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  Accept
+                </>
+              )}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1 text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
+              onClick={() => updateOrderStatus(order.id, "CANCELLED")}
+              disabled={isUpdating}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+
+        {order.status === "CONFIRMED" && (
+          <Button
+            size="sm"
+            className="w-full bg-green-600 hover:bg-green-700 text-white gap-1"
+            onClick={() => updateOrderStatus(order.id, "SHIPPED")}
+            disabled={isUpdating}
+          >
+            {isUpdating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Truck className="w-4 h-4" />
+                Mark as Shipped
+              </>
+            )}
+          </Button>
+        )}
+
+        {order.status === "SHIPPED" && (
+          <Button
+            size="sm"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
+            onClick={() => updateOrderStatus(order.id, "DELIVERED")}
+            disabled={isUpdating}
+          >
+            {isUpdating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                Mark as Delivered
+              </>
+            )}
+          </Button>
+        )}
       </div>
-
-      {order.notes && (
-        <p className="text-xs text-muted-foreground bg-muted p-2 rounded-lg mb-3 italic">&quot;{order.notes}&quot;</p>
-      )}
-
-      {order.status === "pending" && (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            className="flex-1 bg-farmer hover:bg-farmer-light text-white gap-1"
-            onClick={() => updateOrderStatus(order.id, "confirmed")}
-          >
-            <Check className="w-4 h-4" />
-            Accept
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1 text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
-            onClick={() => updateOrderStatus(order.id, "rejected")}
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-      )}
-
-      {order.status === "confirmed" && (
-        <Button
-          size="sm"
-          className="w-full bg-green-600 hover:bg-green-700 text-white gap-1"
-          onClick={() => updateOrderStatus(order.id, "ready")}
-        >
-          <Truck className="w-4 h-4" />
-          Mark Ready for Pickup
-        </Button>
-      )}
-
-      {order.status === "ready" && (
-        <Button
-          size="sm"
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-          onClick={() => updateOrderStatus(order.id, "completed")}
-        >
-          <Check className="w-4 h-4" />
-          Complete Order
-        </Button>
-      )}
-    </div>
-  )
+    )
+  }
 
   const columns = [
     { title: "Pending", orders: pendingOrders, icon: Clock, color: "text-yellow-600" },
     { title: "Confirmed", orders: confirmedOrders, icon: Check, color: "text-blue-600" },
-    { title: "Ready for Pickup", orders: readyOrders, icon: Truck, color: "text-green-600" },
-    { title: "Completed", orders: completedOrders, icon: Package, color: "text-gray-600" },
+    { title: "Shipped", orders: shippedOrders, icon: Truck, color: "text-green-600" },
+    { title: "Delivered", orders: deliveredOrders, icon: Package, color: "text-gray-600" },
   ]
+
+  if (ordersLoading) {
+    return (
+      <div className="p-8">
+        <div className="text-center py-12">
+          <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-4 animate-spin" />
+          <p className="text-muted-foreground">Loading orders...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8">
@@ -153,7 +236,7 @@ export default function FarmerOrdersPage() {
               {col.orders.length === 0 && (
                 <div className="bg-muted/50 rounded-xl border border-dashed border-border p-6 text-center">
                   <Package className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No orders</p>
+                  <p className="text-sm text-muted-foreground">No {col.title.toLowerCase()} orders</p>
                 </div>
               )}
             </div>

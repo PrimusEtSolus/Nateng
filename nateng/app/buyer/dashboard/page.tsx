@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { mockRetailProducts, productCategories, type RetailProduct } from "@/lib/mock-data"
+import { useFetch } from "@/hooks/use-fetch"
 import { useCart } from "@/lib/cart-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Heart, Star, MapPin, ShoppingCart, Plus, Minus } from "lucide-react"
+import { Search, Heart, Star, MapPin, ShoppingCart, Plus, Minus, Loader2 } from "lucide-react"
 import Link from "next/link"
 import {
   Dialog,
@@ -16,27 +16,69 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+interface Listing {
+  id: number
+  productId: number
+  sellerId: number
+  priceCents: number
+  quantity: number
+  available: boolean
+  createdAt: string
+  product: {
+    id: number
+    name: string
+    description: string | null
+    farmer: {
+      id: number
+      name: string
+      email: string
+    }
+  }
+  seller: {
+    id: number
+    name: string
+    role: string
+    email: string
+  }
+}
+
 export default function BuyerDashboardPage() {
-  const [products] = useState<RetailProduct[]>(mockRetailProducts)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
-  const [favorites, setFavorites] = useState<string[]>([])
-  const [selectedProduct, setSelectedProduct] = useState<RetailProduct | null>(null)
+  const [favorites, setFavorites] = useState<number[]>([])
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
   const { addToCart, items } = useCart()
 
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === "All" || p.category === selectedCategory
-    return matchesSearch && matchesCategory
-  })
+  // Fetch available listings
+  const { data: listings, loading: listingsLoading } = useFetch<Listing[]>('/api/listings?available=true')
 
-  const toggleFavorite = (id: string) => {
+  // Extract unique product names for categories (simplified)
+  const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
+
+  const filteredListings = listings?.filter((listing) => {
+    const matchesSearch = listing.product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    // Category filtering would need product.category field - simplified for now
+    const matchesCategory = selectedCategory === "All" || true
+    return matchesSearch && matchesCategory && listing.available && listing.quantity > 0
+  }) || []
+
+  const toggleFavorite = (id: number) => {
     setFavorites((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]))
   }
 
-  const getCartQuantity = (productId: string) => {
-    const item = items.find((i) => i.product.id === productId)
+  const getCartQuantity = (listingId: number) => {
+    const item = items.find((i) => i.listingId === listingId)
     return item?.quantity || 0
+  }
+
+  const handleAddToCart = (listing: Listing, quantity: number) => {
+    addToCart({
+      listingId: listing.id,
+      productName: listing.product.name,
+      sellerName: listing.seller.name,
+      quantity: quantity,
+      priceCents: listing.priceCents,
+    })
   }
 
   return (
@@ -81,36 +123,42 @@ export default function BuyerDashboardPage() {
         </div>
       </div>
 
+      {/* Loading State */}
+      {listingsLoading && (
+        <div className="text-center py-12">
+          <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-4 animate-spin" />
+          <p className="text-muted-foreground">Loading products...</p>
+        </div>
+      )}
+
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => {
-          const cartQty = getCartQuantity(product.id)
-          const isFavorite = favorites.includes(product.id)
+      {!listingsLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredListings.map((listing) => {
+            const cartQty = getCartQuantity(listing.id)
+            const isFavorite = favorites.includes(listing.id)
+            const pricePerKg = listing.priceCents / 100
 
           return (
             <div
-              key={product.id}
+              key={listing.id}
               className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden hover:shadow-lg transition-all group cursor-pointer focus-visible:ring-2 focus-visible:ring-buyer focus-visible:ring-offset-2"
-              onClick={() => setSelectedProduct(product)}
+              onClick={() => setSelectedListing(listing)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault()
-                  setSelectedProduct(product)
+                  setSelectedListing(listing)
                 }
               }}
             >
-              <div className="aspect-square bg-muted relative overflow-hidden">
-                <img
-                  src={product.image || "/placeholder.svg"}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+              <div className="aspect-square bg-muted relative overflow-hidden flex items-center justify-center">
+                <ShoppingCart className="w-16 h-16 text-muted-foreground" />
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    toggleFavorite(product.id)
+                    toggleFavorite(listing.id)
                   }}
                   className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
                 >
@@ -120,7 +168,7 @@ export default function BuyerDashboardPage() {
                     }`}
                   />
                 </button>
-                {product.soldCount > 100 && (
+                {listing.quantity > 100 && (
                   <span className="absolute top-3 left-3 px-2 py-1 bg-buyer text-white text-xs font-medium rounded-full">
                     Popular
                   </span>
@@ -130,29 +178,25 @@ export default function BuyerDashboardPage() {
               <div className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <h3 className="font-semibold text-foreground">{product.name}</h3>
-                    {/* Reseller info so buyers can see who they are ordering from */}
+                    <h3 className="font-semibold text-foreground">{listing.product.name}</h3>
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <MapPin className="w-3 h-3" />
-                      Sold by {product.resellerName} • {product.resellerLocation}
+                      Sold by {listing.seller.name} ({listing.seller.role})
                     </p>
-                    {/* Farmer source information */}
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      From farmer {product.farmerName} ({product.farmerLocation})
+                      From farmer {listing.product.farmer.name}
                     </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-medium">{product.rating}</span>
                   </div>
                 </div>
 
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                  {listing.product.description || "Fresh produce from Benguet"}
+                </p>
 
                 <div className="flex items-end justify-between">
                   <div>
-                    <p className="text-2xl font-bold text-buyer">₱{product.pricePerKg}</p>
-                    <p className="text-xs text-muted-foreground">per kg</p>
+                    <p className="text-2xl font-bold text-buyer">₱{pricePerKg.toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">per kg • {listing.quantity}kg available</p>
                   </div>
 
                   {cartQty > 0 ? (
@@ -163,7 +207,7 @@ export default function BuyerDashboardPage() {
                         className="h-8 w-8 bg-transparent"
                         onClick={(e) => {
                           e.stopPropagation()
-                          addToCart(product, -1)
+                          handleAddToCart(listing, -1)
                         }}
                       >
                         <Minus className="w-4 h-4" />
@@ -174,7 +218,7 @@ export default function BuyerDashboardPage() {
                         className="h-8 w-8 bg-buyer hover:bg-buyer-light"
                         onClick={(e) => {
                           e.stopPropagation()
-                          addToCart(product, 1)
+                          handleAddToCart(listing, 1)
                         }}
                       >
                         <Plus className="w-4 h-4" />
@@ -186,7 +230,7 @@ export default function BuyerDashboardPage() {
                       className="bg-buyer hover:bg-buyer-light text-white gap-1"
                       onClick={(e) => {
                         e.stopPropagation()
-                        addToCart(product, 1)
+                        handleAddToCart(listing, 1)
                       }}
                     >
                       <Plus className="w-4 h-4" />
@@ -198,9 +242,10 @@ export default function BuyerDashboardPage() {
             </div>
           )
         })}
-      </div>
+        </div>
+      )}
 
-      {filteredProducts.length === 0 && (
+      {!listingsLoading && filteredListings.length === 0 && (
         <div className="text-center py-12">
           <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="font-medium text-lg mb-1">No products found</h3>
@@ -209,83 +254,77 @@ export default function BuyerDashboardPage() {
       )}
 
       <Dialog
-        open={!!selectedProduct}
+        open={!!selectedListing}
         onOpenChange={(open) => {
           if (!open) {
-            setSelectedProduct(null)
+            setSelectedListing(null)
           }
         }}
       >
         <DialogContent className="sm:max-w-2xl">
-          {selectedProduct && (
+          {selectedListing && (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedProduct.name}</DialogTitle>
+                <DialogTitle>{selectedListing.product.name}</DialogTitle>
                 <DialogDescription>
-                  Retail transaction via {selectedProduct.resellerName} with produce sourced from{" "}
-                  {selectedProduct.farmerName}
+                  Sold by {selectedListing.seller.name} ({selectedListing.seller.role}) with produce sourced from{" "}
+                  {selectedListing.product.farmer.name}
                 </DialogDescription>
               </DialogHeader>
 
               <div className="grid gap-6 sm:grid-cols-2">
-                <div className="rounded-2xl border border-border overflow-hidden">
-                  <img
-                    src={selectedProduct.image || "/placeholder.svg"}
-                    alt={selectedProduct.name}
-                    className="w-full h-64 object-cover"
-                  />
+                <div className="rounded-2xl border border-border overflow-hidden flex items-center justify-center bg-muted h-64">
+                  <ShoppingCart className="w-24 h-24 text-muted-foreground" />
                 </div>
                 <div className="space-y-4 text-sm">
                   <div>
                     <p className="text-xs uppercase text-muted-foreground tracking-wide">Seller</p>
-                    <p className="font-medium">{selectedProduct.resellerName}</p>
-                    <p className="text-muted-foreground flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {selectedProduct.resellerLocation}
-                    </p>
+                    <p className="font-medium">{selectedListing.seller.name}</p>
+                    <p className="text-muted-foreground">Role: {selectedListing.seller.role}</p>
                     <p className="text-xs mt-1 text-muted-foreground">
-                      This reseller consolidates produce and handles delivery to buyers.
+                      {selectedListing.seller.role === "reseller" 
+                        ? "This reseller consolidates produce and handles delivery to buyers."
+                        : "Direct from farmer"}
                     </p>
                   </div>
 
                   <div>
                     <p className="text-xs uppercase text-muted-foreground tracking-wide">Source Farmer</p>
-                    <p className="font-medium">{selectedProduct.farmerName}</p>
-                    <p className="text-muted-foreground flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {selectedProduct.farmerLocation}
-                    </p>
+                    <p className="font-medium">{selectedListing.product.farmer.name}</p>
+                    <p className="text-muted-foreground">{selectedListing.product.farmer.email}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="rounded-xl bg-muted/60 p-3">
                       <p className="text-xs text-muted-foreground">Available</p>
-                      <p className="font-semibold">{selectedProduct.availableKg} kg</p>
+                      <p className="font-semibold">{selectedListing.quantity} kg</p>
                     </div>
                     <div className="rounded-xl bg-muted/60 p-3">
-                      <p className="text-xs text-muted-foreground">Minimum Order</p>
-                      <p className="font-semibold">{selectedProduct.minOrderKg} kg</p>
+                      <p className="text-xs text-muted-foreground">Price</p>
+                      <p className="font-semibold">₱{(selectedListing.priceCents / 100).toFixed(2)}/kg</p>
                     </div>
                   </div>
 
-                  <p className="text-sm text-muted-foreground">{selectedProduct.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedListing.product.description || "Fresh produce from Benguet highlands"}
+                  </p>
                 </div>
               </div>
 
               <DialogFooter className="sm:justify-between sm:flex-row">
                 <div>
-                  <p className="text-2xl font-bold text-buyer">₱{selectedProduct.pricePerKg}</p>
+                  <p className="text-2xl font-bold text-buyer">₱{(selectedListing.priceCents / 100).toFixed(2)}</p>
                   <p className="text-xs text-muted-foreground">per kilogram</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setSelectedProduct(null)}>
+                  <Button variant="outline" onClick={() => setSelectedListing(null)}>
                     Close
                   </Button>
                   <Button
                     className="bg-buyer hover:bg-buyer-light text-white"
                     onClick={() => {
-                      addToCart(selectedProduct, 1)
-                      setSelectedProduct(null)
+                      handleAddToCart(selectedListing, 1)
+                      setSelectedListing(null)
                     }}
                   >
                     <ShoppingCart className="w-4 h-4" />
