@@ -52,17 +52,27 @@ This project includes a complete full-stack backend using Prisma + Next.js API r
 - `GET /api/notifications?userId=1&unreadOnly=true` — Get notifications
 - `PATCH /api/notifications` — Mark notification as read
 
-Setup (PowerShell)
+## Setup (PowerShell)
+
+⚠️ **Important:** All commands must be run from the `nateng/` directory (not the parent directory).
 
 ✅ **Status: All setup steps completed!**
 
-1) ✅ Install new dependencies:
+**0) Navigate to the project directory:**
+
+```powershell
+cd nateng
+```
+
+You should now be in: `C:\Users\My Computer\OneDrive\Desktop\CAPSTONE 1\Nateng\nateng`
+
+**1) Install dependencies:**
 
 ```powershell
 npm install
 ```
 
-2) ✅ Initialize Prisma DB and run migration:
+**2) Initialize Prisma DB and run migration:**
 
 ```powershell
 npx prisma generate
@@ -71,13 +81,15 @@ npx prisma migrate dev --name init
 
 The migrate command will create `prisma/dev.db` (SQLite) and apply the schema. If you prefer not to run migrations, you can run `npx prisma db push` to push the schema without generating a migration.
 
-3) ✅ Start dev server:
+**3) Start dev server:**
 
 ```powershell
 npm run dev
 ```
 
-**The development server is running at: http://localhost:3000**
+**The development server will be running at: http://localhost:3000**
+
+> **Note:** If you see errors about missing Prisma schema or missing scripts, make sure you're in the `nateng/` directory (not the parent `Nateng/` directory). The `package.json` and `prisma/schema.prisma` files are located in the `nateng/` subdirectory.
 
 ## API Usage Examples
 

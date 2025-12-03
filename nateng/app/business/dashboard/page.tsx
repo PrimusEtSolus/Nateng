@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { mockWholesaleOrders, getWholesaleCrops, type WholesaleOrder } from "@/lib/mock-data"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { Package, TrendingUp, ShoppingBag, DollarSign, ArrowUpRight, Clock } from "lucide-react"
@@ -18,6 +19,7 @@ import {
 type WholesaleCrop = ReturnType<typeof getWholesaleCrops>[number]
 
 export default function BusinessDashboardPage() {
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const orders = mockWholesaleOrders.filter((o) => o.buyerId === "business-1")
   const crops = getWholesaleCrops()
@@ -25,8 +27,13 @@ export default function BusinessDashboardPage() {
   const [selectedCrop, setSelectedCrop] = useState<WholesaleCrop | null>(null)
 
   useEffect(() => {
-    setUser(getCurrentUser())
-  }, [])
+    const currentUser = getCurrentUser()
+    if (!currentUser || currentUser.role !== 'business') {
+      router.push('/login')
+      return
+    }
+    setUser(currentUser)
+  }, [router])
 
   const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "confirmed").length
   const totalSpent = orders.filter((o) => o.status === "completed").reduce((sum, o) => sum + o.total, 0)

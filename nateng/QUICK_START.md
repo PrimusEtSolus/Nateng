@@ -89,19 +89,9 @@ console.log(`Total: ₱${getTotalPrice() / 100}`);
 
 ## 👥 Sample Users (After Seed)
 
-| Role | Email | Password |
-|------|-------|----------|
-| Farmer | farmer1@email.com | password123 |
-| Farmer | farmer2@email.com | password123 |
-| Buyer | buyer1@email.com | password123 |
-| Buyer | buyer2@email.com | password123 |
-| Buyer | buyer3@email.com | password123 |
-| Business | business1@email.com | password123 |
-| Reseller | reseller1@email.com | password123 |
-| Reseller | reseller2@email.com | password123 |
-| Reseller | reseller3@email.com | password123 |
+Running `npm run seed` creates sample users for each role (farmer, buyer, business, reseller) along with sample products and listings for testing purposes.
 
-**Note:** All seed users use the password `password123`. For production, users will set their own passwords during registration.
+**Note:** For production, users will register their own accounts through the signup pages. Seed data is only for development and testing.
 
 ## 🗺️ Navigation
 

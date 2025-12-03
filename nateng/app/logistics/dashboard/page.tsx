@@ -1,10 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Clock, AlertTriangle, CheckCircle2, Truck, MapPin } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Clock, AlertTriangle, CheckCircle2, Truck, MapPin, ArrowLeft } from "lucide-react"
+import { getCurrentUser, getRedirectPath } from "@/lib/auth"
 import {
   getAvailableWindowTimes,
   formatTime,
@@ -14,11 +18,17 @@ import {
 } from "@/lib/truck-ban"
 
 export default function LogisticsDashboard() {
+  const router = useRouter()
   const [currentTime, setCurrentTime] = useState(new Date())
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
+    // Get current user to determine dashboard path
+    const currentUser = getCurrentUser()
+    setUser(currentUser)
+
     // Update current time every minute
     const timer = setInterval(() => {
       setCurrentTime(new Date())
@@ -99,13 +109,27 @@ export default function LogisticsDashboard() {
     })
     .slice(0, 10)
 
+  const dashboardPath = user ? getRedirectPath(user.role as any) : "/"
+
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Logistics Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Baguio City Truck Ban Ordinance Compliance
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-4 mb-2">
+            {user && (
+              <Link href={dashboardPath}>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to {user.role === 'farmer' ? 'Farmer' : user.role === 'business' ? 'Business' : user.role === 'reseller' ? 'Reseller' : 'Buyer'} Dashboard
+                </Button>
+              </Link>
+            )}
+          </div>
+          <h1 className="text-3xl font-bold">Logistics Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
+            Baguio City Truck Ban Ordinance Compliance
+          </p>
+        </div>
       </div>
 
       {/* Current Status */}

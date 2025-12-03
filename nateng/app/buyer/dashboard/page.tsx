@@ -1,11 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { getCurrentUser } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useCart } from "@/lib/cart-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Search, Heart, Star, MapPin, ShoppingCart, Plus, Minus, Loader2, Filter } from "lucide-react"
 import Link from "next/link"
 import { ProductGridSkeleton, ProductCardSkeleton } from "@/components/loading-skeletons"
@@ -48,15 +51,32 @@ interface Listing {
 }
 
 export default function BuyerDashboardPage() {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [favorites, setFavorites] = useState<number[]>([])
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
+  const [dialogQuantity, setDialogQuantity] = useState("0.2")
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name" | "quantity">("name")
-  const { addToCart, items } = useCart()
+  const { addToCart, updateQuantity, items } = useCart()
 
-  // Fetch available listings
+  useEffect(() => {
+    const currentUser = getCurrentUser()
+    if (!currentUser || currentUser.role !== 'buyer') {
+      router.push('/login')
+      return
+    }
+  }, [router])
+
+  // Reset dialog quantity when listing changes
+  useEffect(() => {
+    if (selectedListing) {
+      setDialogQuantity("0.2")
+    }
+  }, [selectedListing])
+
+  // Fetch available listings - only from resellers (farmers only accept bulk orders)
   const { data: listings, loading: listingsLoading, error: listingsError } = useFetch<Listing[]>('/api/listings?available=true')
 
   // Extract unique product names for categories (simplified)
@@ -66,7 +86,9 @@ export default function BuyerDashboardPage() {
     const matchesSearch = listing.product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
     // Category filtering would need product.category field - simplified for now
     const matchesCategory = selectedCategory === "All" || true
-    return matchesSearch && matchesCategory && listing.available && listing.quantity > 0
+    // Only show resellers - farmers only accept bulk orders (for business/reseller portals)
+    const isReseller = listing.seller.role === 'reseller'
+    return matchesSearch && matchesCategory && listing.available && listing.quantity > 0 && isReseller
   }).sort((a, b) => {
     switch (sortBy) {
       case "price-asc":
@@ -92,11 +114,21 @@ export default function BuyerDashboardPage() {
   }
 
   const handleAddToCart = (listing: Listing, quantity: number) => {
-    const newQuantity = quantity > 0 ? quantity : 1
+    // Minimum order for retail (buyer portal): 200 grams (0.2kg)
+    const MIN_QUANTITY = 0.2
     const currentItem = items.find((i) => i.listingId === listing.id)
-    const totalQuantity = (currentItem?.quantity || 0) + newQuantity
+    const currentQuantity = currentItem?.quantity || 0
+    const newTotalQuantity = currentQuantity + quantity
 
-    if (totalQuantity > listing.quantity) {
+    // Validate minimum order
+    if (newTotalQuantity > 0 && newTotalQuantity < MIN_QUANTITY) {
+      toast.error("Minimum order required", {
+        description: `Minimum order is ${MIN_QUANTITY}kg (200 grams)`,
+      })
+      return
+    }
+
+    if (newTotalQuantity > listing.quantity) {
       toast.error("Insufficient stock", {
         description: `Only ${listing.quantity}kg available`,
       })
@@ -108,13 +140,19 @@ export default function BuyerDashboardPage() {
       sellerId: listing.sellerId,
       productName: listing.product.name,
       sellerName: listing.seller.name,
-      quantity: newQuantity,
+      quantity: quantity,
       priceCents: listing.priceCents,
     })
 
-    toast.success("Added to cart", {
-      description: `${newQuantity}kg of ${listing.product.name} added`,
-    })
+    if (quantity > 0) {
+      toast.success("Added to cart", {
+        description: `${quantity.toFixed(1)}kg of ${listing.product.name} added`,
+      })
+    } else {
+      toast.success("Removed from cart", {
+        description: `${Math.abs(quantity).toFixed(1)}kg of ${listing.product.name} removed`,
+      })
+    }
   }
 
   return (
@@ -277,18 +315,72 @@ export default function BuyerDashboardPage() {
                         className="h-8 w-8 bg-transparent"
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleAddToCart(listing, -1)
+                          // Minimum order: 0.2kg (200 grams)
+                          const newQuantity = Math.max(0, cartQty - 0.2)
+                          if (newQuantity === 0) {
+                            updateQuantity(listing.id, 0)
+                            toast.success("Removed from cart")
+                          } else {
+                            updateQuantity(listing.id, newQuantity)
+                          }
                         }}
                       >
                         <Minus className="w-4 h-4" />
                       </Button>
-                      <span className="w-8 text-center font-medium">{cartQty}</span>
+                      <Input
+                        type="number"
+                        min="0.2"
+                        max={listing.quantity}
+                        step="0.1"
+                        value={cartQty.toFixed(1)}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          const value = parseFloat(e.target.value) || 0
+                          const MIN_QUANTITY = 0.2
+                          
+                          if (value === 0) {
+                            updateQuantity(listing.id, 0)
+                            return
+                          }
+                          
+                          if (value < MIN_QUANTITY) {
+                            toast.error("Minimum order required", {
+                              description: `Minimum order is ${MIN_QUANTITY}kg (200 grams)`,
+                            })
+                            return
+                          }
+                          
+                          if (value > listing.quantity) {
+                            toast.error("Insufficient stock", {
+                              description: `Only ${listing.quantity}kg available`,
+                            })
+                            updateQuantity(listing.id, listing.quantity)
+                            return
+                          }
+                          
+                          updateQuantity(listing.id, value)
+                        }}
+                        onBlur={(e) => {
+                          const value = parseFloat(e.target.value) || 0
+                          const MIN_QUANTITY = 0.2
+                          if (value > 0 && value < MIN_QUANTITY) {
+                            updateQuantity(listing.id, MIN_QUANTITY)
+                            toast.error("Minimum order required", {
+                              description: `Quantity adjusted to minimum: ${MIN_QUANTITY}kg`,
+                            })
+                          }
+                        }}
+                        className="w-16 h-8 text-center text-sm font-medium"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className="text-xs text-muted-foreground">kg</span>
                       <Button
                         size="icon"
                         className="h-8 w-8 bg-buyer hover:bg-buyer-light"
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleAddToCart(listing, 1)
+                          const newQuantity = Math.min(listing.quantity, cartQty + 0.2)
+                          updateQuantity(listing.id, newQuantity)
                         }}
                       >
                         <Plus className="w-4 h-4" />
@@ -300,7 +392,8 @@ export default function BuyerDashboardPage() {
                       className="bg-buyer hover:bg-buyer-light text-white gap-1"
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleAddToCart(listing, 1)
+                        // Minimum order: 0.2kg (200 grams) for retail
+                        handleAddToCart(listing, 0.2)
                       }}
                     >
                       <Plus className="w-4 h-4" />
@@ -340,6 +433,7 @@ export default function BuyerDashboardPage() {
         onOpenChange={(open) => {
           if (!open) {
             setSelectedListing(null)
+            setDialogQuantity("0.2")
           }
         }}
       >
@@ -397,24 +491,73 @@ export default function BuyerDashboardPage() {
                 </div>
               </div>
 
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dialog-quantity">Quantity (kg)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="dialog-quantity"
+                      type="number"
+                      min="0.2"
+                      max={selectedListing.quantity}
+                      step="0.1"
+                      value={dialogQuantity}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setDialogQuantity(value)
+                      }}
+                      placeholder="0.2"
+                      className="flex-1"
+                    />
+                    <span className="text-sm text-muted-foreground">kg</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Minimum: 0.2kg (200 grams) • Available: {selectedListing.quantity}kg
+                  </p>
+                </div>
+              </div>
+
               <DialogFooter className="sm:justify-between sm:flex-row">
                 <div>
-                  <p className="text-2xl font-bold text-buyer">₱{(selectedListing.priceCents / 100).toFixed(2)}</p>
-                  <p className="text-xs text-muted-foreground">per kilogram</p>
+                  <p className="text-2xl font-bold text-buyer">
+                    ₱{((selectedListing.priceCents / 100) * (parseFloat(dialogQuantity) || 0.2)).toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">₱{(selectedListing.priceCents / 100).toFixed(2)} per kilogram</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setSelectedListing(null)}>
+                  <Button variant="outline" onClick={() => {
+                    setSelectedListing(null)
+                    setDialogQuantity("0.2")
+                  }}>
                     Close
                   </Button>
                   <Button
                     className="bg-buyer hover:bg-buyer-light text-white"
                     onClick={() => {
-                      handleAddToCart(selectedListing, 1)
+                      const quantity = parseFloat(dialogQuantity) || 0.2
+                      const MIN_QUANTITY = 0.2
+                      
+                      if (quantity < MIN_QUANTITY) {
+                        toast.error("Minimum order required", {
+                          description: `Minimum order is ${MIN_QUANTITY}kg (200 grams)`,
+                        })
+                        return
+                      }
+                      
+                      if (quantity > selectedListing.quantity) {
+                        toast.error("Insufficient stock", {
+                          description: `Only ${selectedListing.quantity}kg available`,
+                        })
+                        return
+                      }
+                      
+                      handleAddToCart(selectedListing, quantity)
                       setSelectedListing(null)
+                      setDialogQuantity("0.2")
                     }}
                   >
                     <ShoppingCart className="w-4 h-4" />
-                    Add 1 kg to cart
+                    Add to cart
                   </Button>
                 </div>
               </DialogFooter>

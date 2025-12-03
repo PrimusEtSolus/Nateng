@@ -184,11 +184,9 @@ For detailed API documentation, see [README_BACKEND.md](./README_BACKEND.md).
 - Session management via localStorage (upgradeable to JWT)
 - Automatic role-based dashboard redirection
 
-**Seed Users** (Password: `password123`):
-- `farmer1@email.com`, `farmer2@email.com`
-- `buyer1@email.com`, `buyer2@email.com`, `buyer3@email.com`
-- `reseller1@email.com`, `reseller2@email.com`, `reseller3@email.com`
-- `business1@email.com`
+**Seed Data:**
+- Running `npm run seed` creates sample users, products, and listings for testing
+- Users can register new accounts through the signup pages
 
 For complete implementation details, see [FULLSTACK_IMPLEMENTATION.md](./FULLSTACK_IMPLEMENTATION.md).
 

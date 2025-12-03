@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 export default function BuyerCartPage() {
   const { items, removeFromCart, updateQuantity, totalPrice, clearCart } = useCart()
@@ -94,17 +95,73 @@ export default function BuyerCartPage() {
                         size="icon"
                         variant="outline"
                         className="h-8 w-8 bg-transparent"
-                        onClick={() => updateQuantity(itemId, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
+                        onClick={() => {
+                          // Minimum order: 0.2kg (200 grams) for retail
+                          const newQuantity = Math.max(0, item.quantity - 0.2)
+                          if (newQuantity === 0) {
+                            updateQuantity(itemId, 0)
+                          } else {
+                            updateQuantity(itemId, newQuantity)
+                          }
+                        }}
+                        disabled={item.quantity <= 0.2}
                       >
                         <Minus className="w-4 h-4" />
                       </Button>
-                      <span className="w-12 text-center font-medium">{item.quantity}kg</span>
+                      <Input
+                        type="number"
+                        min="0.2"
+                        step="0.1"
+                        value={item.quantity.toFixed(1)}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0
+                          const MIN_QUANTITY = 0.2
+                          
+                          if (value === 0) {
+                            updateQuantity(itemId, 0)
+                            return
+                          }
+                          
+                          if (value < MIN_QUANTITY) {
+                            toast.error("Minimum order required", {
+                              description: `Minimum order is ${MIN_QUANTITY}kg (200 grams)`,
+                            })
+                            return
+                          }
+                          
+                          // Get max quantity from listing if available
+                          const maxQuantity = item.listingId ? 1000 : item.quantity // Fallback if no listing data
+                          if (value > maxQuantity) {
+                            toast.error("Insufficient stock", {
+                              description: `Only ${maxQuantity}kg available`,
+                            })
+                            updateQuantity(itemId, maxQuantity)
+                            return
+                          }
+                          
+                          updateQuantity(itemId, value)
+                        }}
+                        onBlur={(e) => {
+                          const value = parseFloat(e.target.value) || 0
+                          const MIN_QUANTITY = 0.2
+                          if (value > 0 && value < MIN_QUANTITY) {
+                            updateQuantity(itemId, MIN_QUANTITY)
+                            toast.error("Minimum order required", {
+                              description: `Quantity adjusted to minimum: ${MIN_QUANTITY}kg`,
+                            })
+                          }
+                        }}
+                        className="w-16 h-8 text-center text-sm font-medium"
+                      />
+                      <span className="text-xs text-muted-foreground">kg</span>
                       <Button
                         size="icon"
                         variant="outline"
                         className="h-8 w-8 bg-transparent"
-                        onClick={() => updateQuantity(itemId, item.quantity + 1)}
+                        onClick={() => {
+                          // Increment by 0.2kg (200 grams)
+                          updateQuantity(itemId, item.quantity + 0.2)
+                        }}
                       >
                         <Plus className="w-4 h-4" />
                       </Button>

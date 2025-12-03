@@ -21,20 +21,25 @@ export async function login(email: string, password: string): Promise<User | nul
     })
 
     if (!response.ok) {
-      return null
+      const errorData = await response.json().catch(() => ({ error: 'Login failed' }))
+      throw new Error(errorData.error || 'Invalid email or password')
     }
 
     const data = await response.json()
     const user = data.user
+
+    if (!user) {
+      throw new Error('No user data returned from server')
+    }
 
     if (user && typeof window !== "undefined") {
       localStorage.setItem(AUTH_KEY, JSON.stringify(user))
     }
 
     return user
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error)
-    return null
+    throw error
   }
 }
 

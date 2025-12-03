@@ -107,7 +107,7 @@ export async function POST(req: Request) {
         userId: Number(buyerId),
         type: 'order_placed',
         title: 'Order Placed',
-        message: `Your order has been placed successfully. Total: ₱${(totalCents / 100).toFixed(2)}`,
+        message: `Your order has been placed successfully. Total: ₱${((fullOrder?.totalCents || 0) / 100).toFixed(2)}`,
         link: `/orders/${createdOrder.id}`,
       },
     });

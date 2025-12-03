@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { Package, TrendingUp, ShoppingBag, DollarSign, ArrowUpRight, Store, Users, Loader2 } from "lucide-react"
@@ -64,13 +65,19 @@ interface Order {
 }
 
 export default function ResellerDashboardPage() {
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<Listing | null>(null)
   const [selectedWholesaleOrder, setSelectedWholesaleOrder] = useState<Order | null>(null)
 
   useEffect(() => {
-    setUser(getCurrentUser())
-  }, [])
+    const currentUser = getCurrentUser()
+    if (!currentUser || currentUser.role !== 'reseller') {
+      router.push('/login')
+      return
+    }
+    setUser(currentUser)
+  }, [router])
 
   // Fetch reseller's listings (inventory)
   const { data: myListings, loading: listingsLoading } = useFetch<Listing[]>(

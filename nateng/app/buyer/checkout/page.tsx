@@ -52,6 +52,16 @@ export default function BuyerCheckoutPage() {
       return
     }
 
+    // Validate minimum order: 0.2kg (200 grams) per item for retail
+    const MIN_QUANTITY = 0.2
+    const invalidItems = items.filter(item => item.quantity > 0 && item.quantity < MIN_QUANTITY)
+    if (invalidItems.length > 0) {
+      toast.error("Minimum order required", {
+        description: `Each item must be at least ${MIN_QUANTITY}kg (200 grams)`,
+      })
+      return
+    }
+
     setIsProcessing(true)
 
     try {

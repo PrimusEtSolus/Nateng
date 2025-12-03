@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { productsAPI, listingsAPI, ordersAPI } from "@/lib/api-client"
@@ -56,13 +57,19 @@ interface Order {
 }
 
 export default function FarmerDashboardPage() {
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
   useEffect(() => {
-    setUser(getCurrentUser())
-  }, [])
+    const currentUser = getCurrentUser()
+    if (!currentUser || currentUser.role !== 'farmer') {
+      router.push('/login')
+      return
+    }
+    setUser(currentUser)
+  }, [router])
 
   // Fetch farmer's products
   const { data: products, loading: productsLoading, refetch: refetchProducts } = useFetch<Product[]>(

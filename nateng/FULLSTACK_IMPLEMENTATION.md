@@ -117,14 +117,13 @@ model Notification {
 
 ### For Existing Users:
 1. Go to `/login`
-2. Use email and password (seed users: password is "password123")
+2. Enter email and password
 3. Logged in and redirected to role-specific dashboard
 
-### Seed Users (Password: "password123"):
-- `farmer1@email.com` / `farmer2@email.com`
-- `buyer1@email.com` / `buyer2@email.com` / `buyer3@email.com`
-- `reseller1@email.com` / `reseller2@email.com` / `reseller3@email.com`
-- `business1@email.com`
+### Seed Data:
+- Running `npm run seed` creates sample users, products, and listings for testing
+- Seed users are created with hashed passwords for development purposes
+- For production, users register their own accounts through the signup pages
 
 ## 📝 Next Steps for Production
 
