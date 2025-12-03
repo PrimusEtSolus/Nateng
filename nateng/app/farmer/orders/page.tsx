@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Package, Check, X, Truck, Clock, Building2, User, Loader2, Calendar } from "lucide-react"
 import { toast } from "sonner"
 import { DeliveryScheduler } from "@/components/delivery-scheduler"
+import { MessageDialog } from "@/components/message-dialog"
+import { ConfirmationDialog } from "@/components/confirmation-dialog"
 
 interface Order {
   id: number
@@ -99,6 +101,16 @@ export default function FarmerOrdersPage() {
               <User className="w-4 h-4 text-buyer" />
             )}
             <span className="font-medium text-sm">{order.buyer.name}</span>
+            <MessageDialog
+              orderId={order.id}
+              otherUserId={order.buyerId}
+              otherUserName={order.buyer.name}
+              trigger={
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
+                  Message
+                </Button>
+              }
+            />
           </div>
           <span
             className={`px-2 py-0.5 rounded-full text-xs font-medium ${

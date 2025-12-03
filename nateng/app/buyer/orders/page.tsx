@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { Button } from "@/components/ui/button"
 import { Package, Truck, CheckCircle, Clock, Eye, MapPin, Phone, Star, Loader2 } from "lucide-react"
+import { MessageDialog } from "@/components/message-dialog"
 
 interface Order {
   id: number
@@ -288,10 +289,17 @@ export default function BuyerOrdersPage() {
                       Rate Your Order
                     </Button>
                   )}
-                  <Button variant="outline" className="w-full bg-transparent">
-                    <Phone className="w-4 h-4 mr-2" />
-                    Contact {selectedOrder.seller.role}
-                  </Button>
+                  <MessageDialog
+                    orderId={selectedOrder.id}
+                    otherUserId={selectedOrder.sellerId}
+                    otherUserName={selectedOrder.seller.name}
+                    trigger={
+                      <Button variant="outline" className="w-full bg-transparent">
+                        <Phone className="w-4 h-4 mr-2" />
+                        Message {selectedOrder.seller.name}
+                      </Button>
+                    }
+                  />
                 </div>
               </div>
             ) : (

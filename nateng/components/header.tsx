@@ -5,9 +5,20 @@ import { Logo } from "./logo"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { useState } from "react"
+import { getCurrentUser, logout } from "@/lib/auth"
+import { useRouter } from "next/navigation"
+import { NotificationBell } from "./notifications"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState(getCurrentUser())
+  const router = useRouter()
+
+  const handleLogout = () => {
+    logout()
+    setUser(null)
+    router.push("/")
+  }
 
   return (
     <header className="w-full bg-[#059669]/60 backdrop-blur-sm">
@@ -30,18 +41,36 @@ export function Header() {
             </Link>
           </nav>
 
-          {/* Auth Buttons */}
+          {/* Auth Buttons / User Menu */}
           <div className="hidden md:flex items-center gap-4">
-            <Button
-              variant="ghost"
-              className="bg-white/45 text-white font-semibold text-lg px-6 hover:bg-white/60 shadow-md"
-              asChild
-            >
-              <Link href="/login">Sign In</Link>
-            </Button>
-            <Button className="bg-white text-[#31E672] font-semibold text-lg px-6 hover:bg-white/90" asChild>
-              <Link href="/signup">Sign Up</Link>
-            </Button>
+            {user ? (
+              <>
+                <NotificationBell />
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-medium">{user.name}</span>
+                  <Button
+                    variant="ghost"
+                    className="bg-white/45 text-white font-semibold text-sm px-4 hover:bg-white/60"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  className="bg-white/45 text-white font-semibold text-lg px-6 hover:bg-white/60 shadow-md"
+                  asChild
+                >
+                  <Link href="/login">Sign In</Link>
+                </Button>
+                <Button className="bg-white text-[#31E672] font-semibold text-lg px-6 hover:bg-white/90" asChild>
+                  <Link href="/signup">Sign Up</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
