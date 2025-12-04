@@ -102,12 +102,15 @@ export function DeliveryScheduler({ orderId, onSchedule, initialSchedule }: Deli
       const scheduleData = {
         scheduledDate,
         scheduledTime,
-        route: route || null,
+        route: route && route !== "NONE" ? route : null,
         isCBD,
         truckWeightKg: parseInt(truckWeightKg),
         deliveryAddress: deliveryAddress || null,
         isExempt,
-        exemptionType: exemptionType || null,
+        exemptionType:
+          exemptionType && exemptionType !== "none"
+            ? exemptionType
+            : null,
       }
 
       if (onSchedule) {
@@ -214,7 +217,7 @@ export function DeliveryScheduler({ orderId, onSchedule, initialSchedule }: Deli
                     </SelectTrigger>
                     <SelectContent>
                       {exemptionTypes.map((type) => (
-                        <SelectItem key={type.value || 'none'} value={type.value || ''}>
+                        <SelectItem key={type.value || 'none'} value={type.value || 'none'}>
                           {type.label}
                         </SelectItem>
                       ))}
@@ -293,7 +296,7 @@ export function DeliveryScheduler({ orderId, onSchedule, initialSchedule }: Deli
                 <SelectValue placeholder="Select route" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No specific route</SelectItem>
+                <SelectItem value="NONE">No specific route</SelectItem>
                 <SelectItem value="KENNON">Kennon Road</SelectItem>
                 <SelectItem value="QUIRINO">Quirino Highway (Naguilian Road)</SelectItem>
                 <SelectItem value="OTHER">Other Route</SelectItem>

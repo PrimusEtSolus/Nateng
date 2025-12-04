@@ -253,7 +253,7 @@ The splash page includes:
 - [ ] Implement payment gateway (Stripe/PayMongo)
 - [ ] Add real-time notifications (WebSockets)
 - [ ] Add review and rating system
-- [ ] Implement chat between buyers and sellers
+- [x] Implement chat between buyers and sellers (in-app messaging tied to orders)
 - [ ] Add inventory alerts
 - [ ] Implement analytics dashboard
 - [ ] Add bulk import/export for farmers

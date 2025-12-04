@@ -218,7 +218,7 @@ async function testOrderCreation() {
     items: [
       {
         listingId: listing.id,
-        quantity: 10
+        quantity: 50
       }
     ]
   });

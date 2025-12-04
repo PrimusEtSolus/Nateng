@@ -9,7 +9,11 @@
     "migrate": "prisma migrate dev",
     "seed": "ts-node --project tsconfig.node.json prisma/seed.ts",
     "lint": "eslint .",
-    "start": "next start"
+    "start": "next start",
+    "test:api": "node test-api-comprehensive.js",
+    "test:auth": "node test-auth-comprehensive.js",
+    "test:users": "node test-user-persistence-and-interactions.js",
+    "test": "npm run test:api && npm run test:auth && npm run test:users"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

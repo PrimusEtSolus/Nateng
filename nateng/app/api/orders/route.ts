@@ -24,7 +24,18 @@ export async function GET(req: Request) {
     });
     return NextResponse.json(orders);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = typeof error?.message === 'string' ? error.message : 'Internal server error';
+    const isBusinessError =
+      typeof message === 'string' &&
+      (message.includes('minimum order requirement not met') ||
+        message.includes('insufficient quantity') ||
+        message.includes('listing') ||
+        message.includes('quantity'));
+
+    return NextResponse.json(
+      { error: message },
+      { status: isBusinessError ? 400 : 500 }
+    );
   }
 }
 

@@ -55,6 +55,7 @@ export function MessageDialog({
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
+  const [hasFetched, setHasFetched] = useState(false)
   const user = getCurrentUser()
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -65,7 +66,15 @@ export function MessageDialog({
       try {
         setLoading(true)
         const data = await messagesAPI.getAll(user.id, otherUserId)
-        setMessages(data)
+
+        // Ensure we always work with an array
+        if (Array.isArray(data)) {
+          setMessages(data)
+        } else {
+          console.warn("Unexpected messages payload", data)
+          setMessages([])
+        }
+        setHasFetched(true)
         // Scroll to bottom after messages load
         setTimeout(() => {
           if (scrollRef.current) {
@@ -133,65 +142,75 @@ export function MessageDialog({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-2xl h-[600px] flex flex-col">
+      <DialogContent className="max-w-2xl h-[560px] flex flex-col p-0 overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Message {otherUserName}</DialogTitle>
-          <DialogDescription>
-            {orderId ? `Conversation about order #${orderId}` : "Send a message"}
-          </DialogDescription>
+          <div className="px-6 pt-5 pb-3 border-b bg-muted/40">
+            <DialogTitle className="text-base font-semibold">
+              Message <span className="text-foreground">{otherUserName}</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs mt-1">
+              {orderId ? `Conversation about order #${orderId}` : "Direct message"}
+            </DialogDescription>
+          </div>
         </DialogHeader>
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 px-6 py-4">
           <div ref={scrollRef}>
-          {loading ? (
-            <div className="p-4 text-center text-muted-foreground">Loading messages...</div>
-          ) : messages.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No messages yet. Start the conversation!</p>
-            </div>
-          ) : (
-            <div className="space-y-4 pb-4">
-              {messages.map((message) => {
-                const isSender = message.senderId === user.id
-                return (
-                  <div
-                    key={message.id}
-                    className={`flex ${isSender ? "justify-end" : "justify-start"}`}
-                  >
+            {!hasFetched && loading ? (
+              <div className="p-4 text-center text-muted-foreground text-sm">Loading messages...</div>
+            ) : messages.length === 0 ? (
+              <div className="py-10 text-center text-muted-foreground text-sm">
+                <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                <p className="font-medium mb-1">No messages yet</p>
+                <p className="text-xs">Start the conversation by sending a message below.</p>
+              </div>
+            ) : (
+              <div className="space-y-3 pb-2">
+                {messages.map((message) => {
+                  const isSender = message.senderId === user.id
+                  return (
                     <div
-                      className={`max-w-[70%] rounded-lg p-3 ${
-                        isSender
-                          ? "bg-blue-500 text-white"
-                          : "bg-muted text-foreground"
-                      }`}
+                      key={message.id}
+                      className={`flex ${isSender ? "justify-end" : "justify-start"}`}
                     >
-                      <p className="text-sm">{message.content}</p>
-                      <p
-                        className={`text-xs mt-1 ${
-                          isSender ? "text-blue-100" : "text-muted-foreground"
+                      <div
+                        className={`max-w-[70%] rounded-2xl px-3 py-2.5 shadow-sm ${
+                          isSender
+                            ? "bg-blue-500 text-white rounded-br-sm"
+                            : "bg-muted text-foreground rounded-bl-sm"
                         }`}
                       >
-                        {formatDistanceToNow(new Date(message.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </p>
+                        <p className="text-sm leading-snug break-words">{message.content}</p>
+                        <p
+                          className={`text-[10px] mt-1 text-right ${
+                            isSender ? "text-blue-100/90" : "text-muted-foreground"
+                          }`}
+                        >
+                          {formatDistanceToNow(new Date(message.createdAt), {
+                            addSuffix: true,
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
           </div>
         </ScrollArea>
-        <form onSubmit={handleSend} className="flex gap-2 pt-4 border-t">
+        <form onSubmit={handleSend} className="flex items-center gap-2 px-6 py-3 border-t bg-background">
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type your message..."
             disabled={sending}
-            className="flex-1"
+            className="flex-1 text-sm"
           />
-          <Button type="submit" disabled={sending || !newMessage.trim()}>
+          <Button
+            type="submit"
+            size="icon"
+            disabled={sending || !newMessage.trim()}
+            className="rounded-full h-9 w-9"
+          >
             <Send className="h-4 w-4" />
           </Button>
         </form>

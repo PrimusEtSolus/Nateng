@@ -7,7 +7,7 @@ import { useFetch } from "@/hooks/use-fetch"
 import { ordersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Package, Check, X, Truck, Clock, Building2, UserIcon, Loader2, Calendar } from "lucide-react"
+import { Package, Check, X, Truck, Clock, Building2, UserIcon, Loader2, Calendar, MessageSquare } from "lucide-react"
 import { toast } from "sonner"
 import { DeliveryScheduler } from "@/components/delivery-scheduler"
 import { MessageDialog } from "@/components/message-dialog"
@@ -20,6 +20,14 @@ interface Order {
   totalCents: number
   status: string
   createdAt: string
+  scheduledDate?: string
+  scheduledTime?: string
+  route?: string | null
+  truckWeightKg?: number | null
+  deliveryAddress?: string | null
+  isExempt?: boolean | null
+  exemptionType?: string | null
+  isCBD?: boolean | null
   buyer: { id: number; name: string; email: string; role: string }
   items: Array<{
     id: number
@@ -91,6 +99,8 @@ export default function FarmerOrdersPage() {
   const OrderCard = ({ order }: { order: Order }) => {
     const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
     const isUpdating = updatingStatus === order.id
+    const hasSchedule = Boolean(order.scheduledDate || order.scheduledTime)
+    const isBusinessBuyer = order.buyer.role === "business"
 
     return (
       <div className="bg-white rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow">
@@ -107,8 +117,13 @@ export default function FarmerOrdersPage() {
               otherUserId={order.buyerId}
               otherUserName={order.buyer.name}
               trigger={
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
-                  Message
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-[11px] text-farmer hover:bg-farmer/10"
+                >
+                  <MessageSquare className="w-3 h-3 mr-1" />
+                  Chat with buyer
                 </Button>
               }
             />
@@ -146,6 +161,82 @@ export default function FarmerOrdersPage() {
           </div>
         </div>
 
+        {hasSchedule && (
+          <div className="mb-3 rounded-xl border border-emerald-100 bg-emerald-50/80 p-3 text-xs text-emerald-900 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Truck className="w-3 h-3" />
+                </span>
+                <div className="flex flex-col">
+                  <span className="font-semibold">Pickup schedule from buyer</span>
+                  <span className="text-[11px] text-emerald-800/80">Review and confirm or propose changes.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-1">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] uppercase tracking-wide text-emerald-700/80">Date</span>
+                <span className="text-[11px] font-medium">
+                  {order.scheduledDate
+                    ? new Date(order.scheduledDate).toLocaleDateString()
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] uppercase tracking-wide text-emerald-700/80">Time</span>
+                <span className="text-[11px] font-medium">{order.scheduledTime || "—"}</span>
+              </div>
+              {order.deliveryAddress && (
+                <div className="flex flex-col gap-0.5 col-span-2">
+                  <span className="text-[10px] uppercase tracking-wide text-emerald-700/80">Address</span>
+                  <span
+                    className="text-[11px] font-medium truncate"
+                    title={order.deliveryAddress}
+                  >
+                    {order.deliveryAddress}
+                  </span>
+                </div>
+              )}
+              {order.truckWeightKg != null && (
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] uppercase tracking-wide text-emerald-700/80">Truck Weight</span>
+                  <span className="text-[11px] font-medium">{order.truckWeightKg} kg</span>
+                </div>
+              )}
+            </div>
+
+            {isBusinessBuyer && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 border-emerald-300 bg-white/80 px-3 text-[11px] font-medium text-emerald-800 hover:bg-emerald-600 hover:text-white"
+                  onClick={() => {
+                    toast.success("Pickup schedule accepted", {
+                      description: `You have accepted the buyer's pickup arrangement for order #${order.id}`,
+                    })
+                  }}
+                >
+                  Accept schedule
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-3 text-[11px] font-medium text-emerald-800 hover:bg-emerald-100"
+                  onClick={() => {
+                    setSchedulingOrderId(order.id)
+                    setScheduleDialogOpen(true)
+                  }}
+                >
+                  Counter request
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         {order.status === "PENDING" && (
           <div className="flex gap-2">
             <Button
@@ -181,26 +272,42 @@ export default function FarmerOrdersPage() {
               setScheduleDialogOpen(open)
               if (!open) setSchedulingOrderId(null)
             }}>
-              <DialogTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full gap-1"
-                  onClick={() => {
-                    setSchedulingOrderId(order.id)
-                    setScheduleDialogOpen(true)
-                  }}
-                >
-                  <Calendar className="w-4 h-4" />
-                  Schedule Delivery
-                </Button>
-              </DialogTrigger>
+              {(!hasSchedule || !isBusinessBuyer) && (
+                <DialogTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full gap-1"
+                    onClick={() => {
+                      setSchedulingOrderId(order.id)
+                      setScheduleDialogOpen(true)
+                    }}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Schedule Delivery
+                  </Button>
+                </DialogTrigger>
+              )}
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Schedule Delivery - Order #{order.id}</DialogTitle>
                 </DialogHeader>
                 <DeliveryScheduler
                   orderId={order.id}
+                  initialSchedule={
+                    hasSchedule
+                      ? {
+                          scheduledDate: order.scheduledDate || undefined,
+                          scheduledTime: order.scheduledTime || undefined,
+                          route: order.route || undefined,
+                          isCBD: order.isCBD ?? false,
+                          truckWeightKg: order.truckWeightKg ?? undefined,
+                          deliveryAddress: order.deliveryAddress || undefined,
+                          isExempt: order.isExempt ?? false,
+                          exemptionType: order.exemptionType || undefined,
+                        }
+                      : undefined
+                  }
                   onSchedule={async (scheduleData) => {
                     try {
                       const response = await fetch(`/api/orders/${order.id}/schedule`, {

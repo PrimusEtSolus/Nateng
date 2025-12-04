@@ -126,6 +126,21 @@ This document outlines all the UX, UI, and functionality improvements made to th
 - "Order status updated" with order details
 - "Insufficient stock" with available quantity
 
+### 9. Business/Farmer Pickup Scheduling Views
+**Improvements:**
+- Farmer Bulk Orders page updated with clearer status chips and order cards.
+- Business and Farmer portals now show **pickup schedule summary cards** on orders once a schedule is set, with consistent styling per role.
+
+### 10. In-app Chat Entry Points
+**Improvements:**
+- In-app **chat entry points** added:
+  - "Chat with seller" on Business My Orders.
+  - "Chat with buyer" on Farmer Bulk Orders.
+
+### 11. Refined Chat Dialog Styling
+**Improvements:**
+- Chat dialog refined with improved header hierarchy, modern message bubbles, and a cleaner input bar.
+
 ## 🚀 Functionality Improvements
 
 ### 1. Buyer Dashboard

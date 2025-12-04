@@ -67,8 +67,8 @@ async function runTests() {
       description: 'Fresh green broccoli',
       farmerId: 1
     });
-    console.log(`   Status: ${res.status} ${res.status === 200 ? '✓' : '❌'}`);
-    if (res.status === 200) {
+    console.log(`   Status: ${res.status} ${res.status === 201 ? '✓' : '❌'}`);
+    if (res.status === 201) {
       console.log(`   Created: ${res.data.name} (ID: ${res.data.id})`);
       const testProductId = res.data.id;
       
@@ -131,8 +131,8 @@ async function runTests() {
         { listingId: 1, quantity: 100 }
       ]
     });
-    console.log(`   Status: ${res.status} ${res.status === 200 ? '✓' : '❌'}`);
-    if (res.status === 200) {
+    console.log(`   Status: ${res.status} ${res.status === 201 ? '✓' : '❌'}`);
+    if (res.status === 201) {
       console.log(`   Order created: ID ${res.data.id}, Status: ${res.data.status}`);
       const newOrderId = res.data.id;
       

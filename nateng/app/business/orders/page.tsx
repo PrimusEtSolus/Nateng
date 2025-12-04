@@ -8,12 +8,18 @@ import { ordersAPI } from "@/lib/api-client"
 import type { Order } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { Button } from "@/components/ui/button"
-import { Package, Clock, Truck, CheckCircle, XCircle, MapPin, Phone, Loader2 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { DeliveryScheduler } from "@/components/delivery-scheduler"
+import { MessageDialog } from "@/components/message-dialog"
+import { toast } from "sonner"
+import { Package, Clock, Truck, CheckCircle, XCircle, MapPin, Loader2 } from "lucide-react"
 
 export default function BusinessOrdersPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "confirmed" | "shipped" | "delivered">("all")
+  const [schedulingOrderId, setSchedulingOrderId] = useState<number | null>(null)
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false)
 
   // Fetch orders for the logged-in business user
   const { data: orders = [], loading: ordersLoading, error: ordersError } = useFetch<Order[]>(
@@ -136,6 +142,7 @@ export default function BusinessOrdersPage() {
             const productName = firstItem?.listing?.product?.name || "Order"
             const totalQuantity = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0
             const sellerName = order.seller?.name || "Unknown"
+            const hasSchedule = Boolean(order.scheduledDate || order.scheduledTime)
             
             return (
               <div
@@ -172,22 +179,136 @@ export default function BusinessOrdersPage() {
                   </div>
                 </div>
 
+                {hasSchedule && (
+                  <div className="mb-3 rounded-xl border border-business/10 bg-business/5 px-4 py-3 text-xs text-business space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-business/10 text-business">
+                          <Truck className="w-3 h-3" />
+                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-business">Pickup schedule confirmed</span>
+                          <span className="text-[11px] text-business/80">Your seller has a pickup schedule for this order.</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-1">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] uppercase tracking-wide text-business/70">Date</span>
+                        <span className="text-[11px] font-medium">
+                          {order.scheduledDate
+                            ? new Date(order.scheduledDate).toLocaleDateString()
+                            : "—"}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] uppercase tracking-wide text-business/70">Time</span>
+                        <span className="text-[11px] font-medium">{order.scheduledTime || "—"}</span>
+                      </div>
+                      {order.deliveryAddress && (
+                        <div className="flex flex-col gap-0.5 col-span-2">
+                          <span className="text-[10px] uppercase tracking-wide text-business/70">Address</span>
+                          <span
+                            className="text-[11px] font-medium truncate"
+                            title={order.deliveryAddress || ''}
+                          >
+                            {order.deliveryAddress}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between pt-4 border-t border-border">
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4" />
                       <span>{sellerName}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="w-4 h-4" />
-                      <span>Contact Seller</span>
-                    </div>
+                    <MessageDialog
+                      orderId={order.id}
+                      otherUserId={order.sellerId}
+                      otherUserName={sellerName}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-business hover:bg-business-bg"
+                        >
+                          Chat with seller
+                        </Button>
+                      }
+                    />
                   </div>
                   {(order.status?.toUpperCase() === "SHIPPED" || order.status?.toUpperCase() === "CONFIRMED") && (
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white gap-2">
-                      <Truck className="w-4 h-4" />
-                      Arrange Pickup
-                    </Button>
+                    <Dialog
+                      open={scheduleDialogOpen && schedulingOrderId === order.id}
+                      onOpenChange={(open) => {
+                        setScheduleDialogOpen(open)
+                        if (!open) setSchedulingOrderId(null)
+                      }}
+                    >
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant={hasSchedule ? "outline" : "default"}
+                          className={
+                            hasSchedule
+                              ? "gap-2 border-business/40 text-business hover:bg-business-bg"
+                              : "gap-2 bg-green-600 hover:bg-green-700 text-white"
+                          }
+                          onClick={() => {
+                            setSchedulingOrderId(order.id)
+                            setScheduleDialogOpen(true)
+                          }}
+                        >
+                          <Truck className="w-4 h-4" />
+                          {hasSchedule ? "View / Edit Pickup" : "Arrange Pickup"}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Arrange Pickup - Order #{order.id}</DialogTitle>
+                        </DialogHeader>
+                        <DeliveryScheduler
+                          orderId={order.id}
+                          initialSchedule={
+                            hasSchedule
+                              ? {
+                                  scheduledDate: order.scheduledDate || undefined,
+                                  scheduledTime: order.scheduledTime || undefined,
+                                  route: order.route || undefined,
+                                  isCBD: order.isCBD ?? false,
+                                  truckWeightKg: order.truckWeightKg ?? undefined,
+                                  deliveryAddress: order.deliveryAddress || undefined,
+                                  isExempt: order.isExempt ?? false,
+                                  exemptionType: order.exemptionType || undefined,
+                                }
+                              : undefined
+                          }
+                          onSchedule={async (scheduleData) => {
+                            try {
+                              const response = await fetch(`/api/orders/${order.id}/schedule`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(scheduleData),
+                              })
+                              if (!response.ok) {
+                                const error = await response.json().catch(() => ({}))
+                                throw new Error(error.error || "Failed to arrange pickup")
+                              }
+                              toast.success("Pickup arranged successfully!")
+                              setScheduleDialogOpen(false)
+                              setSchedulingOrderId(null)
+                            } catch (error: any) {
+                              toast.error(error.message || "Failed to arrange pickup")
+                            }
+                          }}
+                        />
+                      </DialogContent>
+                    </Dialog>
                   )}
                 </div>
               </div>
