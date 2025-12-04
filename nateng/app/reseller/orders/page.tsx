@@ -1,39 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, type User } from "@/lib/auth"
+import type { Order } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { Package, Clock, CheckCircle, Truck, XCircle, Loader2 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
-interface Order {
-  id: number
-  buyerId: number
-  sellerId: number
-  totalCents: number
-  status: string
-  createdAt: string
-  items: Array<{
-    id: number
-    quantity: number
-    priceCents: number
-    listing: {
-      id: number
-      product: {
-        id: number
-        name: string
-      }
-    }
-  }>
-  seller: {
-    id: number
-    name: string
-    role: string
-    email: string
-  }
-}
+import { Clock, CheckCircle, Truck, XCircle } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 export default function ResellerOrdersPage() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -45,7 +23,7 @@ export default function ResellerOrdersPage() {
     { skip: !user }
   )
 
-  const statusConfig: Record<string, { icon: any; color: string; label: string }> = {
+  const statusConfig: Record<string, { icon: LucideIcon; color: string; label: string }> = {
     PENDING: { icon: Clock, color: "bg-yellow-100 text-yellow-700", label: "Pending" },
     CONFIRMED: { icon: CheckCircle, color: "bg-blue-100 text-blue-700", label: "Confirmed" },
     SHIPPED: { icon: Truck, color: "bg-green-100 text-green-700", label: "Shipped" },

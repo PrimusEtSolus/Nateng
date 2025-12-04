@@ -27,7 +27,7 @@ NatengHub is designed to address the challenges facing Benguet's agricultural se
 - ✅ Identify system features: crop programming dashboards, virtual trading, smart logistics
 - ✅ Measure usability based on ISO 25010 software quality standards
 
-For detailed information about the solution approach and research foundation, see [SOLUTION_OVERVIEW.md](./SOLUTION_OVERVIEW.md).
+For detailed information about the solution approach and research foundation, see [SOLUTION_OVERVIEW.md](./docs/SOLUTION_OVERVIEW.md).
 
 ## 🚀 Quick Start
 
@@ -56,7 +56,7 @@ npm run dev
 
 Visit `http://localhost:3000` to see the application.
 
-For detailed setup instructions, see [QUICK_START.md](./QUICK_START.md) or [README_BACKEND.md](./README_BACKEND.md).
+For detailed setup instructions, see [QUICK_START.md](./docs/QUICK_START.md) or [README_BACKEND.md](./docs/README_BACKEND.md).
 
 ## 🏗️ Architecture
 
@@ -111,20 +111,24 @@ For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md
 
 ## 📚 Documentation
 
+All documentation files have been organized in the [`docs/`](./docs/) directory.
+
 ### Core Documentation
 
-- **[SOLUTION_OVERVIEW.md](./SOLUTION_OVERVIEW.md)** - Complete solution overview, objectives, and research foundation
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System architecture and technical design
-- **[QUICK_START.md](./QUICK_START.md)** - Quick start guide and common patterns
-- **[README_BACKEND.md](./README_BACKEND.md)** - Backend API documentation
-- **[FULLSTACK_IMPLEMENTATION.md](./FULLSTACK_IMPLEMENTATION.md)** - Complete full-stack implementation guide
+- **[SOLUTION_OVERVIEW.md](./docs/SOLUTION_OVERVIEW.md)** - Complete solution overview, objectives, and research foundation
+- **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - System architecture and technical design
+- **[QUICK_START.md](./docs/QUICK_START.md)** - Quick start guide and common patterns
+- **[README_BACKEND.md](./docs/README_BACKEND.md)** - Backend API documentation
+- **[FULLSTACK_IMPLEMENTATION.md](./docs/FULLSTACK_IMPLEMENTATION.md)** - Complete full-stack implementation guide
 
 ### Additional Resources
 
-- **[MARKETPLACE_SETUP.md](./MARKETPLACE_SETUP.md)** - Detailed marketplace setup guide
-- **[IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md)** - Feature implementation summary
-- **[BUILD_COMPLETE.md](./BUILD_COMPLETE.md)** - Build and deployment status
-- **[STATUS.md](./STATUS.md)** - Current project status
+- **[MARKETPLACE_SETUP.md](./docs/MARKETPLACE_SETUP.md)** - Detailed marketplace setup guide
+- **[IMPLEMENTATION_SUMMARY.md](./docs/IMPLEMENTATION_SUMMARY.md)** - Feature implementation summary
+- **[BUILD_COMPLETE.md](./docs/BUILD_COMPLETE.md)** - Build and deployment status
+- **[STATUS.md](./docs/STATUS.md)** - Current project status
+
+See the [`docs/`](./docs/) directory for all documentation files including testing reports, bug reports, and implementation summaries.
 
 ## 🛠️ Development
 
@@ -201,7 +205,7 @@ This project is based on extensive research into:
 - Inclusive growth in agri-food systems
 - Post-harvest loss reduction strategies
 
-See [SOLUTION_OVERVIEW.md](./SOLUTION_OVERVIEW.md) for complete research references and citations.
+See [SOLUTION_OVERVIEW.md](./docs/SOLUTION_OVERVIEW.md) for complete research references and citations.
 
 ## 📊 Project Status
 
@@ -228,5 +232,5 @@ This project is part of a capstone research study.
 
 **Built with ❤️ for Benguet's agricultural community**
 
-For more information, see [SOLUTION_OVERVIEW.md](./SOLUTION_OVERVIEW.md).
+For more information, see [SOLUTION_OVERVIEW.md](./docs/SOLUTION_OVERVIEW.md).
 

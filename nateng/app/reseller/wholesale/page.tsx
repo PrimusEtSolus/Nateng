@@ -1,12 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, type User } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { ordersAPI } from "@/lib/api-client"
-import { Search, ShoppingCart, MapPin, Package, Loader2 } from "lucide-react"
+import { Search, ShoppingCart, MapPin, Package, Loader2, X, Plus, Minus, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { toast } from "sonner"
 
 interface Listing {
@@ -39,11 +47,13 @@ interface CartItem {
 }
 
 export default function ResellerWholesalePage() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [cart, setCart] = useState<CartItem[]>([])
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [quantities, setQuantities] = useState<Record<number, number>>({})
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -60,19 +70,59 @@ export default function ResellerWholesalePage() {
     return matchesSearch && matchesCategory && listing.available && listing.quantity > 0 && listing.seller.role === "farmer"
   }) || []
 
-  const addToCart = (listing: Listing, quantity: number) => {
+  const addToCart = (listing: Listing, quantity?: number) => {
+    const qty = quantity || quantities[listing.id] || 1
+    if (qty <= 0) {
+      toast.error("Quantity must be at least 1kg")
+      return
+    }
+    if (qty > listing.quantity) {
+      toast.error(`Only ${listing.quantity}kg available`)
+      return
+    }
     setCart((prev) => {
       const existing = prev.find((item) => item.listing.id === listing.id)
       if (existing) {
+        const newQuantity = existing.quantity + qty
+        if (newQuantity > listing.quantity) {
+          toast.error(`Only ${listing.quantity}kg available`)
+          return prev
+        }
         return prev.map((item) => 
           item.listing.id === listing.id 
-            ? { ...item, quantity: item.quantity + quantity } 
+            ? { ...item, quantity: newQuantity } 
             : item
         )
       }
-      return [...prev, { listing, quantity }]
+      return [...prev, { listing, quantity: qty }]
     })
+    setQuantities((prev) => ({ ...prev, [listing.id]: 1 }))
     toast.success("Added to cart")
+  }
+
+  const updateCartQuantity = (listingId: number, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      removeFromCart(listingId)
+      return
+    }
+    setCart((prev) => {
+      const item = prev.find((item) => item.listing.id === listingId)
+      if (!item) return prev
+      if (newQuantity > item.listing.quantity) {
+        toast.error(`Only ${item.listing.quantity}kg available`)
+        return prev
+      }
+      return prev.map((item) =>
+        item.listing.id === listingId
+          ? { ...item, quantity: newQuantity }
+          : item
+      )
+    })
+  }
+
+  const removeFromCart = (listingId: number) => {
+    setCart((prev) => prev.filter((item) => item.listing.id !== listingId))
+    toast.success("Removed from cart")
   }
 
   const handlePlaceOrder = async () => {
@@ -105,11 +155,14 @@ export default function ResellerWholesalePage() {
         })
       )
 
-      await Promise.all(orderPromises)
-      toast.success(`${orderPromises.length} order(s) placed successfully!`)
+      const results = await Promise.all(orderPromises)
+      const orderCount = results.length
+      toast.success(`${orderCount} order(s) placed successfully!`)
       setCart([])
+      setIsCartOpen(false)
     } catch (error: any) {
-      toast.error(error.message || "Failed to place order")
+      const errorMessage = error?.message || error?.toString() || "Failed to place order"
+      toast.error(typeof errorMessage === 'string' ? errorMessage : "Failed to place order")
     } finally {
       setIsPlacingOrder(false)
     }
@@ -144,7 +197,10 @@ export default function ResellerWholesalePage() {
                 </>
               )}
             </Button>
-            <Button className="bg-teal-600 hover:bg-teal-700">
+            <Button 
+              className="bg-teal-600 hover:bg-teal-700"
+              onClick={() => setIsCartOpen(true)}
+            >
               <ShoppingCart className="w-5 h-5 mr-2" />
               Cart ({cart.length}) - ₱{cartTotal.toLocaleString()}
             </Button>
@@ -233,14 +289,60 @@ export default function ResellerWholesalePage() {
                   </span>
                 </div>
 
-                <Button
-                  onClick={() => addToCart(listing, 1)}
-                  className="w-full bg-teal-600 hover:bg-teal-700"
-                  disabled={!listing.available || listing.quantity === 0}
-                >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Order
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 border border-border rounded-lg flex-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9"
+                      onClick={() => {
+                        const currentQty = quantities[listing.id] || 1
+                        if (currentQty > 1) {
+                          setQuantities((prev) => ({ ...prev, [listing.id]: currentQty - 1 }))
+                        }
+                      }}
+                      disabled={!listing.available || listing.quantity === 0 || (quantities[listing.id] || 1) <= 1}
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <Input
+                      type="number"
+                      min="1"
+                      max={listing.quantity}
+                      value={quantities[listing.id] || 1}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value)
+                        if (!isNaN(val) && val >= 1 && val <= listing.quantity) {
+                          setQuantities((prev) => ({ ...prev, [listing.id]: val }))
+                        }
+                      }}
+                      className="w-16 h-9 text-center border-0 focus-visible:ring-0"
+                      disabled={!listing.available || listing.quantity === 0}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9"
+                      onClick={() => {
+                        const currentQty = quantities[listing.id] || 1
+                        if (currentQty < listing.quantity) {
+                          setQuantities((prev) => ({ ...prev, [listing.id]: currentQty + 1 }))
+                        }
+                      }}
+                      disabled={!listing.available || listing.quantity === 0 || (quantities[listing.id] || 1) >= listing.quantity}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <Button
+                    onClick={() => addToCart(listing)}
+                    className="flex-1 bg-teal-600 hover:bg-teal-700"
+                    disabled={!listing.available || listing.quantity === 0}
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Add
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
@@ -254,6 +356,130 @@ export default function ResellerWholesalePage() {
           <p className="text-muted-foreground">Try a different search term</p>
         </div>
       )}
+
+      {/* Cart Dialog */}
+      <Dialog open={isCartOpen} onOpenChange={setIsCartOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Your Order Cart</DialogTitle>
+            <DialogDescription>
+              Review and manage items before placing your wholesale order
+            </DialogDescription>
+          </DialogHeader>
+
+          {cart.length === 0 ? (
+            <div className="py-12 text-center">
+              <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Your cart is empty</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {cart.map((item) => (
+                <div
+                  key={item.listing.id}
+                  className="flex items-center gap-4 p-4 border border-border rounded-xl bg-muted/30"
+                >
+                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                    <Package className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-foreground">{item.listing.product.name}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {item.listing.product.farmer.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      ₱{(item.listing.priceCents / 100).toFixed(2)}/kg • {item.listing.quantity}kg available
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 border border-border rounded-lg">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => updateCartQuantity(item.listing.id, item.quantity - 1)}
+                        disabled={item.quantity <= 1}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <Input
+                        type="number"
+                        min="1"
+                        max={item.listing.quantity}
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value)
+                          if (!isNaN(val) && val >= 0) {
+                            updateCartQuantity(item.listing.id, val)
+                          }
+                        }}
+                        className="w-20 h-8 text-center border-0 focus-visible:ring-0"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => updateCartQuantity(item.listing.id, item.quantity + 1)}
+                        disabled={item.quantity >= item.listing.quantity}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="text-right min-w-[100px]">
+                      <p className="font-semibold text-foreground">
+                        ₱{((item.listing.priceCents * item.quantity) / 100).toLocaleString()}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => removeFromCart(item.listing.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+
+              <div className="border-t border-border pt-4 mt-4">
+                <div className="flex items-center justify-between text-lg font-semibold">
+                  <span>Total:</span>
+                  <span className="text-teal-600">₱{cartTotal.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCartOpen(false)}>
+              Continue Shopping
+            </Button>
+            {cart.length > 0 && (
+              <Button
+                className="bg-teal-600 hover:bg-teal-700"
+                onClick={async () => {
+                  setIsCartOpen(false)
+                  await handlePlaceOrder()
+                }}
+                disabled={isPlacingOrder}
+              >
+                {isPlacingOrder ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Placing Order...
+                  </>
+                ) : (
+                  <>
+                    <Package className="w-4 h-4 mr-2" />
+                    Place Order
+                  </>
+                )}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

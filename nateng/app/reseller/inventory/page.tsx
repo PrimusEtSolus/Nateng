@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, type User } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { listingsAPI } from "@/lib/api-client"
 import { Search, Plus, Edit2, Trash2, Package, Loader2 } from "lucide-react"
@@ -34,7 +34,7 @@ interface Listing {
 }
 
 export default function ResellerInventoryPage() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {

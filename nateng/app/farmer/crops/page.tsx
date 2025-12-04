@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, type User } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { productsAPI, listingsAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
@@ -27,7 +27,7 @@ interface Product {
 }
 
 export default function FarmerCropsPage() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)

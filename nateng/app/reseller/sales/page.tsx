@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, type User } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { DollarSign, TrendingUp, ShoppingBag, Users, ArrowUpRight, Loader2 } from "lucide-react"
 
@@ -27,7 +27,7 @@ interface Order {
 }
 
 export default function ResellerSalesPage() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     setUser(getCurrentUser())

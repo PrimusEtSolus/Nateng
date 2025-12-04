@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, type User } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { ordersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
@@ -35,7 +35,7 @@ interface Order {
 }
 
 export default function FarmerOrdersPage() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
   const [schedulingOrderId, setSchedulingOrderId] = useState<number | null>(null)
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false)

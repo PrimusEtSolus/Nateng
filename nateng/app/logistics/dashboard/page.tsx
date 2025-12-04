@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Clock, AlertTriangle, CheckCircle2, Truck, MapPin, ArrowLeft } from "lucide-react"
-import { getCurrentUser, getRedirectPath } from "@/lib/auth"
+import { getCurrentUser, getRedirectPath, type User } from "@/lib/auth"
+import type { Order } from "@/lib/types"
 import {
   getAvailableWindowTimes,
   formatTime,
@@ -20,9 +21,9 @@ import {
 export default function LogisticsDashboard() {
   const router = useRouter()
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [orders, setOrders] = useState<any[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
     // Get current user to determine dashboard path
@@ -46,7 +47,7 @@ export default function LogisticsDashboard() {
       if (response.ok) {
         const data = await response.json()
         // Filter orders with scheduled deliveries and validate dates
-        const scheduledOrders = data.filter((o: any) => {
+        const scheduledOrders = data.filter((o: Order) => {
           if (!o.scheduledDate || !o.scheduledTime) return false
           try {
             const scheduled = new Date(`${o.scheduledDate}T${o.scheduledTime}`)
@@ -109,7 +110,7 @@ export default function LogisticsDashboard() {
     })
     .slice(0, 10)
 
-  const dashboardPath = user ? getRedirectPath(user.role as any) : "/"
+  const dashboardPath = user ? getRedirectPath(user.role) : "/"
 
   return (
     <div className="p-8 space-y-6">

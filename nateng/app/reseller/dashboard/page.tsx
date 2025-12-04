@@ -47,9 +47,18 @@ interface Order {
   totalCents: number
   status: string
   createdAt: string
+  scheduledDate?: string | null
+  scheduledTime?: string | null
+  route?: string | null
+  isCBD?: boolean | null
+  truckWeightKg?: number | null
+  deliveryAddress?: string | null
+  isExempt?: boolean | null
+  exemptionType?: string | null
   items: Array<{
     id: number
     quantity: number
+    priceCents: number
     listing: {
       id: number
       product: {
@@ -58,9 +67,17 @@ interface Order {
       }
     }
   }>
+  buyer?: {
+    id: number
+    name: string
+    email: string
+    role: string
+  } | null
   seller: {
     id: number
     name: string
+    email?: string
+    role?: string
   }
 }
 
@@ -395,7 +412,7 @@ export default function ResellerDashboardPage() {
               <DialogHeader>
                 <DialogTitle>Wholesale Order #{selectedWholesaleOrder.id}</DialogTitle>
                 <DialogDescription>
-                  {selectedWholesaleOrder.items.map((item) => item.listing.product.name).join(", ")} from {selectedWholesaleOrder.seller.name}
+                  {selectedWholesaleOrder.items.map((item) => item.listing?.product?.name || 'Unknown').join(", ")} from {selectedWholesaleOrder.seller?.name || 'Unknown Seller'}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-3 text-sm">
@@ -415,8 +432,8 @@ export default function ResellerDashboardPage() {
                   <p className="text-xs uppercase text-muted-foreground mb-2">Items</p>
                   {selectedWholesaleOrder.items.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
-                      <span>{item.listing.product.name} x {item.quantity}kg</span>
-                      <span>₱{(item.priceCents * item.quantity / 100).toLocaleString()}</span>
+                      <span>{item.listing?.product?.name || 'Unknown Product'} x {item.quantity || 0}kg</span>
+                      <span>₱{((item.priceCents || 0) * (item.quantity || 0) / 100).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>

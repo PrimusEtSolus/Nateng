@@ -1,16 +1,8 @@
 "use client"
 
-import type { UserRole } from "./mock-data"
+import type { User, UserRole } from "./types"
 
 const AUTH_KEY = "natenghub_user"
-
-export interface User {
-  id: number
-  name: string
-  email: string
-  role: UserRole
-  createdAt?: string
-}
 
 export async function login(email: string, password: string): Promise<User | null> {
   try {
