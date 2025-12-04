@@ -125,7 +125,9 @@ export default function BuyerCheckoutPage() {
           </p>
           <div className="bg-muted p-4 rounded-xl mb-6">
             <p className="text-sm text-muted-foreground">Order Reference</p>
-            <p className="text-xl font-mono font-bold">#ORD-{placedOrderId || Date.now().toString().slice(-8)}</p>
+            <p className="text-xl font-mono font-bold">
+              {placedOrderId ? `#ORD-${placedOrderId}` : 'Processing...'}
+            </p>
           </div>
           <div className="flex gap-4 justify-center">
             <Link href="/buyer/orders">

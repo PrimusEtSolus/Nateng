@@ -16,8 +16,8 @@ export async function GET(req: Request) {
     const listings = await prisma.listing.findMany({
       where: Object.keys(where).length > 0 ? where : undefined,
       include: {
-        product: { include: { farmer: { select: { id: true, name: true, email: true } } } },
-        seller: { select: { id: true, name: true, role: true, email: true } },
+        product: { include: { farmer: { select: { id: true, name: true, email: true, minimumOrderKg: true } } } },
+        seller: { select: { id: true, name: true, role: true, email: true, minimumOrderKg: true } },
       },
       orderBy: { createdAt: 'desc' },
     });

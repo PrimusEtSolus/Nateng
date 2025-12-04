@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { getCurrentUser } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
+import { formatDateWithMonth } from "@/lib/date-utils"
 import { Button } from "@/components/ui/button"
 import { Package, Truck, CheckCircle, Clock, Eye, MapPin, Phone, Star, Loader2 } from "lucide-react"
 import { MessageDialog } from "@/components/message-dialog"
@@ -133,11 +134,7 @@ export default function BuyerOrdersPage() {
                           <p className="font-mono text-sm text-muted-foreground">#{order.id}</p>
                           <p className="text-sm text-muted-foreground mt-1">
                             Ordered on{" "}
-                            {new Date(order.createdAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
+                            {formatDateWithMonth(order.createdAt)}
                           </p>
                         </div>
                         <span

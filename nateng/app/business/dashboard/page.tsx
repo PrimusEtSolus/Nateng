@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { mockWholesaleOrders, getWholesaleCrops, type WholesaleOrder } from "@/lib/mock-data"
 import { getCurrentUser, type User } from "@/lib/auth"
-import { Package, TrendingUp, ShoppingBag, DollarSign, ArrowUpRight, Clock } from "lucide-react"
+import { ordersAPI, listingsAPI } from "@/lib/api-client"
+import type { Order, Listing } from "@/lib/types"
+import { useFetch } from "@/hooks/use-fetch"
+import { Package, TrendingUp, ShoppingBag, DollarSign, ArrowUpRight, Clock, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,15 +18,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-type WholesaleCrop = ReturnType<typeof getWholesaleCrops>[number]
-
 export default function BusinessDashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
-  const orders = mockWholesaleOrders.filter((o) => o.buyerId === "business-1")
-  const crops = getWholesaleCrops()
-  const [selectedOrder, setSelectedOrder] = useState<WholesaleOrder | null>(null)
-  const [selectedCrop, setSelectedCrop] = useState<WholesaleCrop | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
+
+  // Fetch orders for the logged-in business user
+  const { data: orders = [], loading: ordersLoading, error: ordersError } = useFetch<Order[]>(
+    user ? () => ordersAPI.getAll({ buyerId: user.id }) : null
+  )
+
+  // Fetch available listings (for "Fresh Wholesale" section)
+  const { data: listings = [], loading: listingsLoading } = useFetch<Listing[]>(
+    () => listingsAPI.getAll({ available: true })
+  )
 
   useEffect(() => {
     const currentUser = getCurrentUser()
@@ -35,36 +43,44 @@ export default function BusinessDashboardPage() {
     setUser(currentUser)
   }, [router])
 
-  const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "confirmed").length
-  const totalSpent = orders.filter((o) => o.status === "completed").reduce((sum, o) => sum + o.total, 0)
+  // Calculate stats from real data
+  const completedOrders = orders.filter((o) => o.status === "DELIVERED" || o.status === "COMPLETED")
+  const pendingOrders = orders.filter((o) => 
+    o.status === "PENDING" || o.status === "CONFIRMED" || o.status === "SHIPPED"
+  )
+  const totalSpent = completedOrders.reduce((sum, o) => sum + (o.totalCents || 0), 0) / 100
   const totalOrders = orders.length
+  
+  // Get unique suppliers (sellers) from orders
+  const uniqueSuppliers = new Set(orders.map((o) => o.sellerId))
+  const supplierCount = uniqueSuppliers.size
 
   const stats = [
     {
       label: "Total Spent",
       value: `₱${totalSpent.toLocaleString()}`,
-      change: "+8.2%",
+      change: totalOrders > 0 ? `${completedOrders.length} completed` : "No orders yet",
       icon: DollarSign,
       color: "bg-emerald-500",
     },
     {
       label: "Active Orders",
-      value: pendingOrders.toString(),
-      change: `${pendingOrders} in progress`,
+      value: pendingOrders.length.toString(),
+      change: pendingOrders.length > 0 ? `${pendingOrders.length} in progress` : "No active orders",
       icon: Package,
       color: "bg-blue-500",
     },
     {
       label: "Products Sourced",
       value: totalOrders.toString(),
-      change: "This month",
+      change: totalOrders > 0 ? "All time" : "Start ordering",
       icon: ShoppingBag,
       color: "bg-purple-500",
     },
     {
       label: "Suppliers",
-      value: "3",
-      change: "+1 new",
+      value: supplierCount.toString(),
+      change: supplierCount > 0 ? `${supplierCount} ${supplierCount === 1 ? 'supplier' : 'suppliers'}` : "No suppliers yet",
       icon: TrendingUp,
       color: "bg-cyan-500",
     },
@@ -123,52 +139,12 @@ export default function BusinessDashboardPage() {
             </Link>
           </div>
           <div className="divide-y divide-border">
-            {orders.slice(0, 4).map((order) => (
-              <div
-                key={order.id}
-                className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-business focus-visible:ring-offset-2"
-                role="button"
-                tabIndex={0}
-                onClick={() => setSelectedOrder(order)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault()
-                    setSelectedOrder(order)
-                  }
-                }}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-business-bg rounded-xl flex items-center justify-center">
-                    <Package className="w-6 h-6 text-business" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">{order.crop}</p>
-                    <p className="text-sm text-muted-foreground">
-                      from {order.farmerName} - {order.quantity}
-                      {order.unit}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-foreground">₱{order.total.toLocaleString()}</p>
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                      order.status === "pending"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : order.status === "confirmed"
-                          ? "bg-blue-100 text-blue-700"
-                          : order.status === "ready"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    <Clock className="w-3 h-3" />
-                    {order.status}
-                  </span>
-                </div>
+            {ordersLoading ? (
+              <div className="p-8 text-center">
+                <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-3 animate-spin" />
+                <p className="text-muted-foreground">Loading orders...</p>
               </div>
-            ))}
-            {orders.length === 0 && (
+            ) : orders.length === 0 ? (
               <div className="p-8 text-center">
                 <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">No orders yet</p>
@@ -176,6 +152,58 @@ export default function BusinessDashboardPage() {
                   Browse wholesale products
                 </Link>
               </div>
+            ) : (
+              orders.slice(0, 4).map((order) => {
+                const firstItem = order.items?.[0]
+                const productName = firstItem?.listing?.product?.name || "Order"
+                const sellerName = order.seller?.name || "Unknown"
+                const totalQuantity = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0
+                
+                return (
+                  <div
+                    key={order.id}
+                    className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-business focus-visible:ring-offset-2"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedOrder(order)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        setSelectedOrder(order)
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-business-bg rounded-xl flex items-center justify-center">
+                        <Package className="w-6 h-6 text-business" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{productName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          from {sellerName} - {totalQuantity}kg
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">₱{((order.totalCents || 0) / 100).toLocaleString()}</p>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                          order.status === "PENDING"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : order.status === "CONFIRMED"
+                              ? "bg-blue-100 text-blue-700"
+                              : order.status === "SHIPPED"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <Clock className="w-3 h-3" />
+                        {order.status}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })
             )}
           </div>
         </div>
@@ -216,49 +244,67 @@ export default function BusinessDashboardPage() {
           {/* Available Products */}
           <div className="bg-white rounded-2xl shadow-sm border border-border p-6">
             <h3 className="font-semibold text-foreground mb-4">Fresh Wholesale</h3>
-            <div className="space-y-3">
-              {crops.slice(0, 4).map((crop) => (
-                <div
-                  key={crop.id}
-                  className="flex items-center justify-between cursor-pointer rounded-xl p-2 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-business focus-visible:ring-offset-2"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedCrop(crop)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault()
-                      setSelectedCrop(crop)
-                    }
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted">
-                      <img
-                        src={crop.image || "/placeholder.svg"}
-                        alt={crop.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{crop.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Min: {crop.minOrderQty}
-                        {crop.unit}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="font-semibold text-sm text-business">
-                    ₱{crop.wholesalePrice}/{crop.unit}
-                  </p>
+            {listingsLoading ? (
+              <div className="p-4 text-center">
+                <Loader2 className="w-6 h-6 text-muted-foreground mx-auto mb-2 animate-spin" />
+                <p className="text-xs text-muted-foreground">Loading products...</p>
+              </div>
+            ) : listings.length === 0 ? (
+              <div className="p-4 text-center">
+                <ShoppingBag className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-xs text-muted-foreground">No products available</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {listings.slice(0, 4).map((listing) => {
+                    const product = listing.product
+                    const minOrder = listing.seller?.minimumOrderKg || listing.product?.farmer?.minimumOrderKg || 1
+                    
+                    return (
+                      <div
+                        key={listing.id}
+                        className="flex items-center justify-between cursor-pointer rounded-xl p-2 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-business focus-visible:ring-offset-2"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedListing(listing)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault()
+                            setSelectedListing(listing)
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted">
+                            <img
+                              src={product?.image || "/placeholder.svg"}
+                              alt={product?.name || "Product"}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{product?.name || "Product"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Min: {minOrder}kg
+                            </p>
+                          </div>
+                        </div>
+                        <p className="font-semibold text-sm text-business">
+                          ₱{((listing.priceCents || 0) / 100).toLocaleString()}/kg
+                        </p>
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
-            </div>
-            <Link
-              href="/business/browse"
-              className="block text-center text-sm font-medium text-business mt-4 hover:text-business-light"
-            >
-              View all products
-            </Link>
+                <Link
+                  href="/business/browse"
+                  className="block text-center text-sm font-medium text-business mt-4 hover:text-business-light"
+                >
+                  View all products
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -273,10 +319,9 @@ export default function BusinessDashboardPage() {
           {selectedOrder && (
             <>
               <DialogHeader>
-                <DialogTitle>Wholesale order {selectedOrder.id}</DialogTitle>
+                <DialogTitle>Order #{selectedOrder.id}</DialogTitle>
                 <DialogDescription>
-                  {selectedOrder.crop} from {selectedOrder.farmerName} • {selectedOrder.quantity}
-                  {selectedOrder.unit}
+                  {selectedOrder.items?.length || 0} item(s) from {selectedOrder.seller?.name || "Unknown"}
                 </DialogDescription>
               </DialogHeader>
 
@@ -284,20 +329,33 @@ export default function BusinessDashboardPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-xl bg-muted/60 p-4">
                     <p className="text-xs text-muted-foreground uppercase">Supplier</p>
-                    <p className="font-semibold">{selectedOrder.farmerName}</p>
-                    <p className="text-xs text-muted-foreground">{selectedOrder.orderDate}</p>
+                    <p className="font-semibold">{selectedOrder.seller?.name || "Unknown"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleDateString() : "N/A"}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-muted/60 p-4">
                     <p className="text-xs text-muted-foreground uppercase">Status</p>
                     <p className="font-semibold capitalize">{selectedOrder.status}</p>
-                    <p className="text-xs text-muted-foreground">Total ₱{selectedOrder.total.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Total ₱{((selectedOrder.totalCents || 0) / 100).toLocaleString()}
+                    </p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs uppercase text-muted-foreground tracking-wide mb-1">Notes</p>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedOrder.notes || "No special instructions supplied"}
-                  </p>
+                  <p className="text-xs uppercase text-muted-foreground tracking-wide mb-2">Items</p>
+                  <div className="space-y-2">
+                    {selectedOrder.items?.map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-sm">
+                        <span>
+                          {item.listing?.product?.name || "Product"} × {item.quantity}kg
+                        </span>
+                        <span className="font-medium">
+                          ₱{((item.priceCents || 0) * (item.quantity || 0) / 100).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -315,41 +373,48 @@ export default function BusinessDashboardPage() {
       </Dialog>
 
       <Dialog
-        open={!!selectedCrop}
+        open={!!selectedListing}
         onOpenChange={(open) => {
-          if (!open) setSelectedCrop(null)
+          if (!open) setSelectedListing(null)
         }}
       >
         <DialogContent className="sm:max-w-xl">
-          {selectedCrop && (
+          {selectedListing && (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedCrop.name}</DialogTitle>
+                <DialogTitle>{selectedListing.product?.name || "Product"}</DialogTitle>
                 <DialogDescription>
-                  From {selectedCrop.farmerName} • Minimum order {selectedCrop.minOrderQty}
-                  {selectedCrop.unit}
+                  From {selectedListing.seller?.name || "Unknown"} • Minimum order {
+                    selectedListing.seller?.minimumOrderKg || selectedListing.product?.farmer?.minimumOrderKg || 1
+                  }kg
                 </DialogDescription>
               </DialogHeader>
 
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="rounded-2xl border border-border overflow-hidden">
-                  <img src={selectedCrop.image || "/placeholder.svg"} alt={selectedCrop.name} />
+                  <img 
+                    src={selectedListing.product?.image || "/placeholder.svg"} 
+                    alt={selectedListing.product?.name || "Product"} 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Available</span>
-                    <strong>{selectedCrop.harvestQuantity} {selectedCrop.unit}</strong>
+                    <strong>{selectedListing.quantity}kg</strong>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Price</span>
-                    <strong>₱{selectedCrop.wholesalePrice}/{selectedCrop.unit}</strong>
+                    <strong>₱{((selectedListing.priceCents || 0) / 100).toLocaleString()}/kg</strong>
                   </div>
-                  <p className="text-muted-foreground text-sm">{selectedCrop.description}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {selectedListing.product?.description || "No description available"}
+                  </p>
                 </div>
               </div>
 
               <DialogFooter className="sm:justify-between sm:flex-row">
-                <Button variant="outline" onClick={() => setSelectedCrop(null)}>
+                <Button variant="outline" onClick={() => setSelectedListing(null)}>
                   Close
                 </Button>
                 <Button asChild className="bg-business hover:bg-business-light text-white">

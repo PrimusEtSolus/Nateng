@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser, type User } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
+import { formatDate } from "@/lib/date-utils"
 import { productsAPI, listingsAPI, ordersAPI } from "@/lib/api-client"
 import { Package, TrendingUp, Leaf, DollarSign, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react"
 import Link from "next/link"
@@ -385,7 +386,7 @@ export default function FarmerDashboardPage() {
                     <p className="text-xs text-muted-foreground uppercase">Status</p>
                     <p className="font-semibold">{selectedOrder.status}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(selectedOrder.createdAt).toLocaleDateString()}
+                      {formatDate(selectedOrder.createdAt)}
                     </p>
                   </div>
                   <div className="rounded-xl bg-muted/60 p-4">

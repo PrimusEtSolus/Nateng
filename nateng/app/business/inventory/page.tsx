@@ -11,7 +11,12 @@ import { toast } from "@/hooks/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const generateInventoryId = () => `inventory-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+// Use a counter instead of Date.now() and Math.random() to avoid hydration issues
+let inventoryIdCounter = 0
+const generateInventoryId = () => {
+  inventoryIdCounter++
+  return `inventory-${inventoryIdCounter}`
+}
 
 interface InventoryItem {
   id: string

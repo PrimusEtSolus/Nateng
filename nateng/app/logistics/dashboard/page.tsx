@@ -20,15 +20,20 @@ import {
 
 export default function LogisticsDashboard() {
   const router = useRouter()
-  const [currentTime, setCurrentTime] = useState(new Date())
+  const [currentTime, setCurrentTime] = useState<Date | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     // Get current user to determine dashboard path
     const currentUser = getCurrentUser()
     setUser(currentUser)
+    
+    // Initialize current time on client only
+    setCurrentTime(new Date())
 
     // Update current time every minute
     const timer = setInterval(() => {
@@ -68,6 +73,7 @@ export default function LogisticsDashboard() {
   }
 
   const getCurrentTimeString = () => {
+    if (!currentTime) return '00:00'
     const hours = currentTime.getHours().toString().padStart(2, '0')
     const minutes = currentTime.getMinutes().toString().padStart(2, '0')
     return `${hours}:${minutes}`
@@ -85,8 +91,8 @@ export default function LogisticsDashboard() {
   const cbdWindows = getAvailableWindowTimes('CBD')
   const outsideCBDWindows = getAvailableWindowTimes('OUTSIDE_CBD')
   const currentTimeStr = getCurrentTimeString()
-  const isCurrentlyBannedCBD = checkIfInBanWindow(currentTimeStr, 'CBD')
-  const isCurrentlyBannedOutside = checkIfInBanWindow(currentTimeStr, 'OUTSIDE_CBD')
+  const isCurrentlyBannedCBD = mounted && currentTime ? checkIfInBanWindow(currentTimeStr, 'CBD') : false
+  const isCurrentlyBannedOutside = mounted && currentTime ? checkIfInBanWindow(currentTimeStr, 'OUTSIDE_CBD') : false
 
   const upcomingDeliveries = orders
     .filter((o) => {
@@ -94,7 +100,7 @@ export default function LogisticsDashboard() {
       try {
         const scheduled = new Date(`${o.scheduledDate}T${o.scheduledTime}`)
         if (isNaN(scheduled.getTime())) return false
-        return scheduled >= currentTime
+        return mounted && currentTime ? scheduled >= currentTime : true
       } catch {
         return false
       }
@@ -139,7 +145,7 @@ export default function LogisticsDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              Current Time: {currentTime.toLocaleTimeString()}
+              Current Time: {mounted && currentTime ? currentTime.toLocaleTimeString() : '--:--:--'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -302,7 +308,7 @@ export default function LogisticsDashboard() {
                         )}
                       </div>
                       <span className="text-sm text-muted-foreground">
-                        {scheduled.toLocaleString()}
+                        {formatDateTime(scheduled)}
                       </span>
                     </div>
                     <div className="grid md:grid-cols-3 gap-2 text-sm">

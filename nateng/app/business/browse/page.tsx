@@ -26,6 +26,7 @@ interface Listing {
       id: number
       name: string
       email: string
+      minimumOrderKg?: number | null
     }
   }
   seller: {
@@ -33,6 +34,7 @@ interface Listing {
     name: string
     role: string
     email: string
+    minimumOrderKg?: number | null
   }
 }
 
@@ -68,14 +70,27 @@ export default function BusinessBrowsePage() {
   const handleAddToOrder = () => {
     if (selectedListing && orderQuantity) {
       const qty = Number(orderQuantity)
-      if (qty > 0 && qty <= selectedListing.quantity) {
-        setCart([...cart, { listing: selectedListing, quantity: qty }])
-        setSelectedListing(null)
-        setOrderQuantity("")
-        toast.success("Added to order")
-      } else {
-        toast.error(`Quantity must be between 1 and ${selectedListing.quantity}kg`)
+      const minOrder = selectedListing.seller.role === 'farmer' 
+        ? (selectedListing.seller.minimumOrderKg || selectedListing.product.farmer?.minimumOrderKg || 50)
+        : 1
+      
+      if (qty < minOrder) {
+        toast.error(`Minimum order is ${minOrder}kg for this ${selectedListing.seller.role === 'farmer' ? 'farmer' : 'seller'}`)
+        return
       }
+      if (qty > selectedListing.quantity) {
+        toast.error(`Only ${selectedListing.quantity}kg available`)
+        return
+      }
+      if (qty <= 0) {
+        toast.error("Quantity must be greater than 0")
+        return
+      }
+      
+      setCart([...cart, { listing: selectedListing, quantity: qty }])
+      setSelectedListing(null)
+      setOrderQuantity("")
+      toast.success("Added to order")
     }
   }
 
@@ -238,17 +253,30 @@ export default function BusinessBrowsePage() {
                   </div>
                 </div>
 
-                <Button
-                  className="w-full bg-business hover:bg-business-light text-white gap-2"
-                  onClick={() => {
-                    setSelectedListing(listing)
-                    setOrderQuantity("1")
-                  }}
-                  disabled={!listing.available || listing.quantity === 0}
-                >
-                  <Package className="w-5 h-5" />
-                  Place Wholesale Order
-                </Button>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Min order:</span>
+                    <span className="font-medium text-business">
+                      {listing.seller.role === 'farmer' 
+                        ? `${listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50}kg`
+                        : '1kg'}
+                    </span>
+                  </div>
+                  <Button
+                    className="w-full bg-business hover:bg-business-light text-white gap-2"
+                    onClick={() => {
+                      setSelectedListing(listing)
+                      const minOrder = listing.seller.role === 'farmer' 
+                        ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50)
+                        : 1
+                      setOrderQuantity(minOrder.toString())
+                    }}
+                    disabled={!listing.available || listing.quantity === 0}
+                  >
+                    <Package className="w-5 h-5" />
+                    Place Wholesale Order
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
@@ -289,18 +317,47 @@ export default function BusinessBrowsePage() {
                 <Input
                   id="quantity"
                   type="number"
-                  min={1}
+                  min={selectedListing.seller.role === 'farmer' 
+                    ? (selectedListing.seller.minimumOrderKg || selectedListing.product.farmer?.minimumOrderKg || 50)
+                    : 1}
                   max={selectedListing.quantity}
+                  step="1"
                   value={orderQuantity}
-                  onChange={(e) => setOrderQuantity(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    // Allow typing any number, validation happens on blur/submit
+                    setOrderQuantity(val)
+                  }}
+                  onBlur={(e) => {
+                    const val = parseFloat(e.target.value)
+                    const minOrder = selectedListing.seller.role === 'farmer' 
+                      ? (selectedListing.seller.minimumOrderKg || selectedListing.product.farmer?.minimumOrderKg || 50)
+                      : 1
+                    if (isNaN(val) || val < minOrder) {
+                      setOrderQuantity(minOrder.toString())
+                      toast.error(`Minimum order is ${minOrder}kg`)
+                    } else if (val > selectedListing.quantity) {
+                      setOrderQuantity(selectedListing.quantity.toString())
+                      toast.error(`Only ${selectedListing.quantity}kg available`)
+                    }
+                  }}
                   placeholder="Enter quantity"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Available: {selectedListing.quantity}kg
-                </p>
+                <div className="flex items-center justify-between text-xs">
+                  <p className="text-muted-foreground">
+                    Available: {selectedListing.quantity}kg
+                  </p>
+                  <p className="font-medium text-business">
+                    Min: {selectedListing.seller.role === 'farmer' 
+                      ? `${selectedListing.seller.minimumOrderKg || selectedListing.product.farmer?.minimumOrderKg || 50}kg`
+                      : '1kg'}
+                  </p>
+                </div>
               </div>
 
-              {orderQuantity && Number(orderQuantity) > 0 && Number(orderQuantity) <= selectedListing.quantity && (
+              {orderQuantity && !isNaN(Number(orderQuantity)) && Number(orderQuantity) >= (selectedListing.seller.role === 'farmer' 
+                ? (selectedListing.seller.minimumOrderKg || selectedListing.product.farmer?.minimumOrderKg || 50)
+                : 1) && Number(orderQuantity) <= selectedListing.quantity && (
                 <div className="bg-muted p-4 rounded-lg">
                   <div className="flex justify-between text-sm mb-2">
                     <span>Subtotal</span>
@@ -322,7 +379,14 @@ export default function BusinessBrowsePage() {
                 <Button
                   className="flex-1 bg-business hover:bg-business-light"
                   onClick={handleAddToOrder}
-                  disabled={!orderQuantity || Number(orderQuantity) <= 0 || Number(orderQuantity) > selectedListing.quantity}
+                  disabled={
+                    !orderQuantity || 
+                    isNaN(Number(orderQuantity)) || 
+                    Number(orderQuantity) < (selectedListing.seller.role === 'farmer' 
+                      ? (selectedListing.seller.minimumOrderKg || selectedListing.product.farmer?.minimumOrderKg || 50)
+                      : 1) || 
+                    Number(orderQuantity) > selectedListing.quantity
+                  }
                 >
                   Add to Order
                 </Button>

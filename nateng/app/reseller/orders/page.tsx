@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { getCurrentUser, type User } from "@/lib/auth"
 import type { Order } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
+import { formatDate } from "@/lib/date-utils"
 import { Package, Clock, CheckCircle, Truck, XCircle, Loader2 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -74,7 +75,7 @@ export default function ResellerOrdersPage() {
                           {totalQuantity}kg from {order.seller.name}
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Order #{order.id} - {new Date(order.createdAt).toLocaleDateString()}
+                          Order #{order.id} - {formatDate(order.createdAt)}
                         </p>
                       </div>
                     </div>

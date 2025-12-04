@@ -32,12 +32,14 @@ interface Listing {
       id: number
       name: string
       email: string
+      minimumOrderKg?: number | null
     }
   }
   seller: {
     id: number
     name: string
     role: string
+    minimumOrderKg?: number | null
   }
 }
 
@@ -59,6 +61,22 @@ export default function ResellerWholesalePage() {
     setUser(getCurrentUser())
   }, [])
 
+  // Initialize quantities with minimum order for farmers
+  useEffect(() => {
+    if (listings) {
+      const initialQuantities: Record<number, number> = {}
+      listings.forEach((listing) => {
+        if (listing.seller.role === 'farmer') {
+          const minOrder = listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50
+          initialQuantities[listing.id] = minOrder
+        } else {
+          initialQuantities[listing.id] = 1
+        }
+      })
+      setQuantities(initialQuantities)
+    }
+  }, [listings])
+
   const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
 
   // Fetch available listings from farmers
@@ -72,8 +90,16 @@ export default function ResellerWholesalePage() {
 
   const addToCart = (listing: Listing, quantity?: number) => {
     const qty = quantity || quantities[listing.id] || 1
+    const minOrder = listing.seller.role === 'farmer' 
+      ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50)
+      : 1
+    
     if (qty <= 0) {
       toast.error("Quantity must be at least 1kg")
+      return
+    }
+    if (listing.seller.role === 'farmer' && qty < minOrder) {
+      toast.error(`Minimum order is ${minOrder}kg for this farmer`)
       return
     }
     if (qty > listing.quantity) {
@@ -108,6 +134,15 @@ export default function ResellerWholesalePage() {
     setCart((prev) => {
       const item = prev.find((item) => item.listing.id === listingId)
       if (!item) return prev
+      
+      const minOrder = item.listing.seller.role === 'farmer' 
+        ? (item.listing.seller.minimumOrderKg || item.listing.product.farmer?.minimumOrderKg || 50)
+        : 1
+      
+      if (item.listing.seller.role === 'farmer' && newQuantity < minOrder) {
+        toast.error(`Minimum order is ${minOrder}kg for this farmer`)
+        return prev
+      }
       if (newQuantity > item.listing.quantity) {
         toast.error(`Only ${item.listing.quantity}kg available`)
         return prev
@@ -285,7 +320,9 @@ export default function ResellerWholesalePage() {
                     <span>{listing.quantity}kg available</span>
                   </div>
                   <span className="text-teal-600 font-medium">
-                    Min: 1kg
+                    Min: {listing.seller.role === 'farmer' 
+                      ? `${listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50}kg`
+                      : '1kg'}
                   </span>
                 </div>
 
@@ -296,27 +333,50 @@ export default function ResellerWholesalePage() {
                       size="icon"
                       className="h-9 w-9"
                       onClick={() => {
-                        const currentQty = quantities[listing.id] || 1
-                        if (currentQty > 1) {
+                        const currentQty = quantities[listing.id] || (listing.seller.role === 'farmer' ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50) : 1)
+                        const minOrder = listing.seller.role === 'farmer' 
+                          ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50)
+                          : 1
+                        if (currentQty > minOrder) {
                           setQuantities((prev) => ({ ...prev, [listing.id]: currentQty - 1 }))
                         }
                       }}
-                      disabled={!listing.available || listing.quantity === 0 || (quantities[listing.id] || 1) <= 1}
+                      disabled={!listing.available || listing.quantity === 0 || (quantities[listing.id] || (listing.seller.role === 'farmer' ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50) : 1)) <= (listing.seller.role === 'farmer' ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50) : 1)}
                     >
                       <Minus className="w-4 h-4" />
                     </Button>
                     <Input
                       type="number"
-                      min="1"
+                      min={listing.seller.role === 'farmer' ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50) : 1}
                       max={listing.quantity}
-                      value={quantities[listing.id] || 1}
+                      step="1"
+                      value={quantities[listing.id] || (listing.seller.role === 'farmer' ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50) : 1)}
                       onChange={(e) => {
                         const val = parseFloat(e.target.value)
-                        if (!isNaN(val) && val >= 1 && val <= listing.quantity) {
+                        const minOrder = listing.seller.role === 'farmer' 
+                          ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50)
+                          : 1
+                        if (!isNaN(val) && val >= minOrder && val <= listing.quantity) {
+                          setQuantities((prev) => ({ ...prev, [listing.id]: val }))
+                        } else if (!isNaN(val) && val < minOrder) {
+                          // Allow typing but show error
                           setQuantities((prev) => ({ ...prev, [listing.id]: val }))
                         }
                       }}
-                      className="w-16 h-9 text-center border-0 focus-visible:ring-0"
+                      onBlur={(e) => {
+                        const val = parseFloat(e.target.value)
+                        const minOrder = listing.seller.role === 'farmer' 
+                          ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50)
+                          : 1
+                        if (isNaN(val) || val < minOrder) {
+                          setQuantities((prev) => ({ ...prev, [listing.id]: minOrder }))
+                          toast.error(`Minimum order is ${minOrder}kg`)
+                        } else if (val > listing.quantity) {
+                          setQuantities((prev) => ({ ...prev, [listing.id]: listing.quantity }))
+                          toast.error(`Only ${listing.quantity}kg available`)
+                        }
+                      }}
+                      className="w-20 h-9 text-center border-0 focus-visible:ring-2 focus-visible:ring-teal-500"
                       disabled={!listing.available || listing.quantity === 0}
                     />
                     <Button
@@ -324,12 +384,12 @@ export default function ResellerWholesalePage() {
                       size="icon"
                       className="h-9 w-9"
                       onClick={() => {
-                        const currentQty = quantities[listing.id] || 1
+                        const currentQty = quantities[listing.id] || (listing.seller.role === 'farmer' ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50) : 1)
                         if (currentQty < listing.quantity) {
                           setQuantities((prev) => ({ ...prev, [listing.id]: currentQty + 1 }))
                         }
                       }}
-                      disabled={!listing.available || listing.quantity === 0 || (quantities[listing.id] || 1) >= listing.quantity}
+                      disabled={!listing.available || listing.quantity === 0 || (quantities[listing.id] || (listing.seller.role === 'farmer' ? (listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50) : 1)) >= listing.quantity}
                     >
                       <Plus className="w-4 h-4" />
                     </Button>

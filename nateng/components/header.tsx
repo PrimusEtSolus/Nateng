@@ -4,15 +4,21 @@ import Link from "next/link"
 import { Logo } from "./logo"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { getCurrentUser, logout } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import { NotificationBell } from "./notifications"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [user, setUser] = useState(getCurrentUser())
+  const [user, setUser] = useState<ReturnType<typeof getCurrentUser> | null>(null)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setMounted(true)
+    setUser(getCurrentUser())
+  }, [])
 
   const handleLogout = () => {
     logout()
@@ -43,7 +49,9 @@ export function Header() {
 
           {/* Auth Buttons / User Menu */}
           <div className="hidden md:flex items-center gap-4">
-            {user ? (
+            {!mounted ? (
+              <div className="w-32 h-10 bg-white/20 animate-pulse rounded" />
+            ) : user ? (
               <>
                 <NotificationBell />
                 <div className="flex items-center gap-2">

@@ -49,8 +49,20 @@ export async function POST(req: Request) {
       });
 
       for (const it of items) {
-        const listing = await tx.listing.findUnique({ where: { id: Number(it.listingId) } });
+        const listing = await tx.listing.findUnique({ 
+          where: { id: Number(it.listingId) },
+          include: { seller: { select: { role: true, minimumOrderKg: true } }, product: { include: { farmer: { select: { minimumOrderKg: true } } } } }
+        });
         if (!listing) throw new Error(`listing ${it.listingId} not found`);
+        
+        // Check minimum order requirement for farmers
+        if (listing.seller.role === 'farmer') {
+          const minOrder = listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50;
+          if (Number(it.quantity) < minOrder) {
+            throw new Error(`minimum order requirement not met for listing ${it.listingId}. Minimum: ${minOrder}kg, Requested: ${it.quantity}kg`);
+          }
+        }
+        
         if (listing.quantity < Number(it.quantity)) {
           throw new Error(`insufficient quantity for listing ${it.listingId}. Available: ${listing.quantity}, Requested: ${it.quantity}`);
         }

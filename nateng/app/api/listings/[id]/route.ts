@@ -7,8 +7,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const listing = await prisma.listing.findUnique({
       where: { id: Number(id) },
       include: {
-        product: { include: { farmer: { select: { id: true, name: true, email: true } } } },
-        seller: { select: { id: true, name: true, role: true, email: true } },
+        product: { include: { farmer: { select: { id: true, name: true, email: true, minimumOrderKg: true } } } },
+        seller: { select: { id: true, name: true, role: true, email: true, minimumOrderKg: true } },
       },
     });
 

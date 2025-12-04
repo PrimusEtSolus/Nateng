@@ -29,10 +29,16 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const user = getCurrentUser()
+  const [user, setUser] = useState<ReturnType<typeof getCurrentUser> | null>(null)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    if (!user) return
+    setMounted(true)
+    setUser(getCurrentUser())
+  }, [])
+
+  useEffect(() => {
+    if (!user || !mounted) return
 
     const fetchNotifications = async () => {
       try {
@@ -79,7 +85,7 @@ export function NotificationBell() {
     }
   }
 
-  if (!user) return null
+  if (!mounted || !user) return null
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -135,9 +141,9 @@ export function NotificationBell() {
                         {notification.message}
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
-                        {formatDistanceToNow(new Date(notification.createdAt), {
+                        {mounted ? formatDistanceToNow(new Date(notification.createdAt), {
                           addSuffix: true,
-                        })}
+                        }) : 'Just now'}
                       </p>
                       {notification.link && (
                         <Link
