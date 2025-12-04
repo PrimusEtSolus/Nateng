@@ -179,7 +179,7 @@ export default function BusinessOrdersPage() {
                   </div>
                 </div>
 
-                {hasSchedule && (
+                {hasSchedule && order.status !== "DELIVERED" && (
                   <div className="mb-3 rounded-xl border border-business/10 bg-business/5 px-4 py-3 text-xs text-business space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">

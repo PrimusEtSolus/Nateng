@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body 
         className={`${nunitoSans.className} ${sourceSerif.variable} font-sans antialiased`}
         suppressHydrationWarning

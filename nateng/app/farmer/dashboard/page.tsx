@@ -171,10 +171,20 @@ export default function FarmerDashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat) => (
-          <div
+          <Link
             key={stat.label}
-            className="bg-white rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-all duration-200 hover:scale-[1.02]"
+            href={
+              stat.label === "Total Revenue" || stat.label === "Pending Orders"
+                ? "/farmer/orders"
+                : stat.label === "Active Crops"
+                ? "/farmer/crops"
+                : "/farmer/analytics"
+            }
+            className="group"
           >
+            <div
+              className="bg-white rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-all duration-200 hover:scale-[1.02] cursor-pointer focus-visible:ring-2 focus-visible:ring-farmer focus-visible:ring-offset-2"
+            >
             <div className="flex items-start justify-between">
               <div className={`p-3 rounded-xl ${stat.color}`}>
                 <stat.icon className="w-6 h-6 text-white" />
@@ -191,6 +201,7 @@ export default function FarmerDashboardPage() {
               <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
             </div>
           </div>
+          </Link>
         ))}
       </div>
 

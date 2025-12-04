@@ -161,7 +161,7 @@ export default function FarmerOrdersPage() {
           </div>
         </div>
 
-        {hasSchedule && (
+        {hasSchedule && order.status !== "DELIVERED" && (
           <div className="mb-3 rounded-xl border border-emerald-100 bg-emerald-50/80 p-3 text-xs text-emerald-900 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ export default function FarmerOrdersPage() {
               )}
             </div>
 
-            {isBusinessBuyer && (
+            {isBusinessBuyer && order.status !== "DELIVERED" && (
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button
                   size="sm"

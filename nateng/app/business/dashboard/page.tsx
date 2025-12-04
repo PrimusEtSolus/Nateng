@@ -102,10 +102,20 @@ export default function BusinessDashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat) => (
-          <div
+          <Link
             key={stat.label}
-            className="bg-white rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow"
+            href={
+              stat.label === "Total Spent" || stat.label === "Active Orders"
+                ? "/business/orders"
+                : stat.label === "Products Sourced"
+                ? "/business/browse"
+                : "/business/settings"
+            }
+            className="group"
           >
+            <div
+              className="bg-white rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-all duration-200 hover:scale-[1.02] cursor-pointer focus-visible:ring-2 focus-visible:ring-business focus-visible:ring-offset-2"
+            >
             <div className="flex items-start justify-between">
               <div className={`p-3 rounded-xl ${stat.color}`}>
                 <stat.icon className="w-6 h-6 text-white" />
@@ -120,6 +130,7 @@ export default function BusinessDashboardPage() {
               <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
             </div>
           </div>
+          </Link>
         ))}
       </div>
 

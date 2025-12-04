@@ -4,14 +4,19 @@ import prisma from '@/lib/prisma';
 export async function GET(req: Request) {
   try {
     const params = new URL(req.url).searchParams;
-    const userId = params.get('userId');
+    const userIdParam = params.get('userId');
     const unreadOnly = params.get('unreadOnly') === 'true';
 
-    if (!userId) {
+    if (!userIdParam) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const where: any = { userId: parseInt(userId) };
+    const userId = Number(userIdParam);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: 'User ID must be a valid number' }, { status: 400 });
+    }
+
+    const where: any = { userId };
     if (unreadOnly) {
       where.read = false;
     }
