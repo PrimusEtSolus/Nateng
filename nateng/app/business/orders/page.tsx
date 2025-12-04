@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import { ordersAPI } from "@/lib/api-client"
 import type { Order } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
@@ -16,7 +17,8 @@ export default function BusinessOrdersPage() {
 
   // Fetch orders for the logged-in business user
   const { data: orders = [], loading: ordersLoading, error: ordersError } = useFetch<Order[]>(
-    user ? () => ordersAPI.getAll({ buyerId: user.id }) : null
+    user ? `/api/orders?buyerId=${user.id}` : '',
+    { skip: !user }
   )
 
   useEffect(() => {
@@ -29,23 +31,24 @@ export default function BusinessOrdersPage() {
   }, [router])
 
   // Filter orders by status
+  const ordersData = orders || []
   const filteredOrders = activeTab === "all" 
-    ? orders 
-    : orders.filter((o) => {
+    ? ordersData 
+    : ordersData.filter((o) => {
         const status = o.status?.toUpperCase()
         if (activeTab === "pending") return status === "PENDING"
         if (activeTab === "confirmed") return status === "CONFIRMED"
         if (activeTab === "shipped") return status === "SHIPPED"
-        if (activeTab === "delivered") return status === "DELIVERED" || status === "COMPLETED"
+        if (activeTab === "delivered") return status === "DELIVERED"
         return true
       })
 
   const tabs = [
-    { key: "all", label: "All Orders", count: orders.length },
-    { key: "pending", label: "Pending", count: orders.filter((o) => o.status?.toUpperCase() === "PENDING").length },
-    { key: "confirmed", label: "Confirmed", count: orders.filter((o) => o.status?.toUpperCase() === "CONFIRMED").length },
-    { key: "shipped", label: "Shipped", count: orders.filter((o) => o.status?.toUpperCase() === "SHIPPED").length },
-    { key: "delivered", label: "Delivered", count: orders.filter((o) => o.status?.toUpperCase() === "DELIVERED" || o.status?.toUpperCase() === "COMPLETED").length },
+    { key: "all", label: "All Orders", count: ordersData.length },
+    { key: "pending", label: "Pending", count: ordersData.filter((o) => o.status?.toUpperCase() === "PENDING").length },
+    { key: "confirmed", label: "Confirmed", count: ordersData.filter((o) => o.status?.toUpperCase() === "CONFIRMED").length },
+    { key: "shipped", label: "Shipped", count: ordersData.filter((o) => o.status?.toUpperCase() === "SHIPPED").length },
+    { key: "delivered", label: "Delivered", count: ordersData.filter((o) => o.status?.toUpperCase() === "DELIVERED").length },
   ]
 
   const getStatusIcon = (status: string) => {

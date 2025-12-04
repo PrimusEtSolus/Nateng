@@ -1,14 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import type { Order } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { formatDate } from "@/lib/date-utils"
 import { Package, Clock, CheckCircle, Truck, XCircle, Loader2 } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
-
-import { Clock, CheckCircle, Truck, XCircle } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
 export default function ResellerOrdersPage() {
@@ -69,7 +67,7 @@ export default function ResellerOrdersPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-lg text-foreground">
-                          {order.items.map((item) => item.listing.product.name).join(", ")}
+                          {order.items.map((item) => item.listing?.product?.name || "Product").join(", ")}
                         </h3>
                         <p className="text-muted-foreground">
                           {totalQuantity}kg from {order.seller.name}
@@ -96,7 +94,7 @@ export default function ResellerOrdersPage() {
                     <div className="space-y-1">
                       {order.items.map((item) => (
                         <div key={item.id} className="flex justify-between text-sm">
-                          <span>{item.listing.product.name} x {item.quantity}kg</span>
+                          <span>{item.listing?.product?.name || "Product"} x {item.quantity}kg</span>
                           <span className="font-medium">₱{(item.priceCents * item.quantity / 100).toLocaleString()}</span>
                         </div>
                       ))}

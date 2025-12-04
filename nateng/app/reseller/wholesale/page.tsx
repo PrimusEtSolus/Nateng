@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { ordersAPI } from "@/lib/api-client"
 import { Search, ShoppingCart, MapPin, Package, Loader2, X, Plus, Minus, Trash2 } from "lucide-react"
@@ -61,13 +62,18 @@ export default function ResellerWholesalePage() {
     setUser(getCurrentUser())
   }, [])
 
-  // Initialize quantities with minimum order for farmers
+  const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
+
+  // Fetch available listings from farmers
+  const { data: listings, loading: listingsLoading } = useFetch<Listing[]>('/api/listings?available=true')
+
+  // Initialize quantities when listings change
   useEffect(() => {
     if (listings) {
       const initialQuantities: Record<number, number> = {}
       listings.forEach((listing) => {
         if (listing.seller.role === 'farmer') {
-          const minOrder = listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50
+          const minOrder = 50
           initialQuantities[listing.id] = minOrder
         } else {
           initialQuantities[listing.id] = 1
@@ -76,11 +82,6 @@ export default function ResellerWholesalePage() {
       setQuantities(initialQuantities)
     }
   }, [listings])
-
-  const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
-
-  // Fetch available listings from farmers
-  const { data: listings, loading: listingsLoading } = useFetch<Listing[]>('/api/listings?available=true')
 
   const filteredListings = listings?.filter((listing) => {
     const matchesSearch = listing.product.name.toLowerCase().includes(searchQuery.toLowerCase())

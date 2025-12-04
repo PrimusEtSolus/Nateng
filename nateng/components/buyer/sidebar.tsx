@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 import { logout, getCurrentUser } from "@/lib/auth"
 import { useCart } from "@/lib/cart-context"
 import { useEffect, useState } from "react"
-import type { User } from "@/lib/mock-data"
+import type { User } from "@/lib/types"
 
 const navItems = [
   { name: "Shop", href: "/buyer/dashboard", icon: ShoppingBag },

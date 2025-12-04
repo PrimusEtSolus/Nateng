@@ -1,12 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { ordersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Package, Check, X, Truck, Clock, Building2, User, Loader2, Calendar } from "lucide-react"
+import { Package, Check, X, Truck, Clock, Building2, UserIcon, Loader2, Calendar } from "lucide-react"
 import { toast } from "sonner"
 import { DeliveryScheduler } from "@/components/delivery-scheduler"
 import { MessageDialog } from "@/components/message-dialog"
@@ -98,7 +99,7 @@ export default function FarmerOrdersPage() {
             {order.buyer.role === "business" ? (
               <Building2 className="w-4 h-4 text-business" />
             ) : (
-              <User className="w-4 h-4 text-buyer" />
+              <UserIcon className="w-4 h-4 text-buyer" />
             )}
             <span className="font-medium text-sm">{order.buyer.name}</span>
             <MessageDialog

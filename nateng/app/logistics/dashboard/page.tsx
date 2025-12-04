@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Clock, AlertTriangle, CheckCircle2, Truck, MapPin, ArrowLeft } from "lucide-react"
-import { getCurrentUser, getRedirectPath, type User } from "@/lib/auth"
+import { getCurrentUser, getRedirectPath } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import type { Order } from "@/lib/types"
 import {
   getAvailableWindowTimes,
@@ -286,9 +287,9 @@ export default function LogisticsDashboard() {
                   return null
                 }
 
-                const isBanned = order.truckWeightKg >= 4500 && 
+                const isBanned = (order.truckWeightKg || 0) >= 4500 && 
                   !order.isExempt &&
-                  checkIfInBanWindow(order.scheduledTime, order.isCBD ? 'CBD' : 'OUTSIDE_CBD')
+                  checkIfInBanWindow(order.scheduledTime || '', order.isCBD ? 'CBD' : 'OUTSIDE_CBD')
                 
                 return (
                   <div
@@ -308,7 +309,7 @@ export default function LogisticsDashboard() {
                         )}
                       </div>
                       <span className="text-sm text-muted-foreground">
-                        {formatDateTime(scheduled)}
+                        {scheduled.toLocaleString()}
                       </span>
                     </div>
                     <div className="grid md:grid-cols-3 gap-2 text-sm">
@@ -318,7 +319,7 @@ export default function LogisticsDashboard() {
                       </div>
                       <div>
                         <span className="text-muted-foreground">Truck Weight: </span>
-                        {order.truckWeightKg} kg
+                        {order.truckWeightKg || 0} kg
                       </div>
                       {order.route && (
                         <div>
@@ -338,7 +339,7 @@ export default function LogisticsDashboard() {
                     )}
                   </div>
                 )
-              }).filter((item): item is JSX.Element => item !== null)}
+              }).filter((item): item is React.ReactElement => item !== null)}
             </div>
           )}
         </CardContent>

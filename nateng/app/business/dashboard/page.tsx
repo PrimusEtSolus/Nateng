@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import { ordersAPI, listingsAPI } from "@/lib/api-client"
 import type { Order, Listing } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
@@ -26,12 +27,13 @@ export default function BusinessDashboardPage() {
 
   // Fetch orders for the logged-in business user
   const { data: orders = [], loading: ordersLoading, error: ordersError } = useFetch<Order[]>(
-    user ? () => ordersAPI.getAll({ buyerId: user.id }) : null
+    user ? `/api/orders?buyerId=${user.id}` : '',
+    { skip: !user }
   )
 
   // Fetch available listings (for "Fresh Wholesale" section)
   const { data: listings = [], loading: listingsLoading } = useFetch<Listing[]>(
-    () => listingsAPI.getAll({ available: true })
+    '/api/listings?available=true'
   )
 
   useEffect(() => {
@@ -44,15 +46,16 @@ export default function BusinessDashboardPage() {
   }, [router])
 
   // Calculate stats from real data
-  const completedOrders = orders.filter((o) => o.status === "DELIVERED" || o.status === "COMPLETED")
-  const pendingOrders = orders.filter((o) => 
+  const ordersData = orders || []
+  const completedOrders = ordersData.filter((o) => o.status === "DELIVERED")
+  const pendingOrders = ordersData.filter((o) => 
     o.status === "PENDING" || o.status === "CONFIRMED" || o.status === "SHIPPED"
   )
   const totalSpent = completedOrders.reduce((sum, o) => sum + (o.totalCents || 0), 0) / 100
-  const totalOrders = orders.length
+  const totalOrders = ordersData.length
   
   // Get unique suppliers (sellers) from orders
-  const uniqueSuppliers = new Set(orders.map((o) => o.sellerId))
+  const uniqueSuppliers = new Set(ordersData.map((o) => o.sellerId))
   const supplierCount = uniqueSuppliers.size
 
   const stats = [
@@ -92,9 +95,7 @@ export default function BusinessDashboardPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground">Welcome, {user?.businessName || "Business"}</h1>
         <p className="text-muted-foreground mt-1">
-          {user?.businessType === "reseller"
-            ? "Manage your wholesale purchases for resale"
-            : "Source fresh produce for your business"}
+          Source fresh produce for your business
         </p>
       </div>
 
@@ -144,16 +145,13 @@ export default function BusinessDashboardPage() {
                 <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-3 animate-spin" />
                 <p className="text-muted-foreground">Loading orders...</p>
               </div>
-            ) : orders.length === 0 ? (
+            ) : (orders || []).length === 0 ? (
               <div className="p-8 text-center">
                 <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">No orders yet</p>
-                <Link href="/business/browse" className="text-business font-medium text-sm mt-2 inline-block">
-                  Browse wholesale products
-                </Link>
               </div>
             ) : (
-              orders.slice(0, 4).map((order) => {
+              (orders || []).slice(0, 4).map((order) => {
                 const firstItem = order.items?.[0]
                 const productName = firstItem?.listing?.product?.name || "Order"
                 const sellerName = order.seller?.name || "Unknown"
@@ -235,7 +233,7 @@ export default function BusinessDashboardPage() {
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Track Orders</p>
-                  <p className="text-xs text-muted-foreground">{pendingOrders} in progress</p>
+                  <p className="text-xs text-muted-foreground">{pendingOrders.length} in progress</p>
                 </div>
               </Link>
             </div>
@@ -249,7 +247,7 @@ export default function BusinessDashboardPage() {
                 <Loader2 className="w-6 h-6 text-muted-foreground mx-auto mb-2 animate-spin" />
                 <p className="text-xs text-muted-foreground">Loading products...</p>
               </div>
-            ) : listings.length === 0 ? (
+            ) : (listings || []).length === 0 ? (
               <div className="p-4 text-center">
                 <ShoppingBag className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-xs text-muted-foreground">No products available</p>
@@ -257,9 +255,9 @@ export default function BusinessDashboardPage() {
             ) : (
               <>
                 <div className="space-y-3">
-                  {listings.slice(0, 4).map((listing) => {
+                  {(listings || []).slice(0, 4).map((listing) => {
                     const product = listing.product
-                    const minOrder = listing.seller?.minimumOrderKg || listing.product?.farmer?.minimumOrderKg || 1
+                    const minOrder = 1
                     
                     return (
                       <div
@@ -276,12 +274,8 @@ export default function BusinessDashboardPage() {
                         }}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted">
-                            <img
-                              src={product?.image || "/placeholder.svg"}
-                              alt={product?.name || "Product"}
-                              className="w-full h-full object-cover"
-                            />
+                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                            <Package className="w-5 h-5 text-muted-foreground" />
                           </div>
                           <div>
                             <p className="font-medium text-sm">{product?.name || "Product"}</p>
@@ -384,20 +378,14 @@ export default function BusinessDashboardPage() {
               <DialogHeader>
                 <DialogTitle>{selectedListing.product?.name || "Product"}</DialogTitle>
                 <DialogDescription>
-                  From {selectedListing.seller?.name || "Unknown"} • Minimum order {
-                    selectedListing.seller?.minimumOrderKg || selectedListing.product?.farmer?.minimumOrderKg || 1
-                  }kg
+                  From {selectedListing.seller?.name || "Unknown"} • Minimum order 1kg
                 </DialogDescription>
               </DialogHeader>
 
               <div className="grid gap-6 sm:grid-cols-2">
-                <div className="rounded-2xl border border-border overflow-hidden">
-                  <img 
-                    src={selectedListing.product?.image || "/placeholder.svg"} 
-                    alt={selectedListing.product?.name || "Product"} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <div className="rounded-2xl border border-border overflow-hidden bg-muted flex items-center justify-center h-32">
+                    <Package className="w-12 h-12 text-muted-foreground" />
+                  </div>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Available</span>

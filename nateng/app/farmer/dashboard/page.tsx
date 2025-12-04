@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { formatDate } from "@/lib/date-utils"
 import { productsAPI, listingsAPI, ordersAPI } from "@/lib/api-client"
@@ -294,7 +295,7 @@ export default function FarmerDashboardPage() {
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Manage Orders</p>
-                  <p className="text-xs text-muted-foreground">{pendingOrders} pending</p>
+                  <p className="text-xs text-muted-foreground">{pendingOrders.length} pending</p>
                 </div>
               </Link>
             </div>

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { DollarSign, TrendingUp, ShoppingBag, Users, ArrowUpRight, Loader2 } from "lucide-react"
 

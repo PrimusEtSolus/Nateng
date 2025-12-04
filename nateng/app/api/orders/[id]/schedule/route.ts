@@ -8,10 +8,11 @@ import { validateDeliverySchedule, requiresTruckBanCompliance } from '@/lib/truc
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const orderId = Number(params.id);
+    const { id } = await params;
+    const orderId = Number(id);
     
     // Validate order ID
     if (isNaN(orderId) || orderId <= 0) {
@@ -174,10 +175,11 @@ export async function PATCH(
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const orderId = Number(params.id);
+    const { id } = await params;
+    const orderId = Number(id);
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },

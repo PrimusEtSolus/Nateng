@@ -7,7 +7,7 @@ import { LayoutDashboard, ShoppingBag, Package, Store, Settings, LogOut, Chevron
 import { cn } from "@/lib/utils"
 import { logout, getCurrentUser } from "@/lib/auth"
 import { useEffect, useState } from "react"
-import type { User } from "@/lib/mock-data"
+import type { User } from "@/lib/types"
 
 const navItems = [
   { name: "Dashboard", href: "/business/dashboard", icon: LayoutDashboard },
@@ -39,11 +39,6 @@ export function BusinessSidebar() {
         </Link>
         <div className="mt-3 flex items-center gap-2">
           <span className="px-2 py-1 bg-business-bg text-business text-xs font-medium rounded-md">Business Portal</span>
-          {user?.businessType && (
-            <span className="px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-md capitalize">
-              {user.businessType}
-            </span>
-          )}
         </div>
       </div>
 

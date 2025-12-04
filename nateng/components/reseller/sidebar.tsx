@@ -7,7 +7,7 @@ import { LayoutDashboard, ShoppingBag, Package, Store, Settings, LogOut, Chevron
 import { cn } from "@/lib/utils"
 import { logout, getCurrentUser } from "@/lib/auth"
 import { useEffect, useState } from "react"
-import type { User } from "@/lib/mock-data"
+import type { User } from "@/lib/types"
 
 const navItems = [
   { name: "Dashboard", href: "/reseller/dashboard", icon: LayoutDashboard },

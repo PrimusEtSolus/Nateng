@@ -7,7 +7,7 @@ import { LayoutDashboard, Leaf, Package, BarChart3, Settings, LogOut, ChevronRig
 import { cn } from "@/lib/utils"
 import { logout, getCurrentUser } from "@/lib/auth"
 import { useEffect, useState } from "react"
-import type { User } from "@/lib/mock-data"
+import type { User } from "@/lib/types"
 
 const navItems = [
   { name: "Dashboard", href: "/farmer/dashboard", icon: LayoutDashboard },
@@ -51,7 +51,7 @@ export function FarmerSidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-sm text-foreground truncate">{user?.name || "Farmer"}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.municipality || "Benguet"}</p>
+            <p className="text-xs text-muted-foreground truncate">Benguet</p>
           </div>
         </div>
       </div>

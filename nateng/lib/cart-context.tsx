@@ -72,7 +72,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
               : item,
           )
         }
-        return [...prev, { product, quantity }]
+        return [...prev, { 
+          product, 
+          productName: product.name,
+          sellerName: product.farmerName || "Unknown",
+          priceCents: product.pricePerKg * 100,
+          quantity 
+        }]
       }
       
       // Handle CartItem format

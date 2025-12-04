@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { productsAPI, listingsAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"

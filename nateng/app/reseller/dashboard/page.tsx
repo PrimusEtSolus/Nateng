@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { getCurrentUser, type User } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { Package, TrendingUp, ShoppingBag, DollarSign, ArrowUpRight, Store, Users, Loader2 } from "lucide-react"
 import Link from "next/link"

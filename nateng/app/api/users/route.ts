@@ -25,10 +25,10 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, role } = body;
+    const { name, email, role, password } = body;
 
-    if (!name || !email || !role) {
-      return NextResponse.json({ error: 'missing fields: name, email, role' }, { status: 400 });
+    if (!name || !email || !role || !password) {
+      return NextResponse.json({ error: 'missing fields: name, email, role, password' }, { status: 400 });
     }
 
     const validRoles = ['farmer', 'buyer', 'business', 'reseller', 'admin'];
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
     try {
       const user = await prisma.user.create({
-        data: { name, email, role },
+        data: { name, email, role, password },
       });
       return NextResponse.json(user, { status: 201 });
     } catch (err: any) {

@@ -22,7 +22,7 @@ import {
 
 interface DeliverySchedulerProps {
   orderId?: number
-  onSchedule?: (schedule: any) => void
+  onSchedule?: (schedule: any) => void | Promise<void>
   initialSchedule?: {
     scheduledDate?: string
     scheduledTime?: string
@@ -141,9 +141,6 @@ export function DeliveryScheduler({ orderId, onSchedule, initialSchedule }: Deli
 
         const result = await response.json()
         toast.success("Delivery scheduled successfully!")
-        if (onSchedule) {
-          onSchedule(result)
-        }
       }
     } catch (error: any) {
       // Error already handled with toast above
@@ -375,7 +372,7 @@ export function DeliveryScheduler({ orderId, onSchedule, initialSchedule }: Deli
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={isSubmitting || (validationResult && !validationResult.isValid && requiresCompliance && !isExempt)}
+            disabled={isSubmitting || (validationResult?.isValid === false && requiresCompliance && isExempt === false)}
             className="w-full"
           >
             {isSubmitting ? "Scheduling..." : "Schedule Delivery"}
