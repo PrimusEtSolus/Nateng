@@ -40,6 +40,9 @@ For detailed information about the solution approach and research foundation, se
 ### Installation
 
 ```bash
+# 0.nateng dir
+cd nateng
+
 # 1. Install dependencies
 npm install
 

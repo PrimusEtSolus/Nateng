@@ -35,7 +35,9 @@ export function FarmerSidebar() {
     <aside className="w-[280px] h-screen bg-white border-r border-border flex flex-col fixed left-0 top-0 shadow-sm">
       {/* Logo & Portal Label */}
       <div className="p-5 border-b border-border">
-        <Logo size="md" variant="farmer" />
+        <Link href="/farmer/dashboard" className="block">
+          <Logo size="md" variant="farmer" />
+        </Link>
         <div className="mt-3 flex items-center gap-2">
           <span className="px-2 py-1 bg-farmer-bg text-farmer text-xs font-medium rounded-md">Farmer Portal</span>
         </div>

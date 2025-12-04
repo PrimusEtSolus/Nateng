@@ -190,6 +190,10 @@ export default function ResellerWholesalePage() {
         })
       )
 
+      if (orderPromises.length === 0) {
+        throw new Error("No valid items to order")
+      }
+
       const results = await Promise.all(orderPromises)
       const orderCount = results.length
       toast.success(`${orderCount} order(s) placed successfully!`)

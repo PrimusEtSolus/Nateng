@@ -2,18 +2,82 @@
 
 import { useState, useEffect } from "react"
 import { getCurrentUser, type User } from "@/lib/auth"
+import { usersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { UserIcon, Store, Bell, Shield, Save } from "lucide-react"
+import { UserIcon, Store, Bell, Shield, Save, Loader2, Check } from "lucide-react"
+import { toast } from "sonner"
 
 export default function ResellerSettingsPage() {
   const [user, setUser] = useState<User | null>(null)
   const [activeTab, setActiveTab] = useState("profile")
+  const [saved, setSaved] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    businessName: "",
+  })
 
   useEffect(() => {
-    setUser(getCurrentUser())
+    const currentUser = getCurrentUser()
+    if (currentUser) {
+      setUser(currentUser)
+      setFormData({
+        name: currentUser.name,
+        email: currentUser.email,
+        phone: "", // Not stored in User model yet
+        address: "", // Not stored in User model yet
+        businessName: currentUser.businessName || "",
+      })
+    }
   }, [])
+
+  const handleSave = async () => {
+    if (!user) {
+      toast.error("Please log in to save settings")
+      return
+    }
+
+    // Validate required fields
+    if (!formData.name || !formData.email) {
+      toast.error("Name and email are required")
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      // Only save fields that exist in the User model (name, email)
+      const updatedUser = await usersAPI.update(user.id, {
+        name: formData.name,
+        email: formData.email,
+      })
+
+      // Update localStorage with new user data
+      if (typeof window !== "undefined") {
+        localStorage.setItem("natenghub_user", JSON.stringify(updatedUser))
+      }
+
+      setUser(updatedUser)
+      setSaved(true)
+      toast.success("Profile updated successfully!")
+      setTimeout(() => setSaved(false), 3000)
+
+      // Show info about fields that couldn't be saved
+      if (formData.phone || formData.address || formData.businessName) {
+        toast.info("Note: Phone, address, and business name are not saved yet. These fields will be available in a future update.", {
+          duration: 5000,
+        })
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save settings")
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const tabs = [
     { id: "profile", label: "Profile", icon: UserIcon },
@@ -54,24 +118,60 @@ export default function ResellerSettingsPage() {
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label>Full Name</Label>
-                  <Input defaultValue={user?.name || ""} className="h-12" />
+                  <Input 
+                    value={formData.name} 
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                    className="h-12" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Email</Label>
-                  <Input defaultValue={user?.email || ""} className="h-12" />
+                  <Input 
+                    type="email"
+                    value={formData.email} 
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
+                    className="h-12" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Phone Number</Label>
-                  <Input defaultValue={user?.phone || ""} className="h-12" />
+                  <Input 
+                    value={formData.phone} 
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+                    className="h-12" 
+                    placeholder="+63 XXX XXX XXXX"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Address</Label>
-                  <Input defaultValue={user?.address || ""} className="h-12" />
+                  <Input 
+                    value={formData.address} 
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })} 
+                    className="h-12" 
+                  />
                 </div>
               </div>
-              <Button className="bg-teal-600 hover:bg-teal-700">
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
+              <Button 
+                onClick={handleSave}
+                className="bg-teal-600 hover:bg-teal-700"
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : saved ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Saved!
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
               </Button>
             </div>
           )}
@@ -82,16 +182,42 @@ export default function ResellerSettingsPage() {
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label>Store Name</Label>
-                  <Input defaultValue={user?.businessName || ""} className="h-12" />
+                  <Input 
+                    value={formData.businessName} 
+                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })} 
+                    className="h-12" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Market/Stall Location</Label>
-                  <Input defaultValue={user?.address || ""} className="h-12" />
+                  <Input 
+                    value={formData.address} 
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })} 
+                    className="h-12" 
+                  />
                 </div>
               </div>
-              <Button className="bg-teal-600 hover:bg-teal-700">
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
+              <Button 
+                onClick={handleSave}
+                className="bg-teal-600 hover:bg-teal-700"
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : saved ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Saved!
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
               </Button>
             </div>
           )}

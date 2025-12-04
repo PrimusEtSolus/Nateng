@@ -94,6 +94,10 @@ export default function BuyerCheckoutPage() {
         })
       )
 
+      if (orderPromises.length === 0) {
+        throw new Error("No valid items to order")
+      }
+
       const orders = await Promise.all(orderPromises)
       
       // Use the first order ID for display (or show all if multiple)

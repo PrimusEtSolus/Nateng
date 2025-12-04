@@ -31,6 +31,8 @@ export default function FarmerCropsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
   const [newCrop, setNewCrop] = useState({
     name: "",
     description: "",
@@ -77,13 +79,69 @@ export default function FarmerCropsPage() {
       })
 
       toast.success("Crop and listing created successfully!")
-      setIsAddModalOpen(false)
-      setNewCrop({ name: "", description: "", priceCents: "", quantity: "" })
+      handleCloseModal()
       refetchProducts()
     } catch (error: any) {
       toast.error(error.message || "Failed to create crop")
     } finally {
       setIsCreating(false)
+    }
+  }
+
+  const handleEditCrop = (product: Product) => {
+    // Get the first listing for this product (or use the first available one)
+    const listing = product.listings[0]
+    setEditingProduct(product)
+    setNewCrop({
+      name: product.name,
+      description: product.description || "",
+      priceCents: listing ? (listing.priceCents / 100).toString() : "",
+      quantity: listing ? listing.quantity.toString() : "",
+    })
+    setIsAddModalOpen(true)
+  }
+
+  const handleUpdateCrop = async () => {
+    if (!user || !editingProduct || !newCrop.name || !newCrop.priceCents || !newCrop.quantity) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    setIsUpdating(true)
+    try {
+      // Step 1: Update product (name, description)
+      await productsAPI.update(editingProduct.id, {
+        name: newCrop.name,
+        description: newCrop.description || null,
+      })
+
+      // Step 2: Update or create listing (price, quantity)
+      // If there are multiple listings, we update the first one
+      // If no listings exist, create a new one
+      if (editingProduct.listings.length > 0) {
+        const listingId = editingProduct.listings[0].id
+        await listingsAPI.update(listingId, {
+          priceCents: Math.round(Number(newCrop.priceCents) * 100), // Convert to cents
+          quantity: Number(newCrop.quantity),
+        })
+      } else {
+        // Create a new listing if none exists
+        await listingsAPI.create({
+          productId: editingProduct.id,
+          sellerId: user.id,
+          priceCents: Math.round(Number(newCrop.priceCents) * 100), // Convert to cents
+          quantity: Number(newCrop.quantity),
+          available: true,
+        })
+      }
+
+      toast.success("Crop updated successfully!")
+      handleCloseModal()
+      refetchProducts()
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update crop")
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -99,6 +157,12 @@ export default function FarmerCropsPage() {
     } catch (error: any) {
       toast.error(error.message || "Failed to delete product")
     }
+  }
+
+  const handleCloseModal = () => {
+    setIsAddModalOpen(false)
+    setEditingProduct(null)
+    setNewCrop({ name: "", description: "", priceCents: "", quantity: "" })
   }
 
   return (
@@ -118,7 +182,7 @@ export default function FarmerCropsPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Add New Crop</DialogTitle>
+              <DialogTitle>{editingProduct ? "Edit Crop" : "Add New Crop"}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
@@ -166,17 +230,21 @@ export default function FarmerCropsPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setIsAddModalOpen(false)} disabled={isCreating}>
+              <Button variant="outline" onClick={handleCloseModal} disabled={isCreating || isUpdating}>
                 Cancel
               </Button>
-              <Button onClick={handleAddCrop} className="bg-farmer hover:bg-farmer-light" disabled={isCreating}>
-                {isCreating ? (
+              <Button 
+                onClick={editingProduct ? handleUpdateCrop : handleAddCrop} 
+                className="bg-farmer hover:bg-farmer-light" 
+                disabled={isCreating || isUpdating}
+              >
+                {(isCreating || isUpdating) ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating...
+                    {editingProduct ? "Updating..." : "Creating..."}
                   </>
                 ) : (
-                  "Add Crop"
+                  editingProduct ? "Update Crop" : "Add Crop"
                 )}
               </Button>
             </div>
@@ -242,7 +310,10 @@ export default function FarmerCropsPage() {
                         <p className="text-sm text-muted-foreground line-clamp-2">{product.description || "No description"}</p>
                       </div>
                       <div className="flex gap-1">
-                        <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+                        <button 
+                          onClick={() => handleEditCrop(product)}
+                          className="p-2 hover:bg-muted rounded-lg transition-colors"
+                        >
                           <Edit2 className="w-4 h-4 text-muted-foreground" />
                         </button>
                         <button

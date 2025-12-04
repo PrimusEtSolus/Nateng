@@ -36,7 +36,9 @@ export function BuyerSidebar() {
     <aside className="w-[280px] h-screen bg-white border-r border-border flex flex-col fixed left-0 top-0 shadow-sm">
       {/* Logo & Portal Label */}
       <div className="p-5 border-b border-border">
-        <Logo size="md" variant="buyer" />
+        <Link href="/buyer/dashboard" className="block">
+          <Logo size="md" variant="buyer" />
+        </Link>
         <div className="mt-3 flex items-center gap-2">
           <span className="px-2 py-1 bg-buyer-bg text-buyer text-xs font-medium rounded-md">Buyer Portal</span>
         </div>

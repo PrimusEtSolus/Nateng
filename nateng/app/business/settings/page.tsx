@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { getCurrentUser, type User } from "@/lib/auth"
-import { Building2, MapPin, Lock, Bell, Shield, Banknote, FileText, Check, Trash2, Users } from "lucide-react"
+import { usersAPI } from "@/lib/api-client"
+import { Building2, MapPin, Lock, Bell, Shield, Banknote, FileText, Check, Trash2, Users, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 export default function BusinessSettingsPage() {
   const [user, setUser] = useState<User | null>(null)
@@ -29,17 +31,58 @@ export default function BusinessSettingsPage() {
         businessName: currentUser.businessName || "",
         ownerName: currentUser.name,
         email: currentUser.email,
-        phone: currentUser.phone || "",
-        address: currentUser.address || "",
-        businessType: currentUser.businessType || "reseller",
+        phone: "", // Not stored in User model yet
+        address: "", // Not stored in User model yet
+        businessType: "", // Not stored in User model yet
         taxId: "",
       })
     }
   }, [])
 
-  const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (!user) {
+      toast.error("Please log in to save settings")
+      return
+    }
+
+    // Validate required fields
+    if (!formData.ownerName || !formData.email) {
+      toast.error("Owner name and email are required")
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      // Only save fields that exist in the User model (name, email)
+      // Note: businessName, phone, address, businessType are not in the User model yet
+      const updatedUser = await usersAPI.update(user.id, {
+        name: formData.ownerName,
+        email: formData.email,
+      })
+
+      // Update localStorage with new user data
+      if (typeof window !== "undefined") {
+        localStorage.setItem("natenghub_user", JSON.stringify(updatedUser))
+      }
+
+      setUser(updatedUser)
+      setSaved(true)
+      toast.success("Profile updated successfully!")
+      setTimeout(() => setSaved(false), 3000)
+
+      // Show info about fields that couldn't be saved
+      if (formData.businessName || formData.phone || formData.address || formData.businessType) {
+        toast.info("Note: Business name, phone, address, and business type are not saved yet. These fields will be available in a future update.", {
+          duration: 5000,
+        })
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save settings")
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const tabs = [
@@ -382,8 +425,17 @@ export default function BusinessSettingsPage() {
 
           {/* Save Button */}
           <div className="flex justify-end mt-6">
-            <Button onClick={handleSave} className="bg-business hover:bg-business/90 px-8 h-12">
-              {saved ? (
+            <Button 
+              onClick={handleSave} 
+              className="bg-business hover:bg-business/90 px-8 h-12"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : saved ? (
                 <>
                   <Check className="w-4 h-4 mr-2" />
                   Saved!

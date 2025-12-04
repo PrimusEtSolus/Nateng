@@ -7,6 +7,8 @@ import { listingsAPI } from "@/lib/api-client"
 import { Search, Plus, Edit2, Trash2, Package, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
 
 interface Listing {
@@ -36,6 +38,14 @@ interface Listing {
 export default function ResellerInventoryPage() {
   const [user, setUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [editingListing, setEditingListing] = useState<Listing | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [editForm, setEditForm] = useState({
+    priceCents: "",
+    quantity: "",
+    available: true,
+  })
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -50,6 +60,41 @@ export default function ResellerInventoryPage() {
   const filteredListings = listings?.filter((listing) => 
     listing.product.name.toLowerCase().includes(searchQuery.toLowerCase())
   ) || []
+
+  const handleEditListing = (listing: Listing) => {
+    setEditingListing(listing)
+    setEditForm({
+      priceCents: (listing.priceCents / 100).toString(),
+      quantity: listing.quantity.toString(),
+      available: listing.available,
+    })
+    setIsEditModalOpen(true)
+  }
+
+  const handleUpdateListing = async () => {
+    if (!editingListing || !editForm.priceCents || !editForm.quantity) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    setIsUpdating(true)
+    try {
+      await listingsAPI.update(editingListing.id, {
+        priceCents: Math.round(Number(editForm.priceCents) * 100),
+        quantity: Number(editForm.quantity),
+        available: editForm.available,
+      })
+      toast.success("Listing updated successfully!")
+      setIsEditModalOpen(false)
+      setEditingListing(null)
+      setEditForm({ priceCents: "", quantity: "", available: true })
+      refetchListings()
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update listing")
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   const handleDeleteListing = async (id: number) => {
     if (!confirm("Are you sure you want to delete this listing?")) return
@@ -150,7 +195,10 @@ export default function ResellerInventoryPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2">
-                      <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+                      <button 
+                        onClick={() => handleEditListing(listing)}
+                        className="p-2 hover:bg-muted rounded-lg transition-colors"
+                      >
                         <Edit2 className="w-4 h-4 text-muted-foreground" />
                       </button>
                       <button 
@@ -174,6 +222,92 @@ export default function ResellerInventoryPage() {
           </table>
         </div>
       )}
+
+      {/* Edit Listing Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Listing</DialogTitle>
+          </DialogHeader>
+          {editingListing && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-product-name">Product</Label>
+                <Input
+                  id="edit-product-name"
+                  value={editingListing.product.name}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-quantity">Quantity (kg)</Label>
+                  <Input
+                    id="edit-quantity"
+                    type="number"
+                    value={editForm.quantity}
+                    onChange={(e) => setEditForm({ ...editForm, quantity: e.target.value })}
+                    placeholder="500"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-price">Retail Price (₱/kg)</Label>
+                  <Input
+                    id="edit-price"
+                    type="number"
+                    step="0.01"
+                    value={editForm.priceCents}
+                    onChange={(e) => setEditForm({ ...editForm, priceCents: e.target.value })}
+                    placeholder="60.00"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-available" className="flex items-center gap-2">
+                  <input
+                    id="edit-available"
+                    type="checkbox"
+                    checked={editForm.available}
+                    onChange={(e) => setEditForm({ ...editForm, available: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  Available for sale
+                </Label>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsEditModalOpen(false)
+                setEditingListing(null)
+                setEditForm({ priceCents: "", quantity: "", available: true })
+              }}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpdateListing} 
+              className="bg-teal-600 hover:bg-teal-700" 
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update Listing"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

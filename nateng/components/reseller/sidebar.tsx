@@ -35,7 +35,9 @@ export function ResellerSidebar() {
     <aside className="w-[280px] h-screen bg-white border-r border-border flex flex-col fixed left-0 top-0 shadow-sm">
       {/* Logo & Portal Label */}
       <div className="p-5 border-b border-border">
-        <Logo size="md" variant="reseller" />
+        <Link href="/reseller/dashboard" className="block">
+          <Logo size="md" variant="reseller" />
+        </Link>
         <div className="mt-3">
           <span className="px-3 py-1.5 bg-teal-50 text-teal-700 text-xs font-semibold rounded-full">
             Reseller Portal

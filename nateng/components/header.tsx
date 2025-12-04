@@ -5,9 +5,13 @@ import { Logo } from "./logo"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { useState, useEffect } from "react"
-import { getCurrentUser, logout } from "@/lib/auth"
+import { getCurrentUser, logout, getRedirectPath } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import { NotificationBell } from "./notifications"
+
+function getDashboardPath(role: string): string {
+  return getRedirectPath(role as any) || "/"
+}
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -30,7 +34,10 @@ export function Header() {
     <header className="w-full bg-[#059669]/60 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 md:h-24">
-          <Link href="/" className="flex items-center gap-2 transition-transform hover:scale-105">
+          <Link 
+            href={mounted && user ? getDashboardPath(user.role) : "/"} 
+            className="flex items-center gap-2 transition-transform hover:scale-105"
+          >
             <Logo size="md" variant="light" />
           </Link>
 
@@ -54,6 +61,13 @@ export function Header() {
             ) : user ? (
               <>
                 <NotificationBell />
+                <Button
+                  variant="ghost"
+                  className="bg-white/45 text-white font-semibold text-sm px-4 hover:bg-white/60"
+                  asChild
+                >
+                  <Link href={getDashboardPath(user.role)}>Dashboard</Link>
+                </Button>
                 <div className="flex items-center gap-2">
                   <span className="text-white font-medium">{user.name}</span>
                   <Button
@@ -118,21 +132,46 @@ export function Header() {
               </Link>
             </nav>
             <div className="flex flex-col gap-2 pt-2">
-              <Button 
-                variant="ghost" 
-                className="bg-white/45 text-white font-semibold" 
-                asChild
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Link href="/login">Sign In</Link>
-              </Button>
-              <Button 
-                className="bg-white text-[#31E672] font-semibold" 
-                asChild
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Link href="/signup">Sign Up</Link>
-              </Button>
+              {user ? (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    className="bg-white/45 text-white font-semibold" 
+                    asChild
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Link href={getDashboardPath(user.role)}>Dashboard</Link>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="bg-white/45 text-white font-semibold" 
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      handleLogout()
+                    }}
+                  >
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    className="bg-white/45 text-white font-semibold" 
+                    asChild
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Link href="/login">Sign In</Link>
+                  </Button>
+                  <Button 
+                    className="bg-white text-[#31E672] font-semibold" 
+                    asChild
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Link href="/signup">Sign Up</Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}
