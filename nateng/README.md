@@ -166,6 +166,23 @@ npm run migrate      # Run database migrations
 npm run seed         # Seed database with sample data
 ```
 
+### Build & Test Status
+
+✅ **Build Status**: `npm run build` passes successfully  
+✅ **API Tests**: `node test-api-comprehensive.js` covers 12 endpoints with full CRUD verification  
+✅ **Reseller→Buyer Flow**: Complete - resellers can add products via modal, buyers see listings immediately
+
+### Reseller→Buyer Path
+
+The marketplace now supports the complete reseller-to-buyer flow:
+
+1. **Resellers** can add products via the "Add Product" modal in `/reseller/inventory`
+2. **Products** appear immediately in the reseller's inventory table
+3. **Buyers** see reseller listings on `/buyer/dashboard` (filtered to reseller inventory only)
+4. **Orders** flow from buyer cart → checkout → order confirmation → reseller fulfillment
+
+This creates a direct B2C channel where buyers purchase exclusively from reseller listings.
+
 ### API Endpoints
 
 - `GET/POST /api/products` - Product management

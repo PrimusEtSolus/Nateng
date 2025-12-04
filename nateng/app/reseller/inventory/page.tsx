@@ -42,9 +42,18 @@ export default function ResellerInventoryPage() {
   const [editingListing, setEditingListing] = useState<Listing | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
   const [editForm, setEditForm] = useState({
     priceCents: "",
     quantity: "",
+    available: true,
+  })
+  const [addForm, setAddForm] = useState({
+    name: "",
+    description: "",
+    quantity: "",
+    priceCents: "",
     available: true,
   })
 
@@ -109,6 +118,63 @@ export default function ResellerInventoryPage() {
     }
   }
 
+  const handleAddProduct = async () => {
+    if (!addForm.name || !addForm.quantity || !addForm.priceCents) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    setIsAdding(true)
+    try {
+      // First create the product
+      const productResponse = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: addForm.name,
+          description: addForm.description,
+          farmerId: user?.id, // Use current reseller as the "farmer" for reseller products
+        }),
+      })
+
+      if (!productResponse.ok) {
+        throw new Error('Failed to create product')
+      }
+
+      const product = await productResponse.json()
+
+      // Then create the listing
+      const listingResponse = await fetch('/api/listings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: product.id,
+          sellerId: user?.id,
+          priceCents: Math.round(Number(addForm.priceCents) * 100),
+          quantity: Number(addForm.quantity),
+          available: addForm.available,
+        }),
+      })
+
+      if (!listingResponse.ok) {
+        throw new Error('Failed to create listing')
+      }
+
+      toast.success("Product added successfully!")
+      setIsAddModalOpen(false)
+      setAddForm({ name: "", description: "", quantity: "", priceCents: "", available: true })
+      refetchListings()
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add product")
+    } finally {
+      setIsAdding(false)
+    }
+  }
+
   return (
     <div className="p-8">
       {/* Header */}
@@ -117,7 +183,10 @@ export default function ResellerInventoryPage() {
           <h1 className="text-3xl font-bold text-foreground">My Inventory</h1>
           <p className="text-muted-foreground mt-1">Manage your retail products and set prices for buyers</p>
         </div>
-        <Button className="bg-teal-600 hover:bg-teal-700">
+        <Button 
+          className="bg-teal-600 hover:bg-teal-700"
+          onClick={() => setIsAddModalOpen(true)}
+        >
           <Plus className="w-5 h-5 mr-2" />
           Add Product
         </Button>
@@ -223,6 +292,99 @@ export default function ResellerInventoryPage() {
           </table>
         </div>
       )}
+
+      {/* Add Product Modal */}
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New Product</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="add-product-name">Product Name *</Label>
+              <Input
+                id="add-product-name"
+                value={addForm.name}
+                onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                placeholder="Fresh Tomatoes"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="add-description">Description</Label>
+              <Input
+                id="add-description"
+                value={addForm.description}
+                onChange={(e) => setAddForm({ ...addForm, description: e.target.value })}
+                placeholder="Fresh, locally grown tomatoes"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="add-quantity">Quantity (kg) *</Label>
+                <Input
+                  id="add-quantity"
+                  type="number"
+                  value={addForm.quantity}
+                  onChange={(e) => setAddForm({ ...addForm, quantity: e.target.value })}
+                  placeholder="100"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="add-price">Retail Price (₱/kg) *</Label>
+                <Input
+                  id="add-price"
+                  type="number"
+                  step="0.01"
+                  value={addForm.priceCents}
+                  onChange={(e) => setAddForm({ ...addForm, priceCents: e.target.value })}
+                  placeholder="60.00"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="add-available" className="flex items-center gap-2">
+                <input
+                  id="add-available"
+                  type="checkbox"
+                  checked={addForm.available}
+                  onChange={(e) => setAddForm({ ...addForm, available: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                Available for sale
+              </Label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsAddModalOpen(false)
+                setAddForm({ name: "", description: "", quantity: "", priceCents: "", available: true })
+              }}
+              disabled={isAdding}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddProduct} 
+              className="bg-teal-600 hover:bg-teal-700" 
+              disabled={isAdding}
+            >
+              {isAdding ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Product"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Listing Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
