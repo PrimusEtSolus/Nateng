@@ -16,9 +16,9 @@ export default function ResellerOrdersPage() {
     setUser(getCurrentUser())
   }, [])
 
-  // Fetch reseller's orders (as buyer - wholesale orders from farmers)
+  // Fetch reseller's orders (as seller - orders from buyers)
   const { data: orders, loading: ordersLoading } = useFetch<Order[]>(
-    user ? `/api/orders?buyerId=${user.id}` : '',
+    user ? `/api/orders?sellerId=${user.id}` : '',
     { skip: !user }
   )
 
@@ -34,8 +34,8 @@ export default function ResellerOrdersPage() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">My Orders</h1>
-        <p className="text-muted-foreground mt-1">Track your wholesale orders from farmers</p>
+        <h1 className="text-3xl font-bold text-foreground">Buyer Orders</h1>
+        <p className="text-muted-foreground mt-1">Manage orders from buyers purchasing your products</p>
       </div>
 
       {/* Loading State */}
@@ -70,7 +70,7 @@ export default function ResellerOrdersPage() {
                           {order.items.map((item) => item.listing?.product?.name || "Product").join(", ")}
                         </h3>
                         <p className="text-muted-foreground">
-                          {totalQuantity}kg from {order.seller.name}
+                          {totalQuantity}kg ordered by {order.buyer.name}
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
                           Order #{order.id} - {formatDate(order.createdAt)}
@@ -106,7 +106,7 @@ export default function ResellerOrdersPage() {
           ) : (
             <div className="bg-white rounded-2xl p-12 text-center border border-border">
               <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
-              <p className="text-muted-foreground">No orders yet. Buy wholesale to get started!</p>
+              <p className="text-muted-foreground">No orders from buyers yet. Add products to inventory to receive orders!</p>
             </div>
           )}
         </div>

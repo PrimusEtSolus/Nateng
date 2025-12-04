@@ -5,7 +5,6 @@ import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { listingsAPI, productsAPI } from "@/lib/api-client"
-
 import { Search, Plus, Edit2, Trash2, Package, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -42,8 +41,8 @@ export default function ResellerInventoryPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [editingListing, setEditingListing] = useState<Listing | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
   const [editForm, setEditForm] = useState({
     priceCents: "",
@@ -53,8 +52,8 @@ export default function ResellerInventoryPage() {
   const [addForm, setAddForm] = useState({
     name: "",
     description: "",
-    quantity: "",
     priceCents: "",
+    quantity: "",
     available: true,
   })
 
@@ -107,39 +106,22 @@ export default function ResellerInventoryPage() {
     }
   }
 
-  const handleDeleteListing = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this listing?")) return
-    
-    try {
-      await listingsAPI.delete(id)
-      toast.success("Listing deleted successfully")
-      refetchListings()
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete listing")
-    }
-  }
-
   const handleAddProduct = async () => {
-    if (!addForm.name || !addForm.quantity || !addForm.priceCents) {
+    if (!user || !addForm.name || !addForm.priceCents || !addForm.quantity) {
       toast.error("Please fill in all required fields")
-      return
-    }
-
-    if (!user) {
-      toast.error("You must be logged in to add a product")
       return
     }
 
     setIsAdding(true)
     try {
-      // First create the product via the shared API client
+      // First create the product
       const product = await productsAPI.create({
         name: addForm.name,
         description: addForm.description,
-        farmerId: user.id,
+        farmerId: user.id, // Reseller creates product for themselves
       })
 
-      // Then create the listing for this reseller
+      // Then create the listing
       await listingsAPI.create({
         productId: product.id,
         sellerId: user.id,
@@ -150,12 +132,24 @@ export default function ResellerInventoryPage() {
 
       toast.success("Product added successfully!")
       setIsAddModalOpen(false)
-      setAddForm({ name: "", description: "", quantity: "", priceCents: "", available: true })
+      setAddForm({ name: "", description: "", priceCents: "", quantity: "", available: true })
       refetchListings()
     } catch (error: any) {
       toast.error(error.message || "Failed to add product")
     } finally {
       setIsAdding(false)
+    }
+  }
+
+  const handleDeleteListing = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this listing?")) return
+    
+    try {
+      await listingsAPI.delete(id)
+      toast.success("Listing deleted successfully")
+      refetchListings()
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete listing")
     }
   }
 
@@ -276,99 +270,6 @@ export default function ResellerInventoryPage() {
           </table>
         </div>
       )}
-
-      {/* Add Product Modal */}
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add New Product</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="add-product-name">Product Name *</Label>
-              <Input
-                id="add-product-name"
-                value={addForm.name}
-                onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-                placeholder="Fresh Tomatoes"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="add-description">Description</Label>
-              <Input
-                id="add-description"
-                value={addForm.description}
-                onChange={(e) => setAddForm({ ...addForm, description: e.target.value })}
-                placeholder="Fresh, locally grown tomatoes"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="add-quantity">Quantity (kg) *</Label>
-                <Input
-                  id="add-quantity"
-                  type="number"
-                  value={addForm.quantity}
-                  onChange={(e) => setAddForm({ ...addForm, quantity: e.target.value })}
-                  placeholder="100"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="add-price">Retail Price (₱/kg) *</Label>
-                <Input
-                  id="add-price"
-                  type="number"
-                  step="0.01"
-                  value={addForm.priceCents}
-                  onChange={(e) => setAddForm({ ...addForm, priceCents: e.target.value })}
-                  placeholder="60.00"
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="add-available" className="flex items-center gap-2">
-                <input
-                  id="add-available"
-                  type="checkbox"
-                  checked={addForm.available}
-                  onChange={(e) => setAddForm({ ...addForm, available: e.target.checked })}
-                  className="w-4 h-4"
-                />
-                Available for sale
-              </Label>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setIsAddModalOpen(false)
-                setAddForm({ name: "", description: "", quantity: "", priceCents: "", available: true })
-              }}
-              disabled={isAdding}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAddProduct} 
-              className="bg-teal-600 hover:bg-teal-700" 
-              disabled={isAdding}
-            >
-              {isAdding ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                "Add Product"
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Edit Listing Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
