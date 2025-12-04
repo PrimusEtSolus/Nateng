@@ -30,7 +30,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { productId, sellerId, priceCents, quantity } = body;
+    const { productId, sellerId, priceCents, quantity, available } = body;
     if (!productId || !sellerId || priceCents === undefined || !quantity) {
       return NextResponse.json({ error: 'missing fields: productId, sellerId, priceCents, quantity' }, { status: 400 });
     }
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         sellerId: Number(sellerId),
         priceCents: Number(priceCents),
         quantity: Number(quantity),
-        available: true,
+        available: available !== undefined ? Boolean(available) : true,
       },
       include: {
         product: { include: { farmer: true } },

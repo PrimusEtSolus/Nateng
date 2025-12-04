@@ -153,6 +153,7 @@ export default function ResellerInventoryPage() {
       setAddForm({ name: "", description: "", quantity: "", priceCents: "", available: true })
       refetchListings()
     } catch (error: any) {
+      console.error("Add product failed:", error)
       toast.error(error.message || "Failed to add product")
     } finally {
       setIsAdding(false)
