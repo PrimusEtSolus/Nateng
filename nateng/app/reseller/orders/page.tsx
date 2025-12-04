@@ -70,7 +70,7 @@ export default function ResellerOrdersPage() {
                           {order.items.map((item) => item.listing?.product?.name || "Product").join(", ")}
                         </h3>
                         <p className="text-muted-foreground">
-                          {totalQuantity}kg ordered by {order.buyer.name}
+                          {totalQuantity}kg ordered by {order.buyer?.name || 'Unknown buyer'}
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
                           Order #{order.id} - {formatDate(order.createdAt)}
