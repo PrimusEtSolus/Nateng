@@ -185,22 +185,22 @@ export default function FarmerDashboardPage() {
             <div
               className="bg-white rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-all duration-200 hover:scale-[1.02] cursor-pointer focus-visible:ring-2 focus-visible:ring-farmer focus-visible:ring-offset-2"
             >
-            <div className="flex items-start justify-between">
-              <div className={`p-3 rounded-xl ${stat.color}`}>
-                <stat.icon className="w-6 h-6 text-white" />
+              <div className="flex items-start justify-between">
+                <div className={`p-3 rounded-xl ${stat.color}`}>
+                  <stat.icon className="w-6 h-6 text-white" />
+                </div>
+                <div
+                  className={`flex items-center gap-1 text-sm font-medium ${stat.increasing ? "text-emerald-600" : "text-muted-foreground"}`}
+                >
+                  {stat.increasing ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                  {stat.change}
+                </div>
               </div>
-              <div
-                className={`flex items-center gap-1 text-sm font-medium ${stat.increasing ? "text-emerald-600" : "text-muted-foreground"}`}
-              >
-                {stat.increasing ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                {stat.change}
+              <div className="mt-4">
+                <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </div>
             </div>
-            <div className="mt-4">
-              <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
-            </div>
-          </div>
           </Link>
         ))}
       </div>
