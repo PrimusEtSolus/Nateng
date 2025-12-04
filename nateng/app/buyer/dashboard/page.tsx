@@ -227,7 +227,11 @@ export default function BuyerDashboardPage() {
           description="There was an error loading the products. Please try again."
           action={{
             label: "Retry",
-            onClick: () => window.location.reload(),
+            onClick: () => {
+              if (typeof window !== 'undefined') {
+                window.location.reload()
+              }
+            },
           }}
         />
       )}

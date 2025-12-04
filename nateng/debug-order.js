@@ -18,10 +18,10 @@ async function debugOrder() {
     console.log(JSON.stringify(listing, null, 2));
     
     // Check buyers and sellers
-    const buyer = await prisma.user.findUnique({ where: { id: 4 } });
+    const buyer = await prisma.user.findUnique({ where: { id: 3 } });
     const seller = await prisma.user.findUnique({ where: { id: 1 } });
     
-    console.log('\nBuyer (ID 4):');
+    console.log('\nBuyer (ID 3):');
     console.log(JSON.stringify(buyer, null, 2));
     
     console.log('\nSeller (ID 1):');
@@ -30,7 +30,7 @@ async function debugOrder() {
     // Try to create the order manually
     console.log('\n=== TRYING ORDER CREATION ===');
     const orderData = {
-      buyerId: 4,
+      buyerId: 3,
       sellerId: 1,
       items: [
         { listingId: 1, quantity: 100 }

@@ -27,12 +27,14 @@ export function useCart(): CartContextType {
 
   // Load cart from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(CART_STORAGE_KEY);
-    if (stored) {
-      try {
-        setItems(JSON.parse(stored));
-      } catch {
-        setItems([]);
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(CART_STORAGE_KEY);
+      if (stored) {
+        try {
+          setItems(JSON.parse(stored));
+        } catch {
+          setItems([]);
+        }
       }
     }
     setMounted(true);
@@ -40,7 +42,7 @@ export function useCart(): CartContextType {
 
   // Save cart to localStorage whenever items change
   useEffect(() => {
-    if (mounted) {
+    if (mounted && typeof window !== "undefined") {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
     }
   }, [items, mounted]);

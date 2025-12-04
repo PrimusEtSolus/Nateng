@@ -32,18 +32,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
 
   useEffect(() => {
-    const stored = localStorage.getItem(CART_KEY)
-    if (stored) {
-      try {
-        setItems(JSON.parse(stored))
-      } catch {
-        setItems([])
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(CART_KEY)
+      if (stored) {
+        try {
+          setItems(JSON.parse(stored))
+        } catch {
+          setItems([])
+        }
       }
     }
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(CART_KEY, JSON.stringify(items))
+    if (typeof window !== "undefined") {
+      localStorage.setItem(CART_KEY, JSON.stringify(items))
+    }
   }, [items])
 
   const addToCart = (itemOrProduct: CartItem | { listingId: number; productName: string; sellerName: string; quantity: number; priceCents: number } | RetailProduct, quantity: number = 1) => {

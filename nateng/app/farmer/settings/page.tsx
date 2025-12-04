@@ -61,11 +61,6 @@ export default function FarmerSettingsPage() {
         email: formData.email,
       })
 
-      // Update localStorage with new user data
-      if (typeof window !== "undefined") {
-        localStorage.setItem("natenghub_user", JSON.stringify(updatedUser))
-      }
-
       setUser(updatedUser)
       setSaved(true)
       toast.success("Profile updated successfully!")

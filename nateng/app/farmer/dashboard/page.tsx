@@ -323,7 +323,7 @@ export default function FarmerDashboardPage() {
                   description="Add your first crop to start selling on NatengHub."
                   action={{
                     label: "Add Crop",
-                    onClick: () => window.location.href = "/farmer/crops",
+                    onClick: () => router.push("/farmer/crops"),
                   }}
                 />
               ) : (

@@ -125,7 +125,7 @@ async function runTests() {
     // Test 11: POST new order
     console.log('\n1️⃣1️⃣  Testing POST /api/orders (CREATE ORDER)');
     res = await makeRequest('POST', '/api/orders', {
-      buyerId: 4,
+      buyerId: 3,
       sellerId: 1,
       items: [
         { listingId: 1, quantity: 100 }

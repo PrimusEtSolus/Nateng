@@ -77,8 +77,7 @@ export function BusinessSidebar() {
             </Link>
           )
         })}
-      </nav>
-
+        </nav>
       {/* Bottom Actions */}
       <div className="p-4 border-t border-border space-y-1">
         <Link

@@ -148,7 +148,9 @@ export default function BuyerCheckoutPage() {
   }
 
   if (items.length === 0) {
-    router.push("/buyer/cart")
+    useEffect(() => {
+      router.push("/buyer/cart")
+    }, [])
     return null
   }
 

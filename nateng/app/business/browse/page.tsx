@@ -50,11 +50,33 @@ export default function BusinessBrowsePage() {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
   const [orderQuantity, setOrderQuantity] = useState("")
   const [cart, setCart] = useState<CartItem[]>([])
+  const [showCartModal, setShowCartModal] = useState(false)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
 
   useEffect(() => {
     setUser(getCurrentUser())
   }, [])
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("natenghub_business_cart")
+      if (stored) {
+        try {
+          setCart(JSON.parse(stored))
+        } catch {
+          setCart([])
+        }
+      }
+    }
+  }, [])
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("natenghub_business_cart", JSON.stringify(cart))
+    }
+  }, [cart])
 
   // Fetch available listings
   const { data: listings, loading: listingsLoading } = useFetch<Listing[]>('/api/listings?available=true')
@@ -164,10 +186,13 @@ export default function BusinessBrowsePage() {
                 </>
               )}
             </Button>
-            <Button className="bg-business hover:bg-business-light text-white gap-2">
-              <ShoppingCart className="w-5 h-5" />
-              Cart ({cart.length}) - ₱{totalCartValue.toLocaleString()}
-            </Button>
+              <Button
+                className="bg-business hover:bg-business-light text-white gap-2"
+                onClick={() => setShowCartModal(true)}
+              >
+                <ShoppingCart className="w-5 h-5" />
+                Cart ({cart.length}) - ₱{totalCartValue.toLocaleString()}
+              </Button>
           </div>
         )}
       </div>
@@ -195,7 +220,9 @@ export default function BusinessBrowsePage() {
               {cat}
             </Button>
           ))}
-        </div>
+       </div>
+
+
       </div>
 
       {/* Loading State */}
@@ -290,7 +317,73 @@ export default function BusinessBrowsePage() {
           <p className="text-muted-foreground">Try a different search term</p>
         </div>
       )}
+      {/* Cart Modal */}
+      <Dialog open={showCartModal} onOpenChange={setShowCartModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Your Cart</DialogTitle>
+          </DialogHeader>
 
+          {cart.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Your cart is empty.
+            </p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCart([])}
+                  className="text-red-600"
+                >
+                  Clear Cart
+                </Button>
+                <Button
+                  onClick={async () => {
+                    await handlePlaceOrder()
+                    setShowCartModal(false)
+                  }}
+                  disabled={isPlacingOrder}
+                  className="bg-business"
+                >
+                  {isPlacingOrder ? "Placing..." : "Place Order"}
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {cart.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Package className="w-8 h-8 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">
+                          {item.listing.product.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          from {item.listing.product.farmer.name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">{item.quantity}kg</p>
+                      <p className="text-sm text-muted-foreground">
+                        ₱{(
+                          (item.listing.priceCents / 100) *
+                          item.quantity
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
       {/* Order Modal */}
       <Dialog open={!!selectedListing} onOpenChange={() => setSelectedListing(null)}>
         <DialogContent className="sm:max-w-[450px]">
