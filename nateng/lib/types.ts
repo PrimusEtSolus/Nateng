@@ -70,6 +70,7 @@ export interface Order {
   totalCents: number
   status: 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
   createdAt: string
+  deliveryOption?: 'delivery' | 'pickup' | null
   scheduledDate?: string | null
   scheduledTime?: string | null
   route?: string | null

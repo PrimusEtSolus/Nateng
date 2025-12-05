@@ -129,7 +129,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => setItems([])
 
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
+  const totalItems = Math.round(items.reduce((sum, item) => sum + item.quantity, 0) * 10) / 10
   const totalPrice = items.reduce((sum, item) => {
     if (item.priceCents) {
       return sum + (item.priceCents * item.quantity / 100)

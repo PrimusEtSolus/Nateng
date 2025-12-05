@@ -24,6 +24,7 @@ export default function BuyerCheckoutPage() {
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [placedOrderId, setPlacedOrderId] = useState<number | null>(null)
   const [paymentMethod, setPaymentMethod] = useState("cod")
+  const [deliveryOption, setDeliveryOption] = useState("delivery")
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -36,7 +37,7 @@ export default function BuyerCheckoutPage() {
     setUser(getCurrentUser())
   }, [])
 
-  const deliveryFee = totalPrice >= 500 ? 0 : 50
+  const deliveryFee = deliveryOption === "pickup" ? 0 : (totalPrice >= 500 ? 0 : 50)
   const grandTotal = totalPrice + deliveryFee
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,6 +52,20 @@ export default function BuyerCheckoutPage() {
     if (items.length === 0) {
       toast.error("Your cart is empty")
       return
+    }
+
+    // Validate form fields for home delivery
+    if (deliveryOption === "delivery") {
+      if (!formData.fullName || !formData.phone || !formData.address || !formData.city) {
+        toast.error("Please complete all delivery address fields")
+        return
+      }
+    } else {
+      // For pickup, only need phone number
+      if (!formData.phone) {
+        toast.error("Please provide your phone number for pickup coordination")
+        return
+      }
     }
 
     // Validate minimum order: 0.2kg (200 grams) per item for retail
@@ -92,6 +107,8 @@ export default function BuyerCheckoutPage() {
           buyerId: user.id,
           sellerId: Number(sellerId),
           items: orderItems,
+          deliveryAddress: deliveryOption === "delivery" ? formData.address : null,
+          deliveryOption: deliveryOption,
         })
       )
 
@@ -170,7 +187,31 @@ export default function BuyerCheckoutPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Checkout Form */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Delivery Address */}
+            {/* Contact Information - Always visible */}
+            <div className="bg-white rounded-2xl border border-border p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-buyer-bg rounded-lg">
+                  <MapPin className="w-5 h-5 text-buyer" />
+                </div>
+                <h2 className="text-lg font-semibold">Contact Information</h2>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Input
+                    id="phone"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+63 917 123 4567"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Delivery Address - Only show for home delivery */}
+            {deliveryOption === "delivery" && (
             <div className="bg-white rounded-2xl border border-border p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-buyer-bg rounded-lg">
@@ -184,27 +225,17 @@ export default function BuyerCheckoutPage() {
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
                     id="fullName"
-                    required
+                    required={deliveryOption === "delivery"}
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     placeholder="Juan Dela Cruz"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="+63 917 123 4567"
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="address">Complete Address</Label>
                   <Input
                     id="address"
-                    required
+                    required={deliveryOption === "delivery"}
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     placeholder="House/Unit No., Street, Barangay"
@@ -214,7 +245,7 @@ export default function BuyerCheckoutPage() {
                   <Label htmlFor="city">City/Municipality</Label>
                   <Input
                     id="city"
-                    required
+                    required={deliveryOption === "delivery"}
                     value={formData.city}
                     onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     placeholder="Baguio City"
@@ -230,6 +261,36 @@ export default function BuyerCheckoutPage() {
                   />
                 </div>
               </div>
+            </div>
+            )}
+
+            {/* Delivery Option */}
+            <div className="bg-white rounded-2xl border border-border p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-buyer-bg rounded-lg">
+                  <Truck className="w-5 h-5 text-buyer" />
+                </div>
+                <h2 className="text-lg font-semibold">Delivery Option</h2>
+              </div>
+
+              <RadioGroup value={deliveryOption} onValueChange={setDeliveryOption} className="space-y-3">
+                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
+                  <RadioGroupItem value="delivery" id="delivery" />
+                  <Truck className="w-5 h-5 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="font-medium">Home Delivery</p>
+                    <p className="text-sm text-muted-foreground">Deliver to your address</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
+                  <RadioGroupItem value="pickup" id="pickup" />
+                  <MapPin className="w-5 h-5 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="font-medium">Pickup at Reseller Location</p>
+                    <p className="text-sm text-muted-foreground">Pick up your order from the seller</p>
+                  </div>
+                </label>
+              </RadioGroup>
             </div>
 
             {/* Payment Method */}
@@ -250,20 +311,20 @@ export default function BuyerCheckoutPage() {
                     <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
                   </div>
                 </label>
-                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
-                  <RadioGroupItem value="gcash" id="gcash" />
+                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-not-allowed opacity-50 bg-muted/30">
+                  <RadioGroupItem value="gcash" id="gcash" disabled />
                   <Wallet className="w-5 h-5 text-muted-foreground" />
                   <div className="flex-1">
-                    <p className="font-medium">GCash</p>
-                    <p className="text-sm text-muted-foreground">Pay with your GCash wallet</p>
+                    <p className="font-medium text-muted-foreground">GCash</p>
+                    <p className="text-sm text-muted-foreground">Pay with your GCash wallet (Currently unavailable)</p>
                   </div>
                 </label>
-                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
-                  <RadioGroupItem value="bank" id="bank" />
+                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-not-allowed opacity-50 bg-muted/30">
+                  <RadioGroupItem value="bank" id="bank" disabled />
                   <Building2 className="w-5 h-5 text-muted-foreground" />
                   <div className="flex-1">
-                    <p className="font-medium">Bank Transfer</p>
-                    <p className="text-sm text-muted-foreground">Transfer to our bank account</p>
+                    <p className="font-medium text-muted-foreground">Bank Transfer</p>
+                    <p className="text-sm text-muted-foreground">Transfer to our bank account (Currently unavailable)</p>
                   </div>
                 </label>
               </RadioGroup>
@@ -314,7 +375,7 @@ export default function BuyerCheckoutPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Delivery</span>
-                  <span>{deliveryFee === 0 ? "FREE" : `₱${deliveryFee}`}</span>
+                  <span>{deliveryFee === 0 ? (deliveryOption === "pickup" ? "PICKUP" : "FREE") : `₱${deliveryFee}`}</span>
                 </div>
                 <div className="flex justify-between text-lg font-bold pt-2 border-t border-border">
                   <span>Total</span>
