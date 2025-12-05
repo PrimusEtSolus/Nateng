@@ -26,6 +26,7 @@ model User {
   messagesSent Message[] @relation("SenderMessages")
   messagesReceived Message[] @relation("ReceiverMessages")
   notifications Notification[]
+  analyticsEvents AnalyticsEvent[]
 }
 
 model Product {
@@ -105,4 +106,27 @@ model Notification {
   link      String?  // Optional link to related page
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+// Analytics models
+model AnalyticsEvent {
+  id        Int      @id @default(autoincrement())
+  eventType String   // "page_view", "product_view", "add_to_cart", "order_placed", "search", etc.
+  userId    Int?     // Optional - can track anonymous events too
+  user      User?    @relation(fields: [userId], references: [id])
+  sessionId String?  // For tracking user sessions
+  metadata  String?  // JSON string for flexible metadata (SQLite doesn't support Json type)
+  createdAt DateTime @default(now())
+}
+
+model DailyStats {
+  id            Int      @id @default(autoincrement())
+  date          DateTime @unique
+  totalUsers    Int      @default(0)
+  activeUsers   Int      @default(0)
+  totalOrders   Int      @default(0)
+  totalRevenue  Int      @default(0) // in cents
+  totalListings Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

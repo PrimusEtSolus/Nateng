@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+import { analytics } from "@/lib/analytics"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { formatDate } from "@/lib/date-utils"
@@ -71,6 +72,9 @@ export default function FarmerDashboardPage() {
       return
     }
     setUser(currentUser)
+    
+    // Track page view for analytics
+    analytics.trackPageView('/farmer/dashboard', currentUser.id)
   }, [router])
 
   // Fetch farmer's products

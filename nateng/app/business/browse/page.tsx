@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useFetch } from "@/hooks/use-fetch"
-import { ordersAPI } from "@/lib/api-client"
+import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+import { analytics } from "@/lib/analytics"
+import { useFetch } from "@/hooks/use-fetch"
 import { formatDate } from "@/lib/date-utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,7 +59,13 @@ export default function BusinessBrowsePage() {
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
 
   useEffect(() => {
-    setUser(getCurrentUser())
+    const currentUser = getCurrentUser()
+    setUser(currentUser)
+    
+    // Track page view for analytics
+    if (currentUser) {
+      analytics.trackPageView('/business/browse', currentUser.id)
+    }
   }, [])
 
   // Load cart from localStorage on mount
@@ -92,6 +99,16 @@ export default function BusinessBrowsePage() {
     const matchesCategory = selectedCategory === "All" || true // Simplified
     return matchesSearch && matchesCategory && listing.available && listing.quantity > 0
   }) || []
+
+  // Track search events
+  useEffect(() => {
+    if (searchTerm && user) {
+      const timer = setTimeout(() => {
+        analytics.trackSearch(searchTerm, filteredListings.length, user.id)
+      }, 500) // Debounce search tracking
+      return () => clearTimeout(timer)
+    }
+  }, [searchTerm, filteredListings.length, user])
 
   const handleAddToOrder = () => {
     if (selectedListing && orderQuantity) {
@@ -150,7 +167,13 @@ export default function BusinessBrowsePage() {
         })
       )
 
-      await Promise.all(orderPromises)
+      const orders = await Promise.all(orderPromises)
+      
+      // Track order placement for analytics
+      orders.forEach(order => {
+        analytics.trackOrderPlaced(order.id, order.totalCents / 100, user.id)
+      })
+      
       toast.success("Order placed successfully!")
       setCart([])
     } catch (error: any) {
