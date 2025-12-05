@@ -435,15 +435,10 @@ export default function BuyerDashboardPage() {
                     <p className="text-xs uppercase text-muted-foreground tracking-wide">Seller</p>
                     <p className="font-medium">{selectedListing.seller.name}</p>
                     <p className="text-muted-foreground">Role: {selectedListing.seller.role}</p>
-                    <p className="text-xs mt-1 text-muted-foreground">
-                      {selectedListing.seller.role === "reseller" 
-                        ? "This reseller consolidates produce and handles delivery to buyers."
-                        : "Direct from farmer"}
-                    </p>
                   </div>
 
                   <div>
-                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Source Farmer</p>
+                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Product Source</p>
                     <p className="font-medium">{selectedListing.product.farmer.name}</p>
                     <p className="text-muted-foreground">{selectedListing.product.farmer.email}</p>
                   </div>
