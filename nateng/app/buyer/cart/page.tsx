@@ -202,10 +202,19 @@ export default function BuyerCartPage() {
             </div>
 
             <div className="space-y-3 mb-6">
-              <Input placeholder="Enter promo code" />
-              <Button variant="outline" className="w-full bg-transparent">
+              <Input 
+                placeholder="Enter promo code" 
+                disabled
+                className="bg-muted text-muted-foreground cursor-not-allowed"
+              />
+              <Button 
+                variant="outline" 
+                className="w-full bg-muted text-muted-foreground cursor-not-allowed"
+                disabled
+              >
                 Apply Code
               </Button>
+              <p className="text-xs text-muted-foreground text-center">Promo codes currently unavailable</p>
             </div>
 
             <Link href="/buyer/checkout">

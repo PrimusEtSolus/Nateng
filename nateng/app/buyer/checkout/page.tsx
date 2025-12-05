@@ -303,14 +303,25 @@ export default function BuyerCheckoutPage() {
               </div>
 
               <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
-                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
-                  <RadioGroupItem value="cod" id="cod" />
-                  <Truck className="w-5 h-5 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="font-medium">Cash on Delivery</p>
-                    <p className="text-sm text-muted-foreground">Pay when you receive your order</p>
-                  </div>
-                </label>
+                {deliveryOption === "pickup" ? (
+                  <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
+                    <RadioGroupItem value="cod" id="cod" />
+                    <Wallet className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <p className="font-medium">Cash on Pickup</p>
+                      <p className="text-sm text-muted-foreground">Pay when you pick up your order from the reseller</p>
+                    </div>
+                  </label>
+                ) : (
+                  <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
+                    <RadioGroupItem value="cod" id="cod" />
+                    <Truck className="w-5 h-5 text-muted-foreground" />
+                    <div className="flex-1">
+                      <p className="font-medium">Cash on Delivery</p>
+                      <p className="text-sm text-muted-foreground">Pay when you receive your order at your address</p>
+                    </div>
+                  </label>
+                )}
                 <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-not-allowed opacity-50 bg-muted/30">
                   <RadioGroupItem value="gcash" id="gcash" disabled />
                   <Wallet className="w-5 h-5 text-muted-foreground" />
