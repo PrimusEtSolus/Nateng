@@ -239,23 +239,24 @@ export default function BusinessBrowsePage() {
 
       {/* Products Grid */}
       {!listingsLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredListings.map((listing) => (
             <div
               key={listing.id}
               className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
-              <div className="aspect-video bg-muted relative flex items-center justify-center">
+              <div className="aspect-video bg-muted relative flex items-center justify-center overflow-hidden group">
                 <ProductImage
                   src={listing.product.imageUrl}
                   alt={listing.product.name}
                   className="w-full h-full"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span
-                  className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${
+                  className={`absolute top-3 right-3 px-3 py-1.5 rounded-full text-xs font-medium shadow-md backdrop-blur-sm ${
                     listing.available && listing.quantity > 0
-                      ? "bg-green-500 text-white"
-                      : "bg-red-500 text-white"
+                      ? "bg-green-500/90 text-white"
+                      : "bg-red-500/90 text-white"
                   }`}
                 >
                   {listing.quantity}kg available
@@ -307,7 +308,7 @@ export default function BusinessBrowsePage() {
                     </span>
                   </div>
                   <Button
-                    className="w-full bg-business hover:bg-business-light text-white gap-2"
+                    className="w-full bg-business hover:bg-business-light text-white gap-2 transition-all"
                     onClick={() => {
                       setSelectedListing(listing)
                       const minOrder = listing.seller.role === 'farmer' 
@@ -317,8 +318,8 @@ export default function BusinessBrowsePage() {
                     }}
                     disabled={!listing.available || listing.quantity === 0}
                   >
-                    <Package className="w-5 h-5" />
-                    Place Wholesale Order
+                    <ShoppingCart className="w-4 h-4" />
+                    {listing.available && listing.quantity > 0 ? 'Place Order' : listing.quantity === 0 ? 'Out of Stock' : 'Unavailable'}
                   </Button>
                 </div>
               </div>

@@ -246,8 +246,8 @@ export default function ResellerInventoryPage() {
               {filteredListings.map((listing) => (
                 <tr key={listing.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                    <div className="flex items-center gap-3">
+                      <div className="w-20 h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0 border border-border">
                         {listing.product.imageUrl ? (
                           <img 
                             src={listing.product.imageUrl} 
@@ -255,12 +255,12 @@ export default function ResellerInventoryPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <Package className="w-6 h-6 text-muted-foreground" />
+                          <Package className="w-10 h-10 text-muted-foreground m-auto" />
                         )}
                       </div>
-                      <div>
-                        <p className="font-medium text-foreground">{listing.product.name}</p>
-                        <p className="text-sm text-muted-foreground line-clamp-1">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground text-base">{listing.product.name}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                           {listing.product.description || "Fresh produce"}
                         </p>
                       </div>
@@ -382,7 +382,7 @@ export default function ResellerInventoryPage() {
               <Label>Product Image</Label>
               <div className="flex items-center gap-4">
                 {addForm.imageUrl && (
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted">
+                  <div className="w-24 h-24 rounded-lg overflow-hidden bg-muted border border-border flex-shrink-0">
                     <img 
                       src={addForm.imageUrl} 
                       alt="Product preview"

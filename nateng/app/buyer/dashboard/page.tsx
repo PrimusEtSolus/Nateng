@@ -243,7 +243,7 @@ export default function BuyerDashboardPage() {
 
       {/* Products Grid */}
       {!listingsLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredListings.map((listing) => {
             const cartQty = getCartQuantity(listing.id)
             const isFavorite = favorites.includes(listing.id)
@@ -269,12 +269,13 @@ export default function BuyerDashboardPage() {
                   alt={listing.product.name}
                   className="w-full h-full"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
                     toggleFavorite(listing.id)
                   }}
-                  className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                  className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
                 >
                   <Heart
                     className={`w-5 h-5 transition-colors ${
@@ -283,7 +284,7 @@ export default function BuyerDashboardPage() {
                   />
                 </button>
                 {listing.quantity > 100 && (
-                  <span className="absolute top-3 left-3 px-2 py-1 bg-buyer text-white text-xs font-medium rounded-full">
+                  <span className="absolute top-3 left-3 px-2 py-1 bg-buyer text-white text-xs font-medium rounded-full shadow-md">
                     Popular
                   </span>
                 )}
@@ -323,11 +324,11 @@ export default function BuyerDashboardPage() {
                   </div>
 
                   {cartQty > 0 ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
                       <Button
                         size="icon"
-                        variant="outline"
-                        className="h-8 w-8 bg-transparent"
+                        variant="ghost"
+                        className="h-7 w-7 hover:bg-muted-foreground/10"
                         onClick={(e) => {
                           e.stopPropagation()
                           // Minimum order: 0.2kg (200 grams)
@@ -335,67 +336,25 @@ export default function BuyerDashboardPage() {
                           if (newQuantity === 0) {
                             updateQuantity(listing.id, 0)
                             toast.success("Removed from cart")
-                          } else {
+                          } else if (newQuantity >= 0.2) {
                             updateQuantity(listing.id, newQuantity)
+                          } else {
+                            toast.error("Minimum order is 0.2kg")
                           }
                         }}
                       >
                         <Minus className="w-4 h-4" />
                       </Button>
-                      <Input
-                        type="number"
-                        min="0.2"
-                        max={listing.quantity}
-                        step="0.1"
-                        value={cartQty.toFixed(1)}
-                        onChange={(e) => {
-                          e.stopPropagation()
-                          const value = parseFloat(e.target.value) || 0
-                          const MIN_QUANTITY = 0.2
-                          
-                          if (value === 0) {
-                            updateQuantity(listing.id, 0)
-                            return
-                          }
-                          
-                          if (value < MIN_QUANTITY) {
-                            toast.error("Minimum order required", {
-                              description: `Minimum order is ${MIN_QUANTITY}kg (200 grams)`,
-                            })
-                            return
-                          }
-                          
-                          if (value > listing.quantity) {
-                            toast.error("Insufficient stock", {
-                              description: `Only ${listing.quantity}kg available`,
-                            })
-                            updateQuantity(listing.id, listing.quantity)
-                            return
-                          }
-                          
-                          updateQuantity(listing.id, value)
-                        }}
-                        onBlur={(e) => {
-                          const value = parseFloat(e.target.value) || 0
-                          const MIN_QUANTITY = 0.2
-                          if (value > 0 && value < MIN_QUANTITY) {
-                            updateQuantity(listing.id, MIN_QUANTITY)
-                            toast.error("Minimum order required", {
-                              description: `Quantity adjusted to minimum: ${MIN_QUANTITY}kg`,
-                            })
-                          }
-                        }}
-                        className="w-16 h-8 text-center text-sm font-medium"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <span className="text-xs text-muted-foreground">kg</span>
+                      <span className="text-sm font-medium px-2 min-w-[3rem] text-center">
+                        {cartQty.toFixed(1)}kg
+                      </span>
                       <Button
                         size="icon"
-                        className="h-8 w-8 bg-buyer hover:bg-buyer-light"
+                        variant="ghost"
+                        className="h-7 w-7 hover:bg-muted-foreground/10"
                         onClick={(e) => {
                           e.stopPropagation()
-                          const newQuantity = Math.min(listing.quantity, cartQty + 0.2)
-                          updateQuantity(listing.id, newQuantity)
+                          updateQuantity(listing.id, cartQty + 0.2)
                         }}
                       >
                         <Plus className="w-4 h-4" />

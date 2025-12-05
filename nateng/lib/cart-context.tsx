@@ -112,8 +112,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const updateQuantity = (id: string | number, quantity: number) => {
+    // Enforce minimum order of 0.2kg for buyer portal
+    const MIN_QUANTITY = 0.2
     if (quantity <= 0) {
       removeFromCart(id)
+      return
+    }
+    if (quantity < MIN_QUANTITY) {
+      // Don't update if below minimum, let the UI handle validation
       return
     }
     setItems((prev) => prev.map((item) => {

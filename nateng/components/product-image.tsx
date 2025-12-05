@@ -44,8 +44,8 @@ export function ProductImage({ src, alt, className, fallbackIcon }: ProductImage
         src={src}
         alt={alt}
         className={cn(
-          "w-full h-full object-cover transition-opacity duration-300",
-          loading ? "opacity-0" : "opacity-100"
+          "w-full h-full object-cover transition-all duration-300",
+          loading ? "opacity-0 scale-105" : "opacity-100 scale-100"
         )}
         onLoad={() => setLoading(false)}
         onError={() => {
