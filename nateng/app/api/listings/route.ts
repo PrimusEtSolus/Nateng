@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 
 export async function GET(req: Request) {
   try {
+    // GET is public - no authentication required for browsing listings
     const params = new URL(req.url).searchParams;
     const sellerId = params.get('sellerId');
     const productId = params.get('productId');
@@ -29,10 +31,21 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    // Authenticate user
+    const user = await getCurrentUser(req as any);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { productId, sellerId, priceCents, quantity, available } = body;
     if (!productId || !sellerId || priceCents === undefined || !quantity) {
       return NextResponse.json({ error: 'missing fields: productId, sellerId, priceCents, quantity' }, { status: 400 });
+    }
+
+    // Users can only create listings for themselves unless they're admin
+    if (user.role !== 'admin' && sellerId !== user.id) {
+      return NextResponse.json({ error: 'Cannot create listings for other users' }, { status: 403 });
     }
 
     const listing = await prisma.listing.create({

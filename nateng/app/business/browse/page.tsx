@@ -63,7 +63,6 @@ export default function BusinessBrowsePage() {
     const currentUser = getCurrentUser()
     setUser(currentUser)
     
-    // Track page view for analytics
     if (currentUser) {
       analytics.trackPageView('/business/browse', currentUser.id)
     }
@@ -97,16 +96,15 @@ export default function BusinessBrowsePage() {
 
   const filteredListings = listings?.filter((listing) => {
     const matchesSearch = listing.product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === "All" || true // Simplified
+    const matchesCategory = selectedCategory === "All" || true
     return matchesSearch && matchesCategory && listing.available && listing.quantity > 0
   }) || []
 
-  // Track search events
   useEffect(() => {
     if (searchTerm && user) {
       const timer = setTimeout(() => {
         analytics.trackSearch(searchTerm, filteredListings.length, user.id)
-      }, 500) // Debounce search tracking
+      }, 500)
       return () => clearTimeout(timer)
     }
   }, [searchTerm, filteredListings.length, user])
@@ -170,7 +168,6 @@ export default function BusinessBrowsePage() {
 
       const orders = await Promise.all(orderPromises)
       
-      // Track order placement for analytics
       orders.forEach((order: any) => {
         analytics.trackOrderPlaced(order.id, order.totalCents / 100, user.id)
       })

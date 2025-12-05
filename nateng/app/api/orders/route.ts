@@ -1,17 +1,35 @@
 import { NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 
 export async function GET(req: Request) {
   try {
+    // Authenticate user
+    const user = await getCurrentUser(req as any);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const params = new URL(req.url).searchParams;
     const buyerId = params.get('buyerId');
     const sellerId = params.get('sellerId');
     const status = params.get('status');
 
     const where: any = {};
-    if (buyerId) where.buyerId = Number(buyerId);
-    if (sellerId) where.sellerId = Number(sellerId);
-    if (status) where.status = status;
+    
+    // Users can only see their own orders unless they're admin
+    if (user.role !== 'admin') {
+      if (user.role === 'buyer') {
+        where.buyerId = user.id;
+      } else if (user.role === 'farmer' || user.role === 'reseller') {
+        where.sellerId = user.id;
+      }
+    } else {
+      // Admin can filter by any parameters
+      if (buyerId) where.buyerId = Number(buyerId);
+      if (sellerId) where.sellerId = Number(sellerId);
+      if (status) where.status = status;
+    }
 
     const orders = await prisma.order.findMany({
       where: Object.keys(where).length > 0 ? where : undefined,
@@ -41,10 +59,25 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    // Authenticate user
+    const user = await getCurrentUser(req as any);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { buyerId, sellerId, items } = body; // items: [{ listingId, quantity }]
+    
     if (!buyerId || !sellerId || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'missing fields: buyerId, sellerId, items' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'buyerId, sellerId, and items array are required' },
+        { status: 400 }
+      );
+    }
+
+    // Users can only create orders as themselves unless they're admin
+    if (user.role !== 'admin' && buyerId !== user.id) {
+      return NextResponse.json({ error: 'Cannot create orders for other users' }, { status: 403 });
     }
 
     // Transactional create: check quantities, decrement, create order

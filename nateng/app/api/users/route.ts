@@ -1,8 +1,20 @@
 import { NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 
 export async function GET(req: Request) {
   try {
+    // Authenticate user
+    const user = await getCurrentUser(req as any);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Only admins can view all users
+    if (user.role !== 'admin') {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
     const params = new URL(req.url).searchParams;
     const role = params.get('role');
 

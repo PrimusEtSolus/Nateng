@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Authenticate user
+    const user = await getCurrentUser(req as any);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const { id } = await params;
     const order = await prisma.order.findUnique({
       where: { id: Number(id) },
@@ -17,6 +24,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       return NextResponse.json({ error: 'order not found' }, { status: 404 });
     }
 
+    // Check if user has permission to view this order
+    if (order.buyerId !== user.id && order.sellerId !== user.id && user.role !== 'admin') {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
     return NextResponse.json(order);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -25,6 +37,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Authenticate user
+    const user = await getCurrentUser(req as any);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await req.json();
     const { status } = body;
@@ -39,6 +57,20 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         { error: `invalid status. must be one of: ${validStatuses.join(', ')}` },
         { status: 400 }
       );
+    }
+
+    // Get the order first to check permissions
+    const existingOrder = await prisma.order.findUnique({
+      where: { id: Number(id) }
+    });
+
+    if (!existingOrder) {
+      return NextResponse.json({ error: 'order not found' }, { status: 404 });
+    }
+
+    // Check permissions - only seller or admin can update status
+    if (existingOrder.sellerId !== user.id && user.role !== 'admin') {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const order = await prisma.order.update({

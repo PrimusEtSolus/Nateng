@@ -8,7 +8,7 @@ import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { formatDate } from "@/lib/date-utils"
 import { productsAPI, listingsAPI, ordersAPI } from "@/lib/api-client"
-import { Package, TrendingUp, Leaf, DollarSign, ArrowUpRight, ArrowDownRight, Clock } from "lucide-react"
+import { Package, TrendingUp, Leaf, DollarSign, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, Truck, PackageCheck } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -73,7 +73,6 @@ export default function FarmerDashboardPage() {
     }
     setUser(currentUser)
     
-    // Track page view for analytics
     analytics.trackPageView('/farmer/dashboard', currentUser.id)
   }, [router])
 
@@ -98,7 +97,14 @@ export default function FarmerDashboardPage() {
   const farmerProducts = products?.filter((p) => p.farmerId === user?.id) || []
   const pendingOrders = orders?.filter((o) => o.status === "PENDING") || []
   const completedOrders = orders?.filter((o) => o.status === "DELIVERED") || []
-  const totalRevenue = completedOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
+  const activeOrders = orders?.filter((o) => ["CONFIRMED", "SHIPPED"].includes(o.status)) || []
+  
+  // Total revenue from all non-pending orders (confirmed, shipped, delivered)
+  const totalRevenue = [...completedOrders, ...activeOrders].reduce((sum, o) => sum + o.totalCents, 0) / 100
+  
+  // Revenue from delivered orders only
+  const deliveredRevenue = completedOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
+  
   const totalCrops = farmerProducts.length
   const availableStock = listings?.reduce((sum, l) => sum + (l.available ? l.quantity : 0), 0) || 0
 
@@ -106,7 +112,7 @@ export default function FarmerDashboardPage() {
     {
       label: "Total Revenue",
       value: `₱${totalRevenue.toLocaleString()}`,
-      change: "+12.5%",
+      change: `₱${deliveredRevenue.toLocaleString()} delivered`,
       increasing: true,
       icon: DollarSign,
       color: "bg-emerald-500",
@@ -263,17 +269,20 @@ export default function FarmerDashboardPage() {
                 <div className="text-right">
                   <p className="font-semibold text-foreground">₱{(order.totalCents / 100).toLocaleString()}</p>
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
                       order.status === "PENDING"
-                        ? "bg-yellow-100 text-yellow-700"
+                        ? "bg-amber-50 text-amber-700 border-amber-200"
                         : order.status === "CONFIRMED"
-                          ? "bg-blue-100 text-blue-700"
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
                           : order.status === "SHIPPED"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
+                            ? "bg-purple-50 text-purple-700 border-purple-200"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200"
                     }`}
                   >
-                    <Clock className="w-3 h-3" />
+                    {order.status === "PENDING" && <Clock className="w-3 h-3" />}
+                    {order.status === "CONFIRMED" && <CheckCircle className="w-3 h-3" />}
+                    {order.status === "SHIPPED" && <Truck className="w-3 h-3" />}
+                    {order.status === "DELIVERED" && <PackageCheck className="w-3 h-3" />}
                     {order.status}
                   </span>
                 </div>

@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DeliveryScheduler } from "@/components/delivery-scheduler"
 import { MessageDialog } from "@/components/message-dialog"
 import { toast } from "sonner"
-import { Package, Clock, Truck, CheckCircle, XCircle, MapPin, Loader2 } from "lucide-react"
+import { Package, Clock, Truck, CheckCircle, XCircle, MapPin, Loader2, PackageCheck } from "lucide-react"
 
 export default function BusinessOrdersPage() {
   const router = useRouter()
@@ -61,16 +61,16 @@ export default function BusinessOrdersPage() {
     const statusUpper = status?.toUpperCase()
     switch (statusUpper) {
       case "PENDING":
-        return <Clock className="w-4 h-4" />
+        return <Clock className="w-3 h-3" />
       case "CONFIRMED":
-        return <CheckCircle className="w-4 h-4" />
+        return <CheckCircle className="w-3 h-3" />
       case "SHIPPED":
-        return <Truck className="w-4 h-4" />
+        return <Truck className="w-3 h-3" />
       case "DELIVERED":
       case "COMPLETED":
-        return <Package className="w-4 h-4" />
+        return <PackageCheck className="w-3 h-3" />
       default:
-        return <XCircle className="w-4 h-4" />
+        return <XCircle className="w-3 h-3" />
     }
   }
 
@@ -78,16 +78,16 @@ export default function BusinessOrdersPage() {
     const statusUpper = status?.toUpperCase()
     switch (statusUpper) {
       case "PENDING":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200"
+        return "bg-amber-50 text-amber-700 border-amber-200"
       case "CONFIRMED":
-        return "bg-blue-100 text-blue-700 border-blue-200"
+        return "bg-blue-50 text-blue-700 border-blue-200"
       case "SHIPPED":
-        return "bg-green-100 text-green-700 border-green-200"
+        return "bg-purple-50 text-purple-700 border-purple-200"
       case "DELIVERED":
       case "COMPLETED":
-        return "bg-gray-100 text-gray-700 border-gray-200"
+        return "bg-emerald-50 text-emerald-700 border-emerald-200"
       default:
-        return "bg-red-100 text-red-700 border-red-200"
+        return "bg-red-50 text-red-700 border-red-200"
     }
   }
 
@@ -158,7 +158,7 @@ export default function BusinessOrdersPage() {
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-lg">{productName}</h3>
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status || "")}`}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${getStatusColor(order.status || "")}`}
                         >
                           {getStatusIcon(order.status || "")}
                           {order.status}

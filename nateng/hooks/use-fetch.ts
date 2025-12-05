@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getCurrentUser } from '@/lib/auth';
 
 interface UseFetchOptions {
   skip?: boolean;
@@ -22,7 +23,19 @@ export function useFetch<T>(
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(url);
+      
+      // Get current user for authentication
+      const user = getCurrentUser();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authorization header if user is logged in
+      if (user) {
+        headers['Authorization'] = `Bearer token_${user.id}`;
+      }
+      
+      const response = await fetch(url, { headers });
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }

@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
     const { eventType, userId, sessionId, metadata } = await request.json()
 
-    const event = await prisma.analyticsEvent.create({
-      data: {
-        eventType,
-        userId: userId || null,
-        sessionId,
-        metadata: metadata ? JSON.stringify(metadata) : null,
-      },
+    // For now, just log the analytics event
+    // In production, you would store this in a database
+    console.log('Analytics Event:', {
+      eventType,
+      userId,
+      sessionId,
+      metadata,
+      timestamp: new Date().toISOString(),
     })
 
-    return NextResponse.json(event)
+    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Failed to track analytics event:', error)
     return NextResponse.json(
@@ -26,39 +26,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-    const eventType = searchParams.get('eventType')
-    const userId = searchParams.get('userId')
-
-    const where: any = {}
-    if (startDate || endDate) {
-      where.createdAt = {}
-      if (startDate) where.createdAt.gte = new Date(startDate)
-      if (endDate) where.createdAt.lte = new Date(endDate)
-    }
-    if (eventType) where.eventType = eventType
-    if (userId) where.userId = parseInt(userId)
-
-    const events = await prisma.analyticsEvent.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: 1000,
-      include: {
-        user: {
-          select: { id: true, name: true, email: true, role: true }
-        }
-      }
-    })
-
-    // Parse metadata back to JSON
-    const eventsWithParsedMetadata = events.map((event: any) => ({
-      ...event,
-      metadata: event.metadata ? JSON.parse(event.metadata) : null
-    }))
-
-    return NextResponse.json(eventsWithParsedMetadata)
+    // Return empty events for now
+    return NextResponse.json([])
   } catch (error) {
     console.error('Failed to fetch analytics events:', error)
     return NextResponse.json(

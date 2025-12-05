@@ -13,6 +13,21 @@ async function apiCall(endpoint: string, options: ApiOptions = {}) {
     'Content-Type': 'application/json',
   };
 
+  // Add authentication header if user is logged in
+  if (typeof window !== 'undefined') {
+    const userStr = localStorage.getItem('natenghub_user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        // Create a simple token for authentication
+        headers['Authorization'] = `Bearer token_${user.id}_${Date.now()}`;
+      } catch {
+        // Invalid user data, remove it
+        localStorage.removeItem('natenghub_user');
+      }
+    }
+  }
+
   const config: RequestInit = {
     method: options.method || 'GET',
     headers,

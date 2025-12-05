@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 
 export async function GET() {
@@ -18,11 +19,26 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    // Authenticate user
+    const user = await getCurrentUser(req as any);
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    // Only farmers can create products
+    if (user.role !== 'farmer') {
+      return NextResponse.json({ error: 'Only farmers can create products' }, { status: 403 });
+    }
     const body = await req.json();
     const { name, description, farmerId, imageUrl } = body;
 
     if (!name || !farmerId) {
       return NextResponse.json({ error: 'missing fields: name, farmerId' }, { status: 400 });
+    }
+
+    // Farmers can only create products for themselves
+    if (farmerId !== user.id) {
+      return NextResponse.json({ error: 'Cannot create products for other farmers' }, { status: 403 });
     }
 
     const product = await prisma.product.create({
