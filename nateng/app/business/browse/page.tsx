@@ -170,7 +170,7 @@ export default function BusinessBrowsePage() {
       const orders = await Promise.all(orderPromises)
       
       // Track order placement for analytics
-      orders.forEach(order => {
+      orders.forEach((order: any) => {
         analytics.trackOrderPlaced(order.id, order.totalCents / 100, user.id)
       })
       

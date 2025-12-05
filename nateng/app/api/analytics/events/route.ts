@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Parse metadata back to JSON
-    const eventsWithParsedMetadata = events.map(event => ({
+    const eventsWithParsedMetadata = events.map((event: any) => ({
       ...event,
       metadata: event.metadata ? JSON.parse(event.metadata) : null
     }))
