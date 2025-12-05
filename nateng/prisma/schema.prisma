@@ -29,13 +29,14 @@ model User {
 }
 
 model Product {
-  id        Int      @id @default(autoincrement())
-  name      String
+  id          Int      @id @default(autoincrement())
+  name        String
   description String?
-  farmerId  Int
-  farmer    User     @relation(fields: [farmerId], references: [id], name: "FarmerProducts")
-  createdAt DateTime @default(now())
-  listings  Listing[]
+  imageUrl    String?
+  farmerId    Int
+  farmer      User     @relation(fields: [farmerId], references: [id], name: "FarmerProducts")
+  createdAt   DateTime @default(now())
+  listings    Listing[]
 }
 
 model Listing {

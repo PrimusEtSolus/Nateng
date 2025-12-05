@@ -29,13 +29,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const { id } = await params;
     const body = await req.json();
-    const { name, description } = body;
+    const { name, description, imageUrl } = body;
 
     const product = await prisma.product.update({
       where: { id: Number(id) },
       data: {
         ...(name && { name }),
         ...(description !== undefined && { description }),
+        ...(imageUrl !== undefined && { imageUrl }),
       },
       include: { farmer: { select: { id: true, name: true } } },
     });

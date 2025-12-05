@@ -4,12 +4,14 @@ import { useState, useEffect } from "react"
 import { useFetch } from "@/hooks/use-fetch"
 import { ordersAPI } from "@/lib/api-client"
 import { getCurrentUser } from "@/lib/auth"
+import { formatDate } from "@/lib/date-utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Search, ShoppingCart, MapPin, Package, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { ProductImage } from "@/components/product-image"
 
 interface Listing {
   id: number
@@ -18,10 +20,12 @@ interface Listing {
   priceCents: number
   quantity: number
   available: boolean
+  createdAt: string
   product: {
     id: number
     name: string
     description: string | null
+    imageUrl: string | null
     farmer: {
       id: number
       name: string
@@ -242,7 +246,11 @@ export default function BusinessBrowsePage() {
               className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-shadow"
             >
               <div className="aspect-video bg-muted relative flex items-center justify-center">
-                <Package className="w-16 h-16 text-muted-foreground" />
+                <ProductImage
+                  src={listing.product.imageUrl}
+                  alt={listing.product.name}
+                  className="w-full h-full"
+                />
                 <span
                   className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${
                     listing.available && listing.quantity > 0
@@ -262,6 +270,15 @@ export default function BusinessBrowsePage() {
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Sold by {listing.seller.name} ({listing.seller.role})
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Posted {new Date(listing.createdAt).toLocaleString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric', 
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </p>
                 </div>
 
@@ -394,11 +411,22 @@ export default function BusinessBrowsePage() {
             <div className="space-y-4 py-4">
               <div className="flex gap-4">
                 <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                  <Package className="w-10 h-10 text-muted-foreground" />
+                  <ProductImage
+                    src={selectedListing.product.imageUrl}
+                    alt={selectedListing.product.name}
+                    className="w-full h-full"
+                  />
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">{selectedListing.product.name}</h3>
                   <p className="text-sm text-muted-foreground">from {selectedListing.product.farmer.name}</p>
+                  <p className="text-xs text-muted-foreground">Posted {new Date(selectedListing.createdAt).toLocaleString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}</p>
                   <p className="text-lg font-bold text-business mt-1">
                     ₱{(selectedListing.priceCents / 100).toFixed(2)}/kg
                   </p>

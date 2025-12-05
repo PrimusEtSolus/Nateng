@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useCart } from "@/lib/cart-context"
+import { formatDate } from "@/lib/date-utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -36,6 +37,7 @@ interface Listing {
     id: number
     name: string
     description: string | null
+    imageUrl: string | null
     farmer: {
       id: number
       name: string
@@ -263,7 +265,7 @@ export default function BuyerDashboardPage() {
             >
               <div className="aspect-square bg-muted relative overflow-hidden group">
                 <ProductImage
-                  src={null}
+                  src={listing.product.imageUrl}
                   alt={listing.product.name}
                   className="w-full h-full"
                 />
@@ -297,6 +299,15 @@ export default function BuyerDashboardPage() {
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       From farmer {listing.product.farmer.name}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Posted {new Date(listing.createdAt).toLocaleString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric', 
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                     </p>
                   </div>
                 </div>
@@ -455,7 +466,7 @@ export default function BuyerDashboardPage() {
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="rounded-2xl border border-border overflow-hidden bg-muted h-64">
                   <ProductImage
-                    src={null}
+                    src={selectedListing.product.imageUrl}
                     alt={selectedListing.product.name}
                     className="w-full h-full"
                   />
@@ -487,6 +498,17 @@ export default function BuyerDashboardPage() {
                       <p className="text-xs text-muted-foreground">Price</p>
                       <p className="font-semibold">₱{(selectedListing.priceCents / 100).toFixed(2)}/kg</p>
                     </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs uppercase text-muted-foreground tracking-wide">Posted Date</p>
+                    <p className="font-medium">{new Date(selectedListing.createdAt).toLocaleString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric', 
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</p>
                   </div>
 
                   <p className="text-sm text-muted-foreground">

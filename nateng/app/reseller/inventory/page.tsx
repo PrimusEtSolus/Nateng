@@ -5,8 +5,9 @@ import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { listingsAPI, productsAPI } from "@/lib/api-client"
+import { formatDate } from "@/lib/date-utils"
 
-import { Search, Plus, Edit2, Trash2, Package, Loader2 } from "lucide-react"
+import { Search, Plus, Edit2, Trash2, Package, Loader2, Upload, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -20,10 +21,12 @@ interface Listing {
   priceCents: number
   quantity: number
   available: boolean
+  createdAt: string
   product: {
     id: number
     name: string
     description: string | null
+    imageUrl: string | null
     farmer: {
       id: number
       name: string
@@ -56,7 +59,9 @@ export default function ResellerInventoryPage() {
     quantity: "",
     priceCents: "",
     available: true,
+    imageUrl: "",
   })
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -119,6 +124,31 @@ export default function ResellerInventoryPage() {
     }
   }
 
+  const handleImageUpload = async (file: File) => {
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('image', file)
+      
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload image')
+      }
+      
+      const data = await response.json()
+      setAddForm(prev => ({ ...prev, imageUrl: data.imageUrl }))
+      toast.success('Image uploaded successfully!')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to upload image')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   const handleAddProduct = async () => {
     if (!addForm.name || !addForm.quantity || !addForm.priceCents) {
       toast.error("Please fill in all required fields")
@@ -137,6 +167,7 @@ export default function ResellerInventoryPage() {
         name: addForm.name,
         description: addForm.description,
         farmerId: user.id,
+        ...(addForm.imageUrl && { imageUrl: addForm.imageUrl }),
       })
 
       // Then create the listing for this reseller
@@ -150,7 +181,7 @@ export default function ResellerInventoryPage() {
 
       toast.success("Product added successfully!")
       setIsAddModalOpen(false)
-      setAddForm({ name: "", description: "", quantity: "", priceCents: "", available: true })
+      setAddForm({ name: "", description: "", quantity: "", priceCents: "", available: true, imageUrl: "" })
       refetchListings()
     } catch (error: any) {
       console.error("Add product failed:", error)
@@ -206,6 +237,7 @@ export default function ResellerInventoryPage() {
                 <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Source</th>
                 <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Stock</th>
                 <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Retail Price</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-foreground">Date Posted</th>
                 <th className="text-right px-6 py-4 text-sm font-semibold text-foreground">Status</th>
                 <th className="text-center px-6 py-4 text-sm font-semibold text-foreground">Actions</th>
               </tr>
@@ -216,7 +248,15 @@ export default function ResellerInventoryPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                        <Package className="w-6 h-6 text-muted-foreground" />
+                        {listing.product.imageUrl ? (
+                          <img 
+                            src={listing.product.imageUrl} 
+                            alt={listing.product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="w-6 h-6 text-muted-foreground" />
+                        )}
                       </div>
                       <div>
                         <p className="font-medium text-foreground">{listing.product.name}</p>
@@ -240,6 +280,15 @@ export default function ResellerInventoryPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span className="font-semibold text-teal-600">₱{(listing.priceCents / 100).toFixed(2)}/kg</span>
+                  </td>
+                  <td className="px-6 py-4">
+                  <span className="text-sm text-muted-foreground">{new Date(listing.createdAt).toLocaleString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric', 
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -268,7 +317,7 @@ export default function ResellerInventoryPage() {
               ))}
               {filteredListings.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
                     {searchQuery ? "No products found matching your search" : "No inventory yet. Buy wholesale to get started!"}
                   </td>
                 </tr>
@@ -330,6 +379,68 @@ export default function ResellerInventoryPage() {
               </div>
             </div>
             <div className="grid gap-2">
+              <Label>Product Image</Label>
+              <div className="flex items-center gap-4">
+                {addForm.imageUrl && (
+                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted">
+                    <img 
+                      src={addForm.imageUrl} 
+                      alt="Product preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        handleImageUpload(file)
+                      }
+                    }}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                    disabled={isUploading}
+                    className="w-full"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        {addForm.imageUrl ? 'Change Image' : 'Upload Image'}
+                      </>
+                    )}
+                  </Button>
+                  {addForm.imageUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAddForm(prev => ({ ...prev, imageUrl: "" }))}
+                      className="mt-2 text-red-500 hover:text-red-600"
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Remove Image
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Upload a product image (JPEG, PNG, or WebP, max 5MB)
+              </p>
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="add-available" className="flex items-center gap-2">
                 <input
                   id="add-available"
@@ -347,7 +458,7 @@ export default function ResellerInventoryPage() {
               variant="outline" 
               onClick={() => {
                 setIsAddModalOpen(false)
-                setAddForm({ name: "", description: "", quantity: "", priceCents: "", available: true })
+                setAddForm({ name: "", description: "", quantity: "", priceCents: "", available: true, imageUrl: "" })
               }}
               disabled={isAdding}
             >

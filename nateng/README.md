@@ -93,8 +93,8 @@ For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md
 ### ✅ Implemented
 
 - **Multi-Actor Portals**: Role-based dashboards for farmers, buyers, businesses, and resellers
-- **Product Management**: Create, update, and manage products
-- **Listing System**: Sellers can create listings with pricing and inventory
+- **Product Management**: Create, update, and manage products with image upload support
+- **Listing System**: Sellers can create listings with pricing, inventory, and product images
 - **Order Management**: Complete order lifecycle with status tracking
 - **Inventory Tracking**: Real-time inventory management with automatic decrement
 - **Shopping Cart**: Persistent cart with localStorage
@@ -104,6 +104,8 @@ For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md
 - **User-to-User Messaging**: Direct messaging between buyers and sellers
 - **Notification System**: Real-time notifications for orders, messages, and status updates
 - **Complete Order Flow**: End-to-end order processing with automatic notifications
+- **Image Upload System**: Sellers can upload product images (JPEG, PNG, WebP up to 5MB)
+- **Enhanced Product Display**: Product images displayed across all buyer interfaces
 
 ### 🚧 In Development
 
@@ -191,6 +193,7 @@ This creates a direct B2C channel where buyers purchase exclusively from reselle
 - `GET/POST /api/users` - User management
 - `POST /api/auth/login` - User authentication
 - `POST /api/auth/register` - User registration
+- `POST /api/upload` - Image upload for products
 - `GET/POST /api/messages` - User-to-user messaging
 - `GET/PATCH /api/notifications` - Notification management
 

@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, description, farmerId } = body;
+    const { name, description, farmerId, imageUrl } = body;
 
     if (!name || !farmerId) {
       return NextResponse.json({ error: 'missing fields: name, farmerId' }, { status: 400 });
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
         name,
         description: description || '',
         farmerId: Number(farmerId),
+        ...(imageUrl && { imageUrl }),
       },
       include: {
         farmer: { select: { id: true, name: true } },

@@ -73,7 +73,7 @@ export default function FarmerAnalyticsPage() {
     )
   }
 
-  const completedOrders = orders?.filter((o) => o.status === "DELIVERED") || []
+  const completedOrders = orders?.filter((o) => o.status === "CONFIRMED" || o.status === "SHIPPED" || o.status === "DELIVERED") || []
   const totalRevenue = completedOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
   const totalOrders = orders?.length || 0
   const avgOrderValue = completedOrders.length > 0 ? Math.round(totalRevenue / completedOrders.length) : 0
@@ -84,6 +84,7 @@ export default function FarmerAnalyticsPage() {
       .filter((p) => p.farmerId === user?.id)
       .map((product) => {
         const productOrders = orders?.filter((o) => 
+          (o.status === "CONFIRMED" || o.status === "SHIPPED" || o.status === "DELIVERED") &&
           o.items.some((item) => item.listing.product.id === product.id)
         ) || []
         const revenue = productOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
