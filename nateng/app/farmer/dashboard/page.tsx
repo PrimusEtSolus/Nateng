@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { StatCardSkeleton, OrderCardSkeleton } from "@/components/loading-skeletons"
 import { EmptyState } from "@/components/empty-state"
+import { ProductImage } from "@/components/product-image"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -28,6 +29,7 @@ interface Product {
   id: number
   name: string
   description: string | null
+  imageUrl: string | null
   farmerId: number
   listings: Array<{
     id: number
@@ -361,7 +363,11 @@ export default function FarmerDashboardPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                        <Leaf className="w-5 h-5 text-muted-foreground" />
+                        <ProductImage
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-full h-full"
+                        />
                       </div>
                       <div>
                         <p className="font-medium text-sm">{product.name}</p>

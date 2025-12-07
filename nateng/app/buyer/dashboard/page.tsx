@@ -63,6 +63,15 @@ export default function BuyerDashboardPage() {
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name" | "quantity">("name")
   const { addToCart, updateQuantity, items } = useCart()
 
+  // Fetch user favorites
+  const { data: userFavorites, loading: favoritesLoading } = useFetch<any[]>('/api/favorites')
+
+  useEffect(() => {
+    if (userFavorites) {
+      setFavorites(userFavorites.map(fav => fav.listingId))
+    }
+  }, [userFavorites])
+
   useEffect(() => {
     const currentUser = getCurrentUser()
     if (!currentUser || currentUser.role !== 'buyer') {
@@ -106,8 +115,37 @@ export default function BuyerDashboardPage() {
     }
   }) || []
 
-  const toggleFavorite = (id: number) => {
-    setFavorites((prev) => (prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]))
+  const toggleFavorite = async (id: number) => {
+    const isFavorited = favorites.includes(id)
+    
+    try {
+      if (isFavorited) {
+        // Remove from favorites
+        await fetch(`/api/favorites/listing/${id}`, {
+          method: 'DELETE'
+        })
+        setFavorites(prev => prev.filter(f => f !== id))
+        toast.success("Removed from favorites")
+      } else {
+        // Add to favorites
+        const response = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingId: id })
+        })
+        
+        if (response.ok) {
+          setFavorites(prev => [...prev, id])
+          toast.success("Added to favorites")
+        } else {
+          const error = await response.json()
+          toast.error(error.error || "Failed to add to favorites")
+        }
+      }
+    } catch (error) {
+      console.error('Toggle favorite error:', error)
+      toast.error("Failed to update favorites")
+    }
   }
 
   const getCartQuantity = (listingId: number) => {
