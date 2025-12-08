@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { isUserBanned } from '@/lib/banned-users';
 
 export async function POST(req: Request) {
   try {
@@ -28,9 +29,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    // Return user without password
+    // Check if user is banned
+    const banned = isUserBanned(email.toLowerCase());
+    
+    // Return user without password, but include ban status
     const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json({ user: userWithoutPassword });
+    return NextResponse.json({ 
+      user: {
+        ...userWithoutPassword,
+        isBanned: banned
+      },
+      message: banned ? 'Account suspended. Limited access available for appeals.' : 'Login successful'
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

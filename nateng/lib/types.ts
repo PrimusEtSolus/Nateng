@@ -10,6 +10,7 @@ export interface User {
   profilePhotoUrl?: string
   createdAt?: string
   businessName?: string
+  isBanned?: boolean
 }
 
 export interface Product {

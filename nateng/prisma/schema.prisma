@@ -18,6 +18,9 @@ model User {
   role      String
   minimumOrderKg Int? // Minimum order quantity in kg (for farmers: 50 or 100)
   profilePhotoUrl String? // URL to profile photo
+  isBanned  Boolean  @default(false) // User ban status
+  bannedAt  DateTime? // When user was banned
+  banReason String?  // Reason for banning
   createdAt DateTime @default(now())
   // relations
   products  Product[] @relation("FarmerProducts")

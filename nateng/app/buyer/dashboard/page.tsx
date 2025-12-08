@@ -8,6 +8,9 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { formatDate } from "@/lib/date-utils"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+import { useBanCheck } from "@/hooks/useBanCheck"
+import { useBannedUserRestrictions } from "@/hooks/useBannedUserRestrictions"
+import BannedUserDashboard from "@/components/banned-user-dashboard"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Search, Heart, Star, MapPin, ShoppingCart, Plus, Minus, Loader2, Filter } from "lucide-react"
@@ -63,6 +66,12 @@ export default function BuyerDashboardPage() {
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name" | "quantity">("name")
   const { addToCart, updateQuantity, items } = useCart()
 
+  // Check if user is banned and redirect if needed
+  useBanCheck()
+  
+  // Apply restrictions for banned users
+  useBannedUserRestrictions()
+
   // Fetch user favorites
   const { data: userFavorites, loading: favoritesLoading } = useFetch<any[]>('/api/favorites')
 
@@ -76,6 +85,12 @@ export default function BuyerDashboardPage() {
     const currentUser = getCurrentUser()
     if (!currentUser || currentUser.role !== 'buyer') {
       router.push('/login')
+      return
+    }
+    
+    // Check if user is banned
+    if (currentUser.isBanned) {
+      // Don't load normal dashboard data for banned users
       return
     }
   }, [router])
@@ -196,20 +211,26 @@ export default function BuyerDashboardPage() {
   }
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Fresh from Benguet</h1>
-          <p className="text-muted-foreground mt-1">Shop farm-fresh vegetables delivered to your doorstep</p>
-        </div>
-        <Link href="/buyer/cart">
-          <Button className="bg-buyer hover:bg-buyer-light text-white gap-2">
-            <ShoppingCart className="w-5 h-5" />
-            View Cart ({items.length})
-          </Button>
-        </Link>
-      </div>
+    <>
+      {/* Show restricted dashboard for banned users */}
+      {getCurrentUser()?.isBanned && <BannedUserDashboard />}
+      
+      {/* Show normal dashboard for non-banned users */}
+      {!getCurrentUser()?.isBanned && (
+        <div className="p-8">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Fresh from Benguet</h1>
+              <p className="text-muted-foreground mt-1">Shop farm-fresh vegetables delivered to your doorstep</p>
+            </div>
+            <Link href="/buyer/cart">
+              <Button className="bg-buyer hover:bg-buyer-light text-white gap-2">
+                <ShoppingCart className="w-5 h-5" />
+                View Cart ({items.length})
+              </Button>
+            </Link>
+          </div>
 
       {/* Search & Filters */}
       <div className="space-y-4 mb-8">
@@ -583,6 +604,8 @@ export default function BuyerDashboardPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+      )}
+    </>
   )
 }

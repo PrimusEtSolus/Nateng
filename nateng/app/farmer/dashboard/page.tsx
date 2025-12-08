@@ -6,6 +6,9 @@ import { getCurrentUser } from "@/lib/auth"
 import { analytics } from "@/lib/analytics"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
+import { useBanCheck } from "@/hooks/useBanCheck"
+import { useBannedUserRestrictions } from "@/hooks/useBannedUserRestrictions"
+import BannedUserDashboard from "@/components/banned-user-dashboard"
 import { formatDate } from "@/lib/date-utils"
 import { productsAPI, listingsAPI, ordersAPI } from "@/lib/api-client"
 import { Package, TrendingUp, Leaf, DollarSign, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, Truck, PackageCheck } from "lucide-react"
@@ -66,6 +69,12 @@ export default function FarmerDashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  
+  // Check if user is banned and redirect if needed
+  useBanCheck()
+  
+  // Apply restrictions for banned users
+  useBannedUserRestrictions()
 
   useEffect(() => {
     const currentUser = getCurrentUser()
@@ -73,8 +82,15 @@ export default function FarmerDashboardPage() {
       router.push('/login')
       return
     }
-    setUser(currentUser)
     
+    // Check if user is banned
+    if (currentUser.isBanned) {
+      // Don't load normal dashboard data for banned users
+      setUser(currentUser)
+      return
+    }
+    
+    setUser(currentUser)
     analytics.trackPageView('/farmer/dashboard', currentUser.id)
   }, [router])
 
@@ -173,12 +189,18 @@ export default function FarmerDashboardPage() {
   }
 
   return (
-    <div className="p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Welcome back, {user?.name?.split(" ")[0] || "Farmer"}</h1>
-        <p className="text-muted-foreground mt-1">Here&apos;s what&apos;s happening with your farm today</p>
-      </div>
+    <>
+      {/* Show restricted dashboard for banned users */}
+      {user?.isBanned && <BannedUserDashboard />}
+      
+      {/* Show normal dashboard for non-banned users */}
+      {!user?.isBanned && (
+        <div className="p-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground">Welcome back, {user?.name?.split(" ")[0] || "Farmer"}</h1>
+            <p className="text-muted-foreground mt-1">Here&apos;s what&apos;s happening with your farm today</p>
+          </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -495,6 +517,8 @@ export default function FarmerDashboardPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+      )}
+    </>
   )
 }
