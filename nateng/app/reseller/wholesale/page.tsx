@@ -29,6 +29,7 @@ interface Listing {
     id: number
     name: string
     description: string | null
+    imageUrl: string | null
     farmer: {
       id: number
       name: string
@@ -293,7 +294,7 @@ export default function ResellerWholesalePage() {
               className="bg-white rounded-2xl overflow-hidden shadow-sm border border-border hover:shadow-lg transition-all group"
             >
               <div className="aspect-video relative overflow-hidden bg-muted flex items-center justify-center">
-                <Package className="w-16 h-16 text-muted-foreground" />
+                {listing.product.imageUrl ? <img src={listing.product.imageUrl} alt={listing.product.name} className="w-full h-full object-cover" /> : <Package className="w-16 h-16 text-muted-foreground" />}
                 {listing.quantity < 50 && (
                   <span className="absolute top-3 right-3 px-2 py-1 bg-yellow-500 text-white text-xs font-medium rounded-full">
                     Low Stock
@@ -444,8 +445,8 @@ export default function ResellerWholesalePage() {
                   key={item.listing.id}
                   className="flex items-center gap-4 p-4 border border-border rounded-xl bg-muted/30"
                 >
-                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                    <Package className="w-8 h-8 text-muted-foreground" />
+                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {item.listing.product.imageUrl ? <img src={item.listing.product.imageUrl} alt={item.listing.product.name} className="w-full h-full object-cover" /> : <Package className="w-8 h-8 text-muted-foreground" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-foreground">{item.listing.product.name}</h4>

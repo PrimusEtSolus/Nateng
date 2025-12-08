@@ -7,6 +7,7 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
     const file = formData.get('image') as File;
+    const type = formData.get('type') as string || 'products'; // 'products' or 'profile'
 
     if (!file) {
       return NextResponse.json({ error: 'No image file provided' }, { status: 400 });
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(bytes);
 
     // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'products');
+    const uploadsDir = join(process.cwd(), 'public', 'uploads', type);
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
     }
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
     await writeFile(filepath, buffer);
 
     // Return the public URL
-    const imageUrl = `/uploads/products/${filename}`;
+    const imageUrl = `/uploads/${type}/${filename}`;
     
     return NextResponse.json({ imageUrl });
   } catch (error: any) {

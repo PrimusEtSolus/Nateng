@@ -17,6 +17,7 @@ interface Product {
   id: number
   name: string
   description: string | null
+  imageUrl: string | null
   farmerId: number
   createdAt: string
   listings: Array<{
@@ -46,7 +47,11 @@ export default function FarmerCropsPage() {
     description: "",
     priceCents: "",
     quantity: "",
+    imageUrl: "",
   })
+  const [productPhoto, setProductPhoto] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -105,8 +110,66 @@ export default function FarmerCropsPage() {
       description: product.description || "",
       priceCents: listing ? (listing.priceCents / 100).toString() : "",
       quantity: listing ? listing.quantity.toString() : "",
+      imageUrl: product.imageUrl || "",
     })
+    setPhotoPreview(product.imageUrl)
     setIsEditModalOpen(true)
+  }
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Photo must be less than 5MB")
+        return
+      }
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select an image file")
+        return
+      }
+      setProductPhoto(file)
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handlePhotoUpload = async () => {
+    if (!productPhoto) return
+    
+    setIsUploadingPhoto(true)
+    try {
+      // Create FormData for upload
+      const formData = new FormData()
+      formData.append('image', productPhoto)
+      formData.append('type', 'products')
+
+      // Upload to server
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Upload failed')
+      }
+
+      const { imageUrl } = await response.json()
+      setEditCrop({ ...editCrop, imageUrl })
+      setProductPhoto(null)
+      
+      toast.success("Photo uploaded successfully!")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload photo")
+    } finally {
+      setIsUploadingPhoto(false)
+    }
   }
 
   const handleUpdateCrop = async () => {
@@ -117,10 +180,11 @@ export default function FarmerCropsPage() {
 
     setIsUpdating(true)
     try {
-      // Step 1: Update product (name, description)
+      // Step 1: Update product (name, description, imageUrl)
       await productsAPI.update(editingProduct.id, {
         name: editCrop.name,
         description: editCrop.description || null,
+        imageUrl: editCrop.imageUrl || null,
       })
 
       // Step 2: Update or create listing (price, quantity)
@@ -175,7 +239,9 @@ export default function FarmerCropsPage() {
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false)
     setEditingProduct(null)
-    setEditCrop({ name: "", description: "", priceCents: "", quantity: "" })
+    setEditCrop({ name: "", description: "", priceCents: "", quantity: "", imageUrl: "" })
+    setProductPhoto(null)
+    setPhotoPreview(null)
   }
 
   return (
@@ -265,6 +331,59 @@ export default function FarmerCropsPage() {
         </Dialog>
       </div>
 
+      {/* Edit Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Crop</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-name">Crop Name</Label>
+              <Input id="edit-name" value={editCrop.name} onChange={(e) => setEditCrop({ ...editCrop, name: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-quantity">Quantity (kg)</Label>
+                <Input id="edit-quantity" type="number" value={editCrop.quantity} onChange={(e) => setEditCrop({ ...editCrop, quantity: e.target.value })} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-price">Price (₱/kg)</Label>
+                <Input id="edit-price" type="number" step="0.01" value={editCrop.priceCents} onChange={(e) => setEditCrop({ ...editCrop, priceCents: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Input id="edit-description" value={editCrop.description} onChange={(e) => setEditCrop({ ...editCrop, description: e.target.value })} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Product Photo</Label>
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden">
+                  {photoPreview ? <img src={photoPreview} alt="Product" className="w-full h-full object-cover" /> : <Package className="w-full h-full p-4 text-muted-foreground" />}
+                </div>
+                <div className="flex-1">
+                  <input type="file" id="edit-photo" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+                  <Button asChild variant="outline" size="sm">
+                    <label htmlFor="edit-photo" className="cursor-pointer">Choose Photo</label>
+                  </Button>
+                  {productPhoto && <Button onClick={handlePhotoUpload} className="ml-2 bg-farmer hover:bg-farmer-light" size="sm" disabled={isUploadingPhoto}>
+                    {isUploadingPhoto ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</> : "Upload"}
+                  </Button>}
+                  <p className="text-xs text-muted-foreground mt-1">JPG, PNG. Max 5MB</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={handleCloseEditModal} disabled={isUpdating}>Cancel</Button>
+            <Button onClick={handleUpdateCrop} className="bg-farmer hover:bg-farmer-light" disabled={isUpdating}>
+              {isUpdating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Updating...</> : "Update Crop"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Search */}
       <div className="mb-6">
         <div className="relative max-w-md">
@@ -303,16 +422,8 @@ export default function FarmerCropsPage() {
                   className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                 >
                   <div className="aspect-video bg-muted relative flex items-center justify-center">
-                    <Package className="w-12 h-12 text-muted-foreground" />
-                    <span
-                      className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${
-                        hasAvailable
-                          ? "bg-green-500 text-white"
-                          : totalQuantity === 0
-                            ? "bg-red-500 text-white"
-                            : "bg-yellow-500 text-white"
-                      }`}
-                    >
+                    {product.imageUrl ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" /> : <Package className="w-12 h-12 text-muted-foreground" />}
+                    <span className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium ${hasAvailable ? "bg-green-500 text-white" : totalQuantity === 0 ? "bg-red-500 text-white" : "bg-yellow-500 text-white"}`}>
                       {hasAvailable ? "Available" : "Out of Stock"}
                     </span>
                   </div>

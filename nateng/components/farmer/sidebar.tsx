@@ -46,8 +46,16 @@ export function FarmerSidebar() {
       {/* User Profile Card */}
       <div className="p-4 mx-4 mt-4 bg-gradient-to-br from-farmer-bg to-amber-50 rounded-xl">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-farmer rounded-full flex items-center justify-center text-white font-semibold">
-            {user?.name?.charAt(0) || "F"}
+          <div className="w-10 h-10 bg-farmer rounded-full flex items-center justify-center text-white font-semibold overflow-hidden">
+            {user?.profilePhotoUrl ? (
+              <img 
+                src={user.profilePhotoUrl} 
+                alt={user.name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{user?.name?.charAt(0) || "F"}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-sm text-foreground truncate">{user?.name || "Farmer"}</p>

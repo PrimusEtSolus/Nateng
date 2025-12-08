@@ -7,6 +7,7 @@ export interface User {
   name: string
   email: string
   role: UserRole
+  profilePhotoUrl?: string
   createdAt?: string
   businessName?: string
 }

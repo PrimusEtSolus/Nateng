@@ -397,7 +397,13 @@ export default function BusinessBrowsePage() {
                     className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
-                      <Package className="w-8 h-8 text-muted-foreground" />
+                      <div className="w-8 h-8 rounded overflow-hidden bg-muted flex items-center justify-center">
+                        <ProductImage
+                          src={item.listing.product.imageUrl}
+                          alt={item.listing.product.name}
+                          className="w-full h-full"
+                        />
+                      </div>
                       <div>
                         <p className="font-medium">
                           {item.listing.product.name}

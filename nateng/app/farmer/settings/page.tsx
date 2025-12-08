@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, logout } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { usersAPI } from "@/lib/api-client"
 import { benguetMunicipalities } from "@/lib/mock-data"
@@ -16,6 +16,15 @@ export default function FarmerSettingsPage() {
   const [activeTab, setActiveTab] = useState("profile")
   const [saved, setSaved] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    current: "",
+    new: "",
+    confirm: "",
+  })
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -37,8 +46,115 @@ export default function FarmerSettingsPage() {
         barangay: "",
         farmSize: "",
       })
+      // Set existing profile photo if available
+      if (currentUser.profilePhotoUrl) {
+        setPhotoPreview(currentUser.profilePhotoUrl)
+      }
+    } else {
+      // Redirect to login if no user
+      window.location.href = "/login"
     }
   }, [])
+
+  const handlePasswordChange = async () => {
+    if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
+      toast.error("All password fields are required")
+      return
+    }
+    if (passwordData.new !== passwordData.confirm) {
+      toast.error("New passwords do not match")
+      return
+    }
+    if (passwordData.new.length < 6) {
+      toast.error("Password must be at least 6 characters")
+      return
+    }
+
+    setIsChangingPassword(true)
+    try {
+      // This would need a dedicated API endpoint for password changes
+      toast.info("Password change endpoint not implemented yet. Coming soon!")
+      setPasswordData({ current: "", new: "", confirm: "" })
+    } catch (error: any) {
+      toast.error(error.message || "Failed to change password")
+    } finally {
+      setIsChangingPassword(false)
+    }
+  }
+
+  const handleLogout = () => {
+    logout()
+    window.location.href = "/login"
+  }
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file size (2MB max)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("Photo must be less than 2MB")
+        return
+      }
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select an image file")
+        return
+      }
+      setProfilePhoto(file)
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handlePhotoUpload = async () => {
+    if (!profilePhoto || !user) return
+    
+    setIsUploadingPhoto(true)
+    try {
+      // Create FormData for upload
+      const formData = new FormData()
+      formData.append('image', profilePhoto)
+      formData.append('type', 'profile')
+
+      // Upload to server
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Upload failed')
+      }
+
+      const { imageUrl } = await response.json()
+
+      // Update user with new photo URL
+      const updatedUser = await usersAPI.update(user.id, {
+        profilePhotoUrl: imageUrl,
+      })
+
+      // Update state and localStorage
+      setUser(updatedUser)
+      if (typeof window !== "undefined") {
+        localStorage.setItem("natenghub_user", JSON.stringify(updatedUser))
+      }
+
+      // Update photo preview
+      setPhotoPreview(imageUrl)
+      setProfilePhoto(null)
+
+      toast.success("Photo uploaded and saved successfully!")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload photo")
+    } finally {
+      setIsUploadingPhoto(false)
+    }
+  }
 
   const handleSave = async () => {
     if (!user) {
@@ -55,13 +171,19 @@ export default function FarmerSettingsPage() {
     setIsSaving(true)
     try {
       // Only save fields that exist in the User model (name, email)
-      // Note: phone, municipality, barangay, farmSize are not in the User model yet
       const updatedUser = await usersAPI.update(user.id, {
         name: formData.name,
         email: formData.email,
       })
 
+      // Update state
       setUser(updatedUser)
+
+      // Persist to localStorage so getCurrentUser reflects the change
+      if (typeof window !== "undefined") {
+        localStorage.setItem("natenghub_user", JSON.stringify(updatedUser))
+      }
+
       setSaved(true)
       toast.success("Profile updated successfully!")
       setTimeout(() => setSaved(false), 3000)
@@ -120,13 +242,43 @@ export default function FarmerSettingsPage() {
             <div className="bg-card rounded-2xl border border-border p-6">
               <h2 className="text-xl font-semibold mb-6">Profile Information</h2>
               <div className="flex items-center gap-4 mb-8">
-                <div className="w-20 h-20 rounded-full bg-farmer/10 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-farmer">{formData.name.charAt(0)}</span>
+                <div className="w-20 h-20 rounded-full bg-farmer/10 flex items-center justify-center overflow-hidden">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl font-bold text-farmer">{formData.name.charAt(0)}</span>
+                  )}
                 </div>
                 <div>
-                  <Button variant="outline" size="sm">
-                    Change Photo
+                  <input
+                    type="file"
+                    id="photo-upload"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                  />
+                  <Button asChild variant="outline" size="sm">
+                    <label htmlFor="photo-upload" className="cursor-pointer">
+                      Change Photo
+                    </label>
                   </Button>
+                  {photoPreview && (
+                    <Button
+                      onClick={handlePhotoUpload}
+                      className="ml-2 bg-farmer hover:bg-farmer-light"
+                      size="sm"
+                      disabled={isUploadingPhoto}
+                    >
+                      {isUploadingPhoto ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        "Upload"
+                      )}
+                    </Button>
+                  )}
                   <p className="text-sm text-muted-foreground mt-1">JPG, PNG. Max 2MB</p>
                 </div>
               </div>
@@ -288,17 +440,48 @@ export default function FarmerSettingsPage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Current Password</Label>
-                    <Input type="password" placeholder="••••••••" className="h-12" />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      className="h-12"
+                      value={passwordData.current}
+                      onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>New Password</Label>
-                    <Input type="password" placeholder="••••••••" className="h-12" />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      className="h-12"
+                      value={passwordData.new}
+                      onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Confirm New Password</Label>
-                    <Input type="password" placeholder="••••••••" className="h-12" />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      className="h-12"
+                      value={passwordData.confirm}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                    />
                   </div>
-                  <Button className="bg-farmer hover:bg-farmer-light">Update Password</Button>
+                  <Button
+                    className="bg-farmer hover:bg-farmer-light"
+                    onClick={handlePasswordChange}
+                    disabled={isChangingPassword}
+                  >
+                    {isChangingPassword ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Update Password"
+                    )}
+                  </Button>
                 </div>
               </div>
               <div className="bg-card rounded-2xl border border-border p-6">

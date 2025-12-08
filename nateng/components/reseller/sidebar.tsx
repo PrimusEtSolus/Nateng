@@ -48,8 +48,16 @@ export function ResellerSidebar() {
       {/* User Profile Card */}
       <div className="p-4 mx-4 mt-4 bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl border border-teal-100">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
-            {user?.businessName?.charAt(0) || "R"}
+          <div className="w-11 h-11 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold shadow-md overflow-hidden">
+            {user?.profilePhotoUrl ? (
+              <img 
+                src={user.profilePhotoUrl} 
+                alt={user.name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{user?.businessName?.charAt(0) || "R"}</span>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-foreground truncate">{user?.businessName || "My Store"}</p>

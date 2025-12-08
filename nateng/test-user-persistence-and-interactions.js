@@ -20,13 +20,21 @@ let testUsers = {
   reseller: null
 };
 
+// User tokens for authenticated requests
+let userTokens = {
+  farmer: null,
+  buyer: null,
+  business: null,
+  reseller: null
+};
+
 let testProducts = [];
 let testListings = [];
 let testOrders = [];
 let testMessages = [];
 
 // Helper function to make API calls
-async function apiCall(endpoint, method = 'GET', body = null) {
+async function apiCall(endpoint, method = 'GET', body = null, token = null) {
   try {
     const options = {
       method,
@@ -34,6 +42,9 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     };
     if (body) {
       options.body = JSON.stringify(body);
+    }
+    if (token) {
+      options.headers.Authorization = `Bearer ${token}`;
     }
     
     const response = await fetch(`${BASE_URL}${endpoint}`, options);
@@ -135,10 +146,14 @@ async function testUserLogin() {
     
     if (result.ok && result.data.user) {
       const loggedInUser = result.data.user;
+      const token = result.data.token;
       if (loggedInUser.id === user.id && loggedInUser.email === user.email) {
+        // Store the token for authenticated requests
+        userTokens[role] = token;
         results[role] = 'PASS';
         console.log(`   ✅ ${role} logged in successfully!`);
         console.log(`      Verified: ID ${loggedInUser.id}, Email: ${loggedInUser.email}`);
+        console.log(`      Token stored for authenticated requests`);
       } else {
         results[role] = 'FAIL';
         console.log(`   ❌ Login returned different user data`);

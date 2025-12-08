@@ -28,7 +28,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const { id } = await params;
     const body = await req.json();
-    const { name, email, role } = body;
+    const { name, email, role, profilePhotoUrl } = body;
 
     if (role) {
       const validRoles = ['farmer', 'buyer', 'business', 'reseller', 'admin'];
@@ -46,6 +46,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         ...(name && { name }),
         ...(email && { email }),
         ...(role && { role }),
+        ...(profilePhotoUrl !== undefined && { profilePhotoUrl }),
       },
     });
 

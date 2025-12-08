@@ -44,21 +44,31 @@ async function runTests() {
     // Test 1: GET products
     console.log('1️⃣  Testing GET /api/products');
     let res = await makeRequest('GET', '/api/products');
-    console.log(`   Status: ${res.status} ✓`);
-    console.log(`   Products in DB: ${res.data.length}`);
+    console.log(`   Status: ${res.status} ${res.status === 200 ? '✓' : '❌'}`);
+    if (res.status === 200 && Array.isArray(res.data)) {
+      console.log(`   Products in DB: ${res.data.length}`);
+    } else {
+      console.log('   Unable to list products - unexpected response shape');
+    }
     
     // Test 2: GET specific product
     console.log('\n2️⃣  Testing GET /api/products/1');
     res = await makeRequest('GET', '/api/products/1');
-    console.log(`   Status: ${res.status} ✓`);
-    console.log(`   Product: ${res.data.name}`);
-    console.log(`   Farmer: ${res.data.farmer.name}`);
+    console.log(`   Status: ${res.status} ${res.status === 200 ? '✓' : '❌'}`);
+    if (res.status === 200 && res.data) {
+      console.log(`   Product: ${res.data.name}`);
+      console.log(`   Farmer: ${res.data.farmer?.name}`);
+    }
     
     // Test 3: GET listings
     console.log('\n3️⃣  Testing GET /api/listings');
     res = await makeRequest('GET', '/api/listings');
-    console.log(`   Status: ${res.status} ✓`);
-    console.log(`   Listings in DB: ${res.data.length}`);
+    console.log(`   Status: ${res.status} ${res.status === 200 ? '✓' : '❌'}`);
+    if (res.status === 200 && Array.isArray(res.data)) {
+      console.log(`   Listings in DB: ${res.data.length}`);
+    } else {
+      console.log('   Unable to list listings - unexpected response shape');
+    }
     
     // Test 4: POST new product (CREATE)
     console.log('\n4️⃣  Testing POST /api/products (CREATE)');
@@ -68,6 +78,9 @@ async function runTests() {
       farmerId: 1
     });
     console.log(`   Status: ${res.status} ${res.status === 201 ? '✓' : '❌'}`);
+    if (res.status === 401) {
+      console.log('   Endpoint requires authentication - creation test skipped');
+    }
     if (res.status === 201) {
       console.log(`   Created: ${res.data.name} (ID: ${res.data.id})`);
       const testProductId = res.data.id;
@@ -92,29 +105,43 @@ async function runTests() {
     // Test 7: GET orders
     console.log('\n7️⃣  Testing GET /api/orders');
     res = await makeRequest('GET', '/api/orders');
-    console.log(`   Status: ${res.status} ✓`);
-    console.log(`   Orders in DB: ${res.data.length}`);
+    console.log(`   Status: ${res.status} ${res.status === 200 ? '✓' : '❌'}`);
+    if (res.status === 200 && Array.isArray(res.data)) {
+      console.log(`   Orders in DB: ${res.data.length}`);
+    } else if (res.status === 401) {
+      console.log('   Endpoint requires authentication - order list test limited');
+    } else {
+      console.log('   Unable to list orders - unexpected response shape');
+    }
     
     // Test 8: GET specific order
     console.log('\n8️⃣  Testing GET /api/orders/1');
     res = await makeRequest('GET', '/api/orders/1');
     console.log(`   Status: ${res.status} ${res.status === 200 ? '✓' : '❌'}`);
-    if (res.status === 200) {
+    if (res.status === 200 && res.data) {
       console.log(`   Order ID: ${res.data.id}`);
       console.log(`   Status: ${res.data.status}`);
-      console.log(`   Items: ${res.data.items.length}`);
+      console.log(`   Items: ${Array.isArray(res.data.items) ? res.data.items.length : 0}`);
+    } else if (res.status === 401) {
+      console.log('   Endpoint requires authentication - single order test limited');
     }
     
     // Test 9: GET users
     console.log('\n9️⃣  Testing GET /api/users');
     res = await makeRequest('GET', '/api/users');
-    console.log(`   Status: ${res.status} ✓`);
-    console.log(`   Users in DB: ${res.data.length}`);
-    const userRoles = {};
-    res.data.forEach(u => {
-      userRoles[u.role] = (userRoles[u.role] || 0) + 1;
-    });
-    console.log(`   Roles: ${Object.entries(userRoles).map(([k, v]) => `${k}(${v})`).join(', ')}`);
+    console.log(`   Status: ${res.status} ${res.status === 200 ? '✓' : '❌'}`);
+    if (res.status === 200 && Array.isArray(res.data)) {
+      console.log(`   Users in DB: ${res.data.length}`);
+      const userRoles = {};
+      res.data.forEach(u => {
+        userRoles[u.role] = (userRoles[u.role] || 0) + 1;
+      });
+      console.log(`   Roles: ${Object.entries(userRoles).map(([k, v]) => `${k}(${v})`).join(', ')}`);
+    } else if (res.status === 401) {
+      console.log('   Endpoint requires authentication - user list test limited');
+    } else {
+      console.log('   Unable to list users - unexpected response shape');
+    }
     
     // Test 10: Error handling - GET non-existent product
     console.log('\n🔟 Testing error handling - GET /api/products/9999');

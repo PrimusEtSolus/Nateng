@@ -17,6 +17,7 @@ model User {
   password  String   // Hashed password
   role      String
   minimumOrderKg Int? // Minimum order quantity in kg (for farmers: 50 or 100)
+  profilePhotoUrl String? // URL to profile photo
   createdAt DateTime @default(now())
   // relations
   products  Product[] @relation("FarmerProducts")

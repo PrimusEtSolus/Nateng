@@ -71,11 +71,15 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
+    "@next/eslint-plugin-next": "^16.0.7",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
     "baseline-browser-mapping": "^2.8.32",
+    "eslint": "^9.39.1",
     "postcss": "^8.5",
     "prisma": "^5.9.0",
     "tailwindcss": "^4.1.9",
