@@ -10,9 +10,9 @@
     "seed": "ts-node --project tsconfig.node.json prisma/seed.ts",
     "lint": "eslint .",
     "start": "next start",
-    "test:api": "node test-api-comprehensive.js",
-    "test:auth": "node test-auth-comprehensive.js",
-    "test:users": "node test-user-persistence-and-interactions.js",
+    "test:api": "node tests/test-api-comprehensive.js",
+    "test:auth": "node tests/test-auth-comprehensive.js",
+    "test:users": "node tests/test-user-persistence-and-interactions.js",
     "test": "npm run test:api && npm run test:auth && npm run test:users"
   },
   "dependencies": {
