@@ -6,16 +6,18 @@ const prisma = new PrismaClient()
 export async function GET() {
   try {
     // Get system statistics
-    const [totalUsers, totalProducts, totalListings, totalOrders] = await Promise.all([
+    const [totalUsers, totalProducts, totalListings, totalOrders, bannedUsers] = await Promise.all([
       prisma.user.count(),
       prisma.product.count(),
       prisma.listing.count(),
-      prisma.order.count()
+      prisma.order.count(),
+      prisma.user.count({ where: { isBanned: true } })
     ])
 
-    // For now, simulate banned users count (in production, this would query the isBanned field)
-    // Since the schema changes haven't been fully applied yet, we'll use a mock value
-    const bannedUsers = Math.floor(totalUsers * 0.02) // 2% of users banned
+    // Get pending appeals count
+    const pendingAppeals = await prisma.appeal.count({
+      where: { status: 'pending' }
+    })
 
     // Simulate online users count (in production, this would come from a real-time system)
     // For demo purposes, we'll use a random number between 5-20% of total users
@@ -27,7 +29,8 @@ export async function GET() {
       totalListings,
       totalOrders,
       onlineUsers,
-      bannedUsers
+      bannedUsers,
+      pendingAppeals
     })
   } catch (error) {
     console.error('Admin stats error:', error)

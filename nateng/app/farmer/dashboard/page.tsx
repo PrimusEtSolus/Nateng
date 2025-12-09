@@ -6,8 +6,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { analytics } from "@/lib/analytics"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
-import { useBanCheck } from "@/hooks/useBanCheck"
-import { useBannedUserRestrictions } from "@/hooks/useBannedUserRestrictions"
+import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import BannedUserDashboard from "@/components/banned-user-dashboard"
 import { formatDate } from "@/lib/date-utils"
 import { productsAPI, listingsAPI, ordersAPI } from "@/lib/api-client"
@@ -70,11 +69,8 @@ export default function FarmerDashboardPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   
-  // Check if user is banned and redirect if needed
-  useBanCheck()
-  
-  // Apply restrictions for banned users
-  useBannedUserRestrictions()
+  // Check if user is banned and enforce restrictions
+  const { banStatus, isLoading: banLoading } = useBanEnforcement()
 
   useEffect(() => {
     const currentUser = getCurrentUser()

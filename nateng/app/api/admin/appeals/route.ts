@@ -1,9 +1,28 @@
 import { NextResponse } from 'next/server'
-import { getAppeals, updateAppealStatus } from '@/lib/banned-users'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export async function GET() {
   try {
-    const appeals = getAppeals()
+    const appeals = await prisma.appeal.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isBanned: true,
+            bannedAt: true,
+            banReason: true
+          }
+        }
+      },
+      orderBy: {
+        submittedAt: 'desc'
+      }
+    })
+
     return NextResponse.json(appeals)
   } catch (error) {
     console.error('Get appeals error:', error)
@@ -32,20 +51,65 @@ export async function POST(request: Request) {
       )
     }
 
-    const success = updateAppealStatus(appealId, status, adminEmail, adminNotes)
+    // Get the appeal with user info
+    const appeal = await prisma.appeal.findUnique({
+      where: { id: appealId },
+      include: { user: true }
+    })
 
-    if (!success) {
+    if (!appeal) {
       return NextResponse.json(
         { error: 'Appeal not found' },
         { status: 404 }
       )
     }
 
+    // Update appeal status
+    const updatedAppeal = await prisma.appeal.update({
+      where: { id: appealId },
+      data: {
+        status,
+        reviewedAt: new Date(),
+        reviewedBy: adminEmail,
+        adminNotes
+      }
+    })
+
+    // If approved, unban the user
+    if (status === 'approved' && appeal.user) {
+      await prisma.user.update({
+        where: { id: appeal.userId },
+        data: {
+          isBanned: false,
+          bannedAt: null,
+          banReason: null
+        }
+      })
+    }
+
+    // Create audit log entry
+    await prisma.auditLog.create({
+      data: {
+        userId: appeal.userId,
+        action: status === 'approved' ? 'approve_appeal' : 'reject_appeal',
+        actor: adminEmail,
+        reason: adminNotes || `Appeal ${status}`,
+        metadata: JSON.stringify({
+          appealId,
+          userName: appeal.user?.name,
+          userEmail: appeal.user?.email,
+          appealReason: appeal.appealReason,
+          adminNotes
+        })
+      }
+    })
+
     console.log(`Appeal ${appealId} ${status} by admin ${adminEmail}`, { adminNotes })
 
     return NextResponse.json({ 
       message: `Appeal ${status} successfully`,
-      status
+      status,
+      appeal: updatedAppeal
     })
   } catch (error) {
     console.error('Update appeal error:', error)

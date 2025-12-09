@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
+import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import { Package, TrendingUp, ShoppingBag, DollarSign, ArrowUpRight, Store, Users, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -87,6 +88,9 @@ export default function ResellerDashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [selectedInventoryItem, setSelectedInventoryItem] = useState<Listing | null>(null)
   const [selectedWholesaleOrder, setSelectedWholesaleOrder] = useState<Order | null>(null)
+  
+  // Check if user is banned and enforce restrictions
+  const { banStatus, isLoading: banLoading } = useBanEnforcement()
 
   useEffect(() => {
     const currentUser = getCurrentUser()

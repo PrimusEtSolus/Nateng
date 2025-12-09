@@ -11,6 +11,7 @@ import { Clock, AlertTriangle, CheckCircle2, Truck, MapPin, ArrowLeft } from "lu
 import { getCurrentUser, getRedirectPath } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import type { Order } from "@/lib/types"
+import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import {
   getAvailableWindowTimes,
   formatTime,
@@ -26,6 +27,9 @@ export default function LogisticsDashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
   const [mounted, setMounted] = useState(false)
+  
+  // Check if user is banned and enforce restrictions
+  const { banStatus, isLoading: banLoading } = useBanEnforcement()
 
   useEffect(() => {
     setMounted(true)

@@ -8,8 +8,7 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { formatDate } from "@/lib/date-utils"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
-import { useBanCheck } from "@/hooks/useBanCheck"
-import { useBannedUserRestrictions } from "@/hooks/useBannedUserRestrictions"
+import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import BannedUserDashboard from "@/components/banned-user-dashboard"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -66,11 +65,8 @@ export default function BuyerDashboardPage() {
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name" | "quantity">("name")
   const { addToCart, updateQuantity, items } = useCart()
 
-  // Check if user is banned and redirect if needed
-  useBanCheck()
-  
-  // Apply restrictions for banned users
-  useBannedUserRestrictions()
+  // Check if user is banned and enforce restrictions
+  const { banStatus, isLoading: banLoading } = useBanEnforcement()
 
   // Fetch user favorites
   const { data: userFavorites, loading: favoritesLoading } = useFetch<any[]>('/api/favorites')

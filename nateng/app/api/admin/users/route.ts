@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 export async function GET() {
   try {
-    // Get all users with their listings count
+    // Get all users with their listings count and ban information
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -13,6 +13,9 @@ export async function GET() {
         email: true,
         role: true,
         createdAt: true,
+        isBanned: true,
+        bannedAt: true,
+        banReason: true,
         _count: {
           select: {
             listings: true,

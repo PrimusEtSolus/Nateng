@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { usersAPI } from "@/lib/api-client"
+import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import { Building2, MapPin, Lock, Bell, Shield, Banknote, FileText, Check, Trash2, Users, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -14,6 +15,9 @@ export default function BusinessSettingsPage() {
   const [user, setUser] = useState<User | null>(null)
   const [activeTab, setActiveTab] = useState("business")
   const [saved, setSaved] = useState(false)
+  
+  // Check if user is banned and enforce restrictions
+  const { banStatus, isLoading: banLoading } = useBanEnforcement()
   const [formData, setFormData] = useState({
     businessName: "",
     ownerName: "",

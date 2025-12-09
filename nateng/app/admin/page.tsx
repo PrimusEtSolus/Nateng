@@ -22,9 +22,9 @@ export default function AdminPage() {
     onlineUsers: 0,
     bannedUsers: 0
   })
-  const [users, setUsers] = useState([])
-  const [products, setProducts] = useState([])
-  const [appeals, setAppeals] = useState([])
+  const [users, setUsers] = useState<any[]>([])
+  const [products, setProducts] = useState<any[]>([])
+  const [appeals, setAppeals] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState('dashboard')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedUser, setSelectedUser] = useState(null)

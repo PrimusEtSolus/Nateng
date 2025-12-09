@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { listingId: string } }
+  { params }: { params: Promise<{ listingId: string }> }
 ) {
   try {
     const currentUser = getCurrentUser()
@@ -12,7 +12,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const listingId = parseInt(params.listingId)
+    const resolvedParams = await params
+    const listingId = parseInt(resolvedParams.listingId)
     if (isNaN(listingId)) {
       return NextResponse.json({ error: 'Invalid listing ID' }, { status: 400 })
     }

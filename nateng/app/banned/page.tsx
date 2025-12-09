@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Ban, Mail, Send, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-export default function BannedPage() {
+function BannedPageContent() {
   const searchParams = useSearchParams()
   const reason = searchParams.get('reason') || 'Your account has been suspended'
   const [showAppealForm, setShowAppealForm] = useState(false)
@@ -220,5 +220,13 @@ export default function BannedPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function BannedPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>}>
+      <BannedPageContent />
+    </Suspense>
   )
 }

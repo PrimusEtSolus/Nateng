@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const currentUser = getCurrentUser()
@@ -12,7 +12,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const favoriteId = parseInt(params.id)
+    const resolvedParams = await params
+    const favoriteId = parseInt(resolvedParams.id)
     if (isNaN(favoriteId)) {
       return NextResponse.json({ error: 'Invalid favorite ID' }, { status: 400 })
     }

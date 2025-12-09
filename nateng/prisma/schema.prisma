@@ -32,6 +32,8 @@ model User {
   notifications Notification[]
   analyticsEvents AnalyticsEvent[]
   favorites      Favorite[]
+  appeals        Appeal[]
+  auditLogs      AuditLog[]
 }
 
 model Product {
@@ -146,4 +148,30 @@ model Favorite {
   createdAt DateTime @default(now())
   
   @@unique([userId, listingId]) // Prevent duplicate favorites
+}
+
+model Appeal {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  appealReason  String
+  appealDetails String?
+  status        String   @default("pending") // "pending", "approved", "rejected"
+  submittedAt   DateTime @default(now())
+  reviewedAt    DateTime?
+  reviewedBy    String?  // Admin email who reviewed
+  adminNotes    String?
+  
+  @@unique([userId, status]) // One pending appeal per user
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     // User being acted upon (can be null for system actions)
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String   // "ban", "unban", "approve_appeal", "reject_appeal"
+  actor       String   // Admin email who performed action
+  reason      String?  // Reason for action
+  metadata    String?  // JSON string for additional context
+  createdAt   DateTime @default(now())
 }
