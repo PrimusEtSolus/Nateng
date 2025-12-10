@@ -29,17 +29,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    // Check if user is banned
-    const banned = isUserBanned(email.toLowerCase());
+    // Check if user is banned (from database)
+    const banned = user.isBanned;
     
-    // Return user without password, but include ban status
+    if (banned) {
+      return NextResponse.json({ 
+        error: 'Account suspended. Your account has been banned by administrator. Please submit an appeal at http://localhost:3000/contact if you believe this is an error.',
+        isBanned: true
+      }, { status: 403 });
+    }
+
+    // Return user without password for successful login
     const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json({ 
-      user: {
-        ...userWithoutPassword,
-        isBanned: banned
-      },
-      message: banned ? 'Account suspended. Limited access available for appeals.' : 'Login successful'
+      user: userWithoutPassword,
+      message: 'Login successful'
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

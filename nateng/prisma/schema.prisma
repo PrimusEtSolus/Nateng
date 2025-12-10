@@ -29,10 +29,11 @@ model User {
   ordersAsSeller Order[] @relation("SellerOrders")
   messagesSent Message[] @relation("SenderMessages")
   messagesReceived Message[] @relation("ReceiverMessages")
+  appeals   Appeal[]
+  contactMessages ContactMessage[]
   notifications Notification[]
   analyticsEvents AnalyticsEvent[]
   favorites      Favorite[]
-  appeals        Appeal[]
   auditLogs      AuditLog[]
 }
 
@@ -174,4 +175,19 @@ model AuditLog {
   reason      String?  // Reason for action
   metadata    String?  // JSON string for additional context
   createdAt   DateTime @default(now())
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String
+  message   String
+  type      String // 'general', 'appeal', 'support', 'business'
+  status    String @default("pending") // 'pending', 'reviewed', 'resolved'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // relations
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
 }

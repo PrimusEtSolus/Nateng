@@ -13,7 +13,8 @@ export function removeBannedUser(email: string) {
 }
 
 export function isUserBanned(email: string): boolean {
-  return bannedUsers.includes(email)
+  const result = bannedUsers.includes(email)
+  return result
 }
 
 export function getBannedUsers(): string[] {
