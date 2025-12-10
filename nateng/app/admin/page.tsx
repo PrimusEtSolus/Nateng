@@ -463,9 +463,13 @@ export default function AdminPage() {
   }
 
   const handleRefreshUsers = async () => {
-    await fetchUsers()
-    setLastRefresh(new Date())
-    toast.success("User list refreshed")
+    try {
+      await fetchUsers()
+      setLastRefresh(new Date())
+      toast.success("User list refreshed")
+    } catch (error) {
+      toast.error("Failed to refresh users")
+    }
   }
 
   const handleMarkReviewed = async (messageId: number, messageName: string) => {
@@ -537,9 +541,12 @@ export default function AdminPage() {
       if (response.ok) {
         const data = await response.json()
         setContactMessages(data.messages || [])
+        setLastRefresh(new Date())
+        toast.success("Messages refreshed")
       }
     } catch (error) {
       console.error('Failed to fetch contact messages:', error)
+      toast.error("Failed to refresh messages")
     }
   }
 
