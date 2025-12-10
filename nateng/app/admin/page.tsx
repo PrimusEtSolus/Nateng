@@ -621,15 +621,6 @@ export default function AdminPage() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Security Notice */}
-        <Alert className="mb-6">
-          <Shield className="w-4 h-4" />
-          <AlertDescription>
-            <strong>Security Notice:</strong> This admin panel is only accessible from localhost. 
-            Current access: {typeof window !== 'undefined' ? window.location.hostname : 'Unknown'}
-          </AlertDescription>
-        </Alert>
-
         {/* Tab Navigation */}
         <div className="border-b border-gray-200 mb-8">
           <nav className="-mb-px flex space-x-8">
