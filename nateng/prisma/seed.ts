@@ -51,6 +51,10 @@ async function main() {
       email: "reseller1@email.com",
       password: defaultPassword,
       role: "reseller",
+      address: "123 Session Road",
+      city: "Baguio",
+      province: "Benguet",
+      country: "Philippines",
     },
   });
 
@@ -88,6 +92,10 @@ async function main() {
       email: "reseller2@email.com",
       password: defaultPassword,
       role: "reseller",
+      address: "456 Magsaysay Avenue",
+      city: "Baguio",
+      province: "Benguet",
+      country: "Philippines",
     },
   });
 
@@ -97,6 +105,10 @@ async function main() {
       email: "reseller3@email.com",
       password: defaultPassword,
       role: "reseller",
+      address: "789 Harrison Road",
+      city: "Baguio",
+      province: "Benguet",
+      country: "Philippines",
     },
   });
 

@@ -119,9 +119,9 @@ export default function ResellerDashboardPage() {
     { skip: !user }
   )
 
-  const pendingOrders = wholesaleOrders?.filter((o) => o.status === "PENDING" || o.status === "CONFIRMED").length || 0
-  const totalSpent = wholesaleOrders?.filter((o) => o.status === "DELIVERED").reduce((sum, o) => sum + o.totalCents, 0) || 0
-  const totalSales = salesOrders?.filter((o) => o.status === "DELIVERED").reduce((sum, o) => sum + o.totalCents, 0) || 0
+  const pendingOrders = Array.isArray(wholesaleOrders) ? wholesaleOrders.filter((o) => o.status === "PENDING" || o.status === "CONFIRMED").length || 0 : 0
+  const totalSpent = Array.isArray(wholesaleOrders) ? wholesaleOrders.filter((o) => o.status === "DELIVERED").reduce((sum, o) => sum + o.totalCents, 0) || 0 : 0
+  const totalSales = Array.isArray(salesOrders) ? salesOrders.filter((o) => o.status === "DELIVERED").reduce((sum, o) => sum + o.totalCents, 0) || 0 : 0
 
   const stats = [
     {

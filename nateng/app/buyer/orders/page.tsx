@@ -60,7 +60,7 @@ export default function BuyerOrdersPage() {
     { skip: !user }
   )
 
-  const filteredOrders = orders?.filter((order) => {
+  const filteredOrders = Array.isArray(orders) ? orders.filter((order) => {
     if (filter === "all") return true
     // Map database statuses to filter
     const statusMap: Record<string, string> = {
@@ -70,7 +70,7 @@ export default function BuyerOrdersPage() {
       "delivered": "DELIVERED",
     }
     return order.status === statusMap[filter] || order.status === filter
-  }) || []
+  }) || [] : []
 
   return (
     <div className="p-8">

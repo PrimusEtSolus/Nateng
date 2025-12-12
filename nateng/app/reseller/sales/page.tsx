@@ -40,7 +40,7 @@ export default function ResellerSalesPage() {
     { skip: !user }
   )
 
-  const deliveredOrders = salesOrders?.filter((o) => o.status === "DELIVERED") || []
+  const deliveredOrders = Array.isArray(salesOrders) ? salesOrders.filter((o) => o.status === "DELIVERED") || [] : []
   const totalRevenue = deliveredOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
   const totalSold = deliveredOrders.reduce((sum, o) => sum + o.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0)
 

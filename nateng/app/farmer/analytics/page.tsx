@@ -51,10 +51,13 @@ export default function FarmerAnalyticsPage() {
   )
 
   // Fetch farmer's products
-  const { data: products, loading: productsLoading } = useFetch<Product[]>(
+  const { data: productsResponse, loading: productsLoading } = useFetch<{ products: Product[] }>(
     user ? `/api/products` : '',
     { skip: !user }
   )
+
+  // Extract products from response
+  const products = productsResponse?.products || null
 
   if (ordersLoading || productsLoading) {
     return (
@@ -73,20 +76,18 @@ export default function FarmerAnalyticsPage() {
     )
   }
 
-  const completedOrders = orders?.filter((o) => o.status === "CONFIRMED" || o.status === "SHIPPED" || o.status === "DELIVERED") || []
+  const completedOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "CONFIRMED" || o.status === "SHIPPED" || o.status === "DELIVERED") || [] : []
   const totalRevenue = completedOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
-  const totalOrders = orders?.length || 0
+  const totalOrders = Array.isArray(orders) ? orders.length || 0 : 0
   const avgOrderValue = completedOrders.length > 0 ? Math.round(totalRevenue / completedOrders.length) : 0
 
   // Aggregate crop sales from real data
   const cropSales: (Product & { totalRevenue: number; totalQuantity: number; orderCount: number })[] =
-    (products || [])
-      .filter((p) => p.farmerId === user?.id)
-      .map((product) => {
-        const productOrders = orders?.filter((o) => 
+    Array.isArray(products) ? products.filter((p) => p.farmerId === user?.id).map((product) => {
+        const productOrders = Array.isArray(orders) ? orders.filter((o) => 
           (o.status === "CONFIRMED" || o.status === "SHIPPED" || o.status === "DELIVERED") &&
           o.items.some((item) => item.listing.product.id === product.id)
-        ) || []
+        ) || [] : []
         const revenue = productOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
         const quantity = productOrders.reduce((sum, o) => 
           sum + o.items
@@ -100,7 +101,7 @@ export default function FarmerAnalyticsPage() {
         }
       })
       .filter((crop) => crop.orderCount > 0)
-      .sort((a, b) => b.totalRevenue - a.totalRevenue)
+      .sort((a, b) => b.totalRevenue - a.totalRevenue) : []
 
   // Generate monthly data from real orders
   const monthlyData = Array.from({ length: 6 }, (_, i) => {

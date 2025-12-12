@@ -58,14 +58,17 @@ export default function FarmerCropsPage() {
   }, [])
 
   // Fetch farmer's products
-  const { data: allProducts, loading: productsLoading, refetch: refetchProducts } = useFetch<Product[]>(
+  const { data: productsResponse, loading: productsLoading, refetch: refetchProducts } = useFetch<{ products: Product[] }>(
     user ? `/api/products` : '',
     { skip: !user }
   )
 
+  // Extract products from response
+  const allProducts = productsResponse?.products || null
+
   // Filter products by current farmer
-  const products = allProducts?.filter((p) => p.farmerId === user?.id) || []
-  const filteredCrops = products.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const products = Array.isArray(allProducts) ? allProducts.filter((p) => p.farmerId === user?.id) || [] : []
+  const filteredCrops = Array.isArray(products) ? products.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase())) : []
 
   const handleAddCrop = async () => {
     if (!user || !newCrop.name || !newCrop.priceCents || !newCrop.quantity) {

@@ -49,7 +49,7 @@ export default function ResellerSignupPage() {
     setIsLoading(true)
 
     try {
-      const user = await register(formData.businessName, formData.email, formData.password, "reseller")
+      const user = await register(formData.businessName, formData.email, formData.password, "reseller", formData.stallLocation)
       if (user) {
         toast.success("Account created successfully!")
         router.push(getRedirectPath(user.role))

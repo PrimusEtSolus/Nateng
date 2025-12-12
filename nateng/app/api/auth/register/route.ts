@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, role } = await req.json();
+    const { name, email, password, role, stallLocation } = await req.json();
 
     // Input validation
     if (!name || !email || !password || !role) {
@@ -65,6 +65,8 @@ export async function POST(req: NextRequest) {
         email: email.toLowerCase(),
         password: hashedPassword,
         role,
+        // Save stall location for resellers in the address field
+        ...(role === 'reseller' && stallLocation && { address: stallLocation }),
       },
     });
 

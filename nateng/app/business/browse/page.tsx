@@ -94,11 +94,11 @@ export default function BusinessBrowsePage() {
 
   const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
 
-  const filteredListings = listings?.filter((listing) => {
+  const filteredListings = Array.isArray(listings) ? listings.filter((listing) => {
     const matchesSearch = listing.product.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === "All" || true
     return matchesSearch && matchesCategory && listing.available && listing.quantity > 0
-  }) || []
+  }) || [] : []
 
   useEffect(() => {
     if (searchTerm && user) {

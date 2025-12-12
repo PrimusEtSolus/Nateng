@@ -69,9 +69,9 @@ export default function ResellerInventoryPage() {
     { skip: !user }
   )
 
-  const filteredListings = listings?.filter((listing) => 
+  const filteredListings = Array.isArray(listings) ? listings.filter((listing) => 
     listing.product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || []
+  ) || [] : []
 
   const handleEditListing = (listing: Listing) => {
     setEditingListing(listing)

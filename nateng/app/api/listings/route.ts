@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
             farmer: { select: { id: true, name: true, email: true, minimumOrderKg: true } }
           }
         },
-        seller: { select: { id: true, name: true, role: true, email: true, minimumOrderKg: true } },
+        seller: { select: { id: true, name: true, role: true, email: true, minimumOrderKg: true, address: true, city: true, province: true, country: true } },
       },
       orderBy: { createdAt: 'desc' },
     });

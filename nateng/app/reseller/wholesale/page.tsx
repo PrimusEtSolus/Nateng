@@ -84,12 +84,12 @@ export default function ResellerWholesalePage() {
     }
   }, [listings])
 
-  const filteredListings = listings?.filter((listing) => {
+  const filteredListings = Array.isArray(listings) ? listings.filter((listing) => {
     const matchesSearch = listing.product.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === "All" || true // Simplified
     // Listings are already filtered by API based on marketplace rules (resellers can only buy from farmers)
     return matchesSearch && matchesCategory && listing.available && listing.quantity > 0
-  }) || []
+  }) || [] : []
 
   const addToCart = (listing: Listing, quantity?: number) => {
     const qty = quantity || quantities[listing.id] || 1

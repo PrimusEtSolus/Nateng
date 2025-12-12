@@ -7,7 +7,7 @@ import { useCart } from "@/lib/cart-context"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
-import { ordersAPI } from "@/lib/api-client"
+import { ordersAPI, listingsAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,6 +25,7 @@ export default function BuyerCheckoutPage() {
   const [placedOrderId, setPlacedOrderId] = useState<number | null>(null)
   const [paymentMethod, setPaymentMethod] = useState("cod")
   const [deliveryOption, setDeliveryOption] = useState("delivery")
+  const [sellerInfo, setSellerInfo] = useState<Record<number, any>>({})
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -35,7 +36,31 @@ export default function BuyerCheckoutPage() {
 
   useEffect(() => {
     setUser(getCurrentUser())
-  }, [])
+    
+    // Fetch seller information for all items in cart
+    const fetchSellerInfo = async () => {
+      const uniqueSellerIds = [...new Set(items.map(item => item.sellerId).filter(Boolean))]
+      const sellerData: Record<number, any> = {}
+      
+      for (const sellerId of uniqueSellerIds) {
+        try {
+          // Get listings for this seller to find one with seller details
+          const listingsResponse = await listingsAPI.getAll({ sellerId: sellerId as number })
+          if (listingsResponse.length > 0) {
+            sellerData[sellerId as number] = listingsResponse[0].seller
+          }
+        } catch (error) {
+          console.error('Failed to fetch seller info:', error)
+        }
+      }
+      
+      setSellerInfo(sellerData)
+    }
+    
+    if (items.length > 0) {
+      fetchSellerInfo()
+    }
+  }, [items])
 
   const deliveryFee = deliveryOption === "pickup" ? 0 : (totalPrice >= 500 ? 0 : 50)
   const grandTotal = totalPrice + deliveryFee
@@ -287,7 +312,14 @@ export default function BuyerCheckoutPage() {
                   <MapPin className="w-5 h-5 text-muted-foreground" />
                   <div className="flex-1">
                     <p className="font-medium">Pickup at Reseller Location</p>
-                    <p className="text-sm text-muted-foreground">Pick up your order from the seller</p>
+                    {Object.values(sellerInfo).map((seller, index) => (
+                      <p key={index} className="text-sm text-muted-foreground">
+                        {seller.city && seller.province 
+                          ? `Pick up from ${seller.name} in ${seller.city}, ${seller.province}`
+                          : `Pick up from ${seller.name}`
+                        }
+                      </p>
+                    ))}
                   </div>
                 </label>
               </RadioGroup>

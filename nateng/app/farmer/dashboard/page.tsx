@@ -91,10 +91,13 @@ export default function FarmerDashboardPage() {
   }, [router])
 
   // Fetch farmer's products
-  const { data: products, loading: productsLoading, refetch: refetchProducts } = useFetch<Product[]>(
+  const { data: productsResponse, loading: productsLoading, refetch: refetchProducts } = useFetch<{ products: Product[] }>(
     user ? `/api/products` : '',
     { skip: !user }
   )
+
+  // Extract products from response
+  const products = productsResponse?.products || null
 
   // Fetch farmer's listings
   const { data: listings, loading: listingsLoading } = useFetch<any[]>(
@@ -108,10 +111,10 @@ export default function FarmerDashboardPage() {
     { skip: !user }
   )
 
-  const farmerProducts = products?.filter((p) => p.farmerId === user?.id) || []
-  const pendingOrders = orders?.filter((o) => o.status === "PENDING") || []
-  const completedOrders = orders?.filter((o) => o.status === "DELIVERED") || []
-  const activeOrders = orders?.filter((o) => ["CONFIRMED", "SHIPPED"].includes(o.status)) || []
+  const farmerProducts = Array.isArray(products) ? products.filter((p) => p.farmerId === user?.id) || [] : []
+  const pendingOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "PENDING") || [] : []
+  const completedOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "DELIVERED") || [] : []
+  const activeOrders = Array.isArray(orders) ? orders.filter((o) => ["CONFIRMED", "SHIPPED"].includes(o.status)) || [] : []
   
   // Total revenue from all non-pending orders (confirmed, shipped, delivered)
   const totalRevenue = [...completedOrders, ...activeOrders].reduce((sum, o) => sum + o.totalCents, 0) / 100
@@ -361,7 +364,7 @@ export default function FarmerDashboardPage() {
                 />
               ) : (
                 farmerProducts.slice(0, 4).map((product) => {
-                const productListings = listings?.filter((l) => l.productId === product.id) || []
+                const productListings = Array.isArray(listings) ? listings.filter((l) => l.productId === product.id) || [] : []
                 const totalQuantity = productListings.reduce((sum, l) => sum + (l.available ? l.quantity : 0), 0)
                 const hasAvailable = productListings.some((l) => l.available && l.quantity > 0)
                 

@@ -12,7 +12,7 @@ import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import BannedUserDashboard from "@/components/banned-user-dashboard"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Search, Heart, Star, MapPin, ShoppingCart, Plus, Minus, Loader2, Filter } from "lucide-react"
+import { Search, Heart, Star, MapPin, ShoppingCart, Plus, Minus, Loader2, Filter, Store } from "lucide-react"
 import Link from "next/link"
 import { ProductGridSkeleton, ProductCardSkeleton } from "@/components/loading-skeletons"
 import { EmptyState } from "@/components/empty-state"
@@ -51,6 +51,10 @@ interface Listing {
     name: string
     role: string
     email: string
+    address?: string
+    city?: string
+    province?: string
+    country?: string
   }
 }
 
@@ -104,7 +108,7 @@ export default function BuyerDashboardPage() {
   // Extract unique product names for categories (simplified)
   const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
 
-  const filteredListings = listings?.filter((listing) => {
+  const filteredListings = Array.isArray(listings) ? listings.filter((listing) => {
     const matchesSearch = listing.product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
     // Category filtering would need product.category field - simplified for now
     const matchesCategory = selectedCategory === "All" || true
@@ -123,7 +127,7 @@ export default function BuyerDashboardPage() {
       default:
         return 0
     }
-  }) || []
+  }) : []
 
   const toggleFavorite = async (id: number) => {
     const isFavorited = favorites.includes(id)
@@ -351,7 +355,16 @@ export default function BuyerDashboardPage() {
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                       <MapPin className="w-3 h-3" />
                       Sold by {listing.seller.name} ({listing.seller.role})
+                      {listing.seller.city && listing.seller.province && 
+                        ` • ${listing.seller.city}, ${listing.seller.province}`
+                      }
                     </p>
+                    {listing.seller.role === 'reseller' && listing.seller.address && (
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Store className="w-3 h-3" />
+                        {listing.seller.address}
+                      </p>
+                    )}
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       From farmer {listing.product.farmer.name}
                     </p>
@@ -489,6 +502,18 @@ export default function BuyerDashboardPage() {
                     <p className="text-xs uppercase text-muted-foreground tracking-wide">Seller</p>
                     <p className="font-medium">{selectedListing.seller.name}</p>
                     <p className="text-muted-foreground">Role: {selectedListing.seller.role}</p>
+                    {selectedListing.seller.role === 'reseller' && selectedListing.seller.address && (
+                      <p className="text-muted-foreground flex items-center gap-1 mt-1">
+                        <Store className="w-3 h-3" />
+                        Stall: {selectedListing.seller.address}
+                      </p>
+                    )}
+                    {selectedListing.seller.city && selectedListing.seller.province && (
+                      <p className="text-muted-foreground flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3" />
+                        {selectedListing.seller.city}, {selectedListing.seller.province}
+                      </p>
+                    )}
                   </div>
 
                   <div>

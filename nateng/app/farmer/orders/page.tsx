@@ -91,10 +91,10 @@ export default function FarmerOrdersPage() {
   }
 
   // Map database statuses to display
-  const pendingOrders = orders?.filter((o) => o.status === "PENDING") || []
-  const confirmedOrders = orders?.filter((o) => o.status === "CONFIRMED") || []
-  const shippedOrders = orders?.filter((o) => o.status === "SHIPPED") || []
-  const deliveredOrders = orders?.filter((o) => o.status === "DELIVERED") || []
+  const pendingOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "PENDING") || [] : []
+  const confirmedOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "CONFIRMED") || [] : []
+  const shippedOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "SHIPPED") || [] : []
+  const deliveredOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "DELIVERED") || [] : []
 
   const OrderCard = ({ order }: { order: Order }) => {
     const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)

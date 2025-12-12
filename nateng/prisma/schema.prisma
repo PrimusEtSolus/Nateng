@@ -22,6 +22,12 @@ model User {
   bannedAt  DateTime? // When user was banned
   banReason String?  // Reason for banning
   createdAt DateTime @default(now())
+  // Location fields for resellers and businesses
+  address   String?  // Street address
+  city      String?  // City
+  province  String?  // Province
+  postalCode String? // Postal code
+  country   String?  @default("Philippines") // Country
   // relations
   products  Product[] @relation("FarmerProducts")
   listings  Listing[] @relation("SellerListings")
