@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import type { RetailProduct } from "./mock-data"
+import type { LegacyRetailProduct as RetailProduct } from "./mock-data"
 
 export interface CartItem {
   // Support both old format (RetailProduct) and new format (Listing)

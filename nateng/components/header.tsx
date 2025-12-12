@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { getCurrentUser, logout, getRedirectPath } from "@/lib/auth"
+import type { UserRole } from "@/lib/types"
 import { useRouter } from "next/navigation"
 import { NotificationBell } from "./notifications"
 
 function getDashboardPath(role: string): string {
-  return getRedirectPath(role as any) || "/"
+  return getRedirectPath(role as UserRole) || "/"
 }
 
 export function Header() {

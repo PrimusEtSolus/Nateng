@@ -1,21 +1,29 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
+import { validateMarketplaceTransaction } from '@/lib/marketplace-rules';
+import type { UserRole } from '@/lib/types';
 
-export async function GET(req: Request) {
+interface OrderItem {
+  listingId: number;
+  quantity: number;
+}
+
+export async function GET(req: NextRequest) {
   try {
     // Authenticate user
-    const user = await getCurrentUser(req as any);
+    const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const params = new URL(req.url).searchParams;
+
     const buyerId = params.get('buyerId');
     const sellerId = params.get('sellerId');
     const status = params.get('status');
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     
     // Users can only see their own orders unless they're admin
     if (user.role !== 'admin') {
@@ -57,16 +65,16 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     // Authenticate user
-    const user = await getCurrentUser(req as any);
+    const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const body = await req.json();
-    const { buyerId, sellerId, items } = body; // items: [{ listingId, quantity }]
+    const { buyerId, sellerId, items }: { buyerId: number; sellerId: number; items: OrderItem[] } = body;
     
     if (!buyerId || !sellerId || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -80,8 +88,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Cannot create orders for other users' }, { status: 403 });
     }
 
+    // Get seller information to validate marketplace rules
+    const seller = await prisma.user.findUnique({
+      where: { id: Number(sellerId) },
+      select: { role: true }
+    });
+
+    if (!seller) {
+      return NextResponse.json({ error: 'Seller not found' }, { status: 404 });
+    }
+
+    // Validate marketplace transaction rules
+    const buyer = user.role === 'admin' 
+      ? await prisma.user.findUnique({ where: { id: Number(buyerId) }, select: { role: true } })
+      : user;
+
+    if (!buyer) {
+      return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
+    }
+
+    const transactionValidation = validateMarketplaceTransaction(
+      seller.role as UserRole,
+      buyer.role as UserRole
+    );
+
+    if (!transactionValidation.allowed) {
+      return NextResponse.json(
+        { error: transactionValidation.reason || 'Transaction not allowed by marketplace rules' },
+        { status: 403 }
+      );
+    }
+
     // Transactional create: check quantities, decrement, create order
-    const createdOrder = await prisma.$transaction(async (tx: any) => {
+    const createdOrder = await prisma.$transaction(async (tx) => {
       let totalCents = 0;
       const order = await tx.order.create({
         data: {

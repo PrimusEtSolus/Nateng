@@ -29,7 +29,7 @@ export async function login(email: string, password: string): Promise<User | nul
     }
 
     return user
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Login error:', error)
     throw error
   }
@@ -75,7 +75,7 @@ export async function register(name: string, email: string, password: string, ro
     }
 
     return user
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Registration error:', error)
     throw error
   }

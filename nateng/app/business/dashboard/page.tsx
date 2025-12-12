@@ -31,9 +31,9 @@ export default function BusinessDashboardPage() {
     { skip: !user }
   )
 
-  // Fetch available listings (for "Fresh Wholesale" section)
+  // Fetch available listings (for "Fresh Wholesale" section) - filtered for business users
   const { data: listings = [], loading: listingsLoading } = useFetch<Listing[]>(
-    '/api/listings?available=true'
+    '/api/listings?available=true&userRole=business'
   )
 
   useEffect(() => {

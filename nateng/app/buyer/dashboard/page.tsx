@@ -98,8 +98,8 @@ export default function BuyerDashboardPage() {
     }
   }, [selectedListing])
 
-  // Fetch available listings - only from resellers (farmers only accept bulk orders)
-  const { data: listings, loading: listingsLoading, error: listingsError } = useFetch<Listing[]>('/api/listings?available=true')
+  // Fetch available listings - filtered for buyers based on marketplace rules
+  const { data: listings, loading: listingsLoading, error: listingsError } = useFetch<Listing[]>('/api/listings?available=true&userRole=buyer')
 
   // Extract unique product names for categories (simplified)
   const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
@@ -108,9 +108,8 @@ export default function BuyerDashboardPage() {
     const matchesSearch = listing.product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
     // Category filtering would need product.category field - simplified for now
     const matchesCategory = selectedCategory === "All" || true
-    // Only show resellers - farmers only accept bulk orders (for business/reseller portals)
-    const isReseller = listing.seller.role === 'reseller'
-    return matchesSearch && matchesCategory && listing.available && listing.quantity > 0 && isReseller
+    // Listings are already filtered by API based on marketplace rules
+    return matchesSearch && matchesCategory && listing.available && listing.quantity > 0
   }).sort((a, b) => {
     switch (sortBy) {
       case "price-asc":

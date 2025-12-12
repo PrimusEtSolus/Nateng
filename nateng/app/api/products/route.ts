@@ -1,26 +1,69 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const products = await prisma.product.findMany({
-      include: {
-        farmer: { select: { id: true, name: true, role: true, email: true } },
-        listings: { include: { seller: { select: { id: true, name: true } } } },
-      },
-      orderBy: { createdAt: 'desc' },
+    const params = new URL(req.url).searchParams;
+    const page = parseInt(params.get('page') || '1');
+    const limit = parseInt(params.get('limit') || '20');
+    const skip = (page - 1) * limit;
+
+    const [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        include: {
+          farmer: { 
+            select: { 
+              id: true, 
+              name: true, 
+              role: true, 
+              email: true 
+            } 
+          },
+          listings: { 
+            select: { 
+              id: true, 
+              quantity: true, 
+              available: true,
+              priceCents: true,
+              seller: { 
+                select: { 
+                  id: true, 
+                  name: true 
+                } 
+              }
+            },
+            where: { available: true },
+            orderBy: { createdAt: 'desc' },
+            take: 5 // Limit listings per product for performance
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: skip,
+      }),
+      prisma.product.count()
+    ]);
+
+    return NextResponse.json({
+      products,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        pages: Math.ceil(totalCount / limit)
+      }
     });
-    return NextResponse.json(products);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     // Authenticate user
-    const user = await getCurrentUser(req as any);
+    const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -54,7 +97,8 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(product, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

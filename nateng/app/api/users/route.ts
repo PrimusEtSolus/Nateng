@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     // Authenticate user
-    const user = await getCurrentUser(req as any);
+    const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -17,24 +17,59 @@ export async function GET(req: Request) {
 
     const params = new URL(req.url).searchParams;
     const role = params.get('role');
+    const page = parseInt(params.get('page') || '1');
+    const limit = parseInt(params.get('limit') || '10');
+    const skip = (page - 1) * limit;
 
     const where = role ? { role } : undefined;
 
-    const users = await prisma.user.findMany({
-      where,
-      include: {
-        products: { select: { id: true, name: true } },
-        listings: { select: { id: true, quantity: true, available: true } },
-      },
-      orderBy: { createdAt: 'desc' },
+    const [users, totalCount] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          isBanned: true,
+          products: { 
+            select: { 
+              id: true, 
+              name: true 
+            } 
+          },
+          listings: { 
+            select: { 
+              id: true, 
+              quantity: true, 
+              available: true 
+            } 
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: skip,
+      }),
+      prisma.user.count({ where })
+    ]);
+
+    return NextResponse.json({
+      users,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        pages: Math.ceil(totalCount / limit)
+      }
     });
-    return NextResponse.json(users);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { name, email, role, password } = body;
@@ -56,13 +91,15 @@ export async function POST(req: Request) {
         data: { name, email, role, password },
       });
       return NextResponse.json(user, { status: 201 });
-    } catch (err: any) {
-      if (err.code === 'P2002') {
+    } catch (err: unknown) {
+      const error = err as Error;
+      if (error.message.includes('Unique constraint')) {
         return NextResponse.json({ error: 'email already exists' }, { status: 409 });
       }
       throw err;
     }
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

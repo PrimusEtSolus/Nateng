@@ -1,9 +1,7 @@
-import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { NextResponse, NextRequest } from 'next/server'
+import prisma from '@/lib/prisma'
 
-const prisma = new PrismaClient()
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { name, email, message, subject, type } = await request.json()
 
@@ -30,7 +28,7 @@ export async function POST(request: Request) {
         : 'Message sent successfully. We will get back to you soon.',
       id: (result as any)[0]?.id
     })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Contact form error:', error)
     return NextResponse.json(
       { error: 'Failed to send message. Please try again later.' },
@@ -39,7 +37,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const adminKey = searchParams.get('admin')
@@ -59,7 +57,7 @@ export async function GET(request: Request) {
     `
 
     return NextResponse.json({ messages })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching contact messages:', error)
     return NextResponse.json(
       { error: 'Failed to fetch messages' },

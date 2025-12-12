@@ -9,15 +9,22 @@ export function useBanCheck() {
   const router = useRouter()
 
   useEffect(() => {
-    const checkBanStatus = () => {
+    const checkBanStatus = async () => {
       const user = getCurrentUser()
       
-      if (user && user.email && isUserBanned(user.email)) {
-        // Clear the user session
-        localStorage.removeItem('natenghub_user')
-        
-        // Redirect to banned page
-        router.push('/banned?reason=Your account has been suspended by an administrator')
+      if (user && user.email) {
+        try {
+          const banned = await isUserBanned(user.email)
+          if (banned) {
+            // Clear the user session
+            localStorage.removeItem('natenghub_user')
+            
+            // Redirect to banned page
+            router.push('/banned?reason=Your account has been suspended by an administrator')
+          }
+        } catch (error) {
+          console.error('Error checking ban status:', error)
+        }
       }
     }
 

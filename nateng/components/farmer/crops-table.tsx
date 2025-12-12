@@ -1,6 +1,6 @@
 "use client"
 
-import type { Crop } from "@/lib/mock-data"
+import type { LegacyCrop as Crop } from "@/lib/mock-data"
 
 interface CropsTableProps {
   crops: Crop[]

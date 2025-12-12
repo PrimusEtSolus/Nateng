@@ -89,8 +89,8 @@ export default function BusinessBrowsePage() {
     }
   }, [cart])
 
-  // Fetch available listings
-  const { data: listings, loading: listingsLoading } = useFetch<Listing[]>('/api/listings?available=true')
+  // Fetch available listings - filtered for business users
+  const { data: listings, loading: listingsLoading } = useFetch<Listing[]>('/api/listings?available=true&userRole=business')
 
   const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
 

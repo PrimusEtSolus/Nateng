@@ -65,8 +65,8 @@ export default function ResellerWholesalePage() {
 
   const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
 
-  // Fetch available listings from farmers
-  const { data: listings, loading: listingsLoading } = useFetch<Listing[]>('/api/listings?available=true')
+  // Fetch available listings from farmers - filtered for resellers
+  const { data: listings, loading: listingsLoading } = useFetch<Listing[]>('/api/listings?available=true&userRole=reseller')
 
   // Initialize quantities when listings change
   useEffect(() => {
@@ -87,7 +87,8 @@ export default function ResellerWholesalePage() {
   const filteredListings = listings?.filter((listing) => {
     const matchesSearch = listing.product.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = selectedCategory === "All" || true // Simplified
-    return matchesSearch && matchesCategory && listing.available && listing.quantity > 0 && listing.seller.role === "farmer"
+    // Listings are already filtered by API based on marketplace rules (resellers can only buy from farmers)
+    return matchesSearch && matchesCategory && listing.available && listing.quantity > 0
   }) || []
 
   const addToCart = (listing: Listing, quantity?: number) => {

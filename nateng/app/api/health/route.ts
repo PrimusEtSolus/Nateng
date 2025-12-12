@@ -9,12 +9,12 @@ export async function GET() {
       productsInDatabase: count,
       message: 'Database connection successful'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[DB-CHECK] Error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ 
       status: 'error', 
-      error: error.message,
-      stack: error.stack
+      error: message
     }, { status: 500 });
   }
 }

@@ -1,26 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import prisma from '@/lib/prisma'
+import { getCurrentUser } from '@/lib/auth-server'
 
 export async function GET(request: NextRequest) {
   try {
-    const currentUser = getCurrentUser()
+    const currentUser = await getCurrentUser(request)
     if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const favorites = await prisma.favorite.findMany({
       where: { userId: currentUser.id },
-      include: {
+      select: {
+        id: true,
+        createdAt: true,
         listing: {
-          include: {
+          select: {
+            id: true,
+            priceCents: true,
+            quantity: true,
+            available: true,
             product: {
-              include: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                imageUrl: true,
                 farmer: {
                   select: {
                     id: true,
-                    name: true,
-                    email: true
+                    name: true
                   }
                 }
               }
@@ -29,8 +38,7 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 name: true,
-                role: true,
-                email: true
+                role: true
               }
             }
           }
@@ -40,7 +48,7 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json(favorites)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('GET favorites error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -48,7 +56,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const currentUser = getCurrentUser()
+    const currentUser = await getCurrentUser(request)
     if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -88,16 +96,34 @@ export async function POST(request: NextRequest) {
         userId: currentUser.id,
         listingId: listingId
       },
-      include: {
+      select: {
+        id: true,
+        createdAt: true,
         listing: {
-          include: {
-            product: true,
+          select: {
+            id: true,
+            priceCents: true,
+            quantity: true,
+            available: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                imageUrl: true,
+                farmer: {
+                  select: {
+                    id: true,
+                    name: true
+                  }
+                }
+              }
+            },
             seller: {
               select: {
                 id: true,
                 name: true,
-                role: true,
-                email: true
+                role: true
               }
             }
           }
@@ -106,7 +132,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(favorite, { status: 201 })
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('POST favorite error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

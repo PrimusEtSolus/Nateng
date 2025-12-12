@@ -1,14 +1,32 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { name, email, password, role } = await req.json();
 
+    // Input validation
     if (!name || !email || !password || !role) {
       return NextResponse.json(
         { error: 'Missing required fields: name, email, password, role' },
+        { status: 400 }
+      );
+    }
+
+    // Name validation
+    if (name.length < 2 || name.length > 50) {
+      return NextResponse.json(
+        { error: 'Name must be between 2 and 50 characters long' },
+        { status: 400 }
+      );
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
         { status: 400 }
       );
     }
@@ -53,11 +71,12 @@ export async function POST(req: Request) {
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json({ user: userWithoutPassword }, { status: 201 });
-  } catch (error: any) {
-    if (error.code === 'P2002') {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    if (message.includes('Unique constraint')) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

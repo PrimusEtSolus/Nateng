@@ -4,12 +4,12 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
 export interface ApiOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
-  body?: any;
+  body?: unknown;
 }
 
 async function apiCall(endpoint: string, options: ApiOptions = {}) {
   const url = `${API_BASE}${endpoint}`;
-  const headers: any = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
@@ -31,14 +31,17 @@ async function apiCall(endpoint: string, options: ApiOptions = {}) {
   const config: RequestInit = {
     method: options.method || 'GET',
     headers,
-    ...(options.body && { body: JSON.stringify(options.body) }),
   };
+
+  if (options.body) {
+    config.body = JSON.stringify(options.body);
+  }
 
   const response = await fetch(url, config);
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(error.error || `API error: ${response.status}`);
+    throw new Error((error as { error?: string }).error || `API error: ${response.status}`);
   }
 
   return response.json();
@@ -48,8 +51,8 @@ async function apiCall(endpoint: string, options: ApiOptions = {}) {
 export const productsAPI = {
   getAll: () => apiCall('/api/products'),
   getById: (id: number) => apiCall(`/api/products/${id}`),
-  create: (data: any) => apiCall('/api/products', { method: 'POST', body: data }),
-  update: (id: number, data: any) => apiCall(`/api/products/${id}`, { method: 'PATCH', body: data }),
+  create: (data: unknown) => apiCall('/api/products', { method: 'POST', body: data }),
+  update: (id: number, data: unknown) => apiCall(`/api/products/${id}`, { method: 'PATCH', body: data }),
   delete: (id: number) => apiCall(`/api/products/${id}`, { method: 'DELETE' }),
 };
 
@@ -63,8 +66,8 @@ export const listingsAPI = {
     return apiCall(`/api/listings${params.toString() ? `?${params}` : ''}`);
   },
   getById: (id: number) => apiCall(`/api/listings/${id}`),
-  create: (data: any) => apiCall('/api/listings', { method: 'POST', body: data }),
-  update: (id: number, data: any) => apiCall(`/api/listings/${id}`, { method: 'PATCH', body: data }),
+  create: (data: unknown) => apiCall('/api/listings', { method: 'POST', body: data }),
+  update: (id: number, data: unknown) => apiCall(`/api/listings/${id}`, { method: 'PATCH', body: data }),
   delete: (id: number) => apiCall(`/api/listings/${id}`, { method: 'DELETE' }),
 };
 
@@ -78,7 +81,7 @@ export const ordersAPI = {
     return apiCall(`/api/orders${params.toString() ? `?${params}` : ''}`);
   },
   getById: (id: number) => apiCall(`/api/orders/${id}`),
-  create: (data: any) => apiCall('/api/orders', { method: 'POST', body: data }),
+  create: (data: unknown) => apiCall('/api/orders', { method: 'POST', body: data }),
   updateStatus: (id: number, status: string) => apiCall(`/api/orders/${id}`, { method: 'PATCH', body: { status } }),
   delete: (id: number) => apiCall(`/api/orders/${id}`, { method: 'DELETE' }),
 };
@@ -90,8 +93,8 @@ export const usersAPI = {
     return apiCall(`/api/users${params}`);
   },
   getById: (id: number) => apiCall(`/api/users/${id}`),
-  create: (data: any) => apiCall('/api/users', { method: 'POST', body: data }),
-  update: (id: number, data: any) => apiCall(`/api/users/${id}`, { method: 'PATCH', body: data }),
+  create: (data: unknown) => apiCall('/api/users', { method: 'POST', body: data }),
+  update: (id: number, data: unknown) => apiCall(`/api/users/${id}`, { method: 'PATCH', body: data }),
   delete: (id: number) => apiCall(`/api/users/${id}`, { method: 'DELETE' }),
   getByRole: (role: string) => apiCall(`/api/users?role=${role}`),
 };

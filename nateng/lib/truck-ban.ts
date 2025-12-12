@@ -265,8 +265,6 @@ export function validateDeliverySchedule(schedule: DeliverySchedule): {
  * Get available window times for a given zone
  */
 export function getAvailableWindowTimes(zone: TruckBanZone): TruckBanWindow[] {
-  const windows = TRUCK_BAN_WINDOWS[zone];
-  
   if (zone === 'OUTSIDE_CBD') {
     return [
       { start: '09:01', end: '15:59', isBanned: false },

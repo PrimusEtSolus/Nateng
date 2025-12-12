@@ -1,14 +1,26 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { isUserBanned } from '@/lib/banned-users';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
 
+    // Input validation
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    // Password length validation
+    if (password.length < 6) {
+      return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 });
     }
 
     const user = await prisma.user.findUnique({
@@ -19,23 +31,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    // For development: if password is not hashed (old users), check plain text
-    // In production, always use bcrypt
-    const isValidPassword = user.password.startsWith('$2')
-      ? await bcrypt.compare(password, user.password)
-      : user.password === password;
+    // Always use bcrypt for password verification
+    const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
     // Check if user is banned (from database)
-    const banned = user.isBanned;
+    const banned = await isUserBanned(user.email);
     
     if (banned) {
       return NextResponse.json({ 
-        error: 'Account suspended. Your account has been banned by administrator. Please submit an appeal at http://localhost:3000/contact if you believe this is an error.',
-        isBanned: true
+        error: 'Your account has been suspended. Please contact an administrator.'
       }, { status: 403 });
     }
 
@@ -45,8 +53,9 @@ export async function POST(req: Request) {
       user: userWithoutPassword,
       message: 'Login successful'
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

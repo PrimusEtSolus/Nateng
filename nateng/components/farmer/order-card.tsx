@@ -1,4 +1,4 @@
-import type { WholesaleOrder } from "@/lib/mock-data"
+import type { LegacyWholesaleOrder as WholesaleOrder } from "@/lib/mock-data"
 
 interface OrderCardProps {
   order: WholesaleOrder
