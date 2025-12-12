@@ -58,7 +58,7 @@ export default function BuyerCartPage() {
             // Support both old format (product) and new format (listingId)
             const itemId = item.listingId || item.product?.id || index
             const productName = item.productName || item.product?.name || "Product"
-            const sellerName = item.sellerName || item.product?.farmerName || "Seller"
+            const sellerName = item.sellerName || "Seller"
             const pricePerKg = item.priceCents ? item.priceCents / 100 : (item.product?.pricePerKg || 0)
             const totalPrice = pricePerKg * item.quantity
 

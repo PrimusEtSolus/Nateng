@@ -1,10 +1,10 @@
 "use client"
 
-import type { LegacyCrop as Crop } from "@/lib/mock-data"
+import type { Product } from "@prisma/client"
 
 interface CropsTableProps {
-  crops: Crop[]
-  onEdit: (id: string) => void
+  crops: Product[]
+  onEdit: (id: number) => void
 }
 
 export function CropsTable({ crops, onEdit }: CropsTableProps) {
@@ -28,9 +28,9 @@ export function CropsTable({ crops, onEdit }: CropsTableProps) {
           }`}
         >
           <div className="font-normal text-black">{crop.name}</div>
-          <div className="text-center text-black/50">{crop.harvestQuantity}</div>
-          <div className="text-center text-black/50">{crop.wholesalePrice}</div>
-          <div className="text-center text-black/50">{crop.minOrderQty}</div>
+          <div className="text-center text-black/50">-</div>
+          <div className="text-center text-black/50">-</div>
+          <div className="text-center text-black/50">-</div>
           <div className="text-center">
             <button
               onClick={() => onEdit(crop.id)}

@@ -1,11 +1,17 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import type { LegacyRetailProduct as RetailProduct } from "./mock-data"
 
 export interface CartItem {
   // Support both old format (RetailProduct) and new format (Listing)
-  product?: RetailProduct
+  product?: {
+    id: string
+    name: string
+    pricePerKg: number
+    availableKg: number
+    minOrderKg: number
+    image: string
+  }
   listingId?: number
   sellerId?: number
   productName: string
@@ -16,7 +22,7 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[]
-  addToCart: (item: CartItem | { listingId: number; productName: string; sellerName: string; quantity: number; priceCents: number } | RetailProduct, quantity?: number) => void
+  addToCart: (item: CartItem | { listingId: number; productName: string; sellerName: string; quantity: number; priceCents: number } | { id: string; name: string; pricePerKg: number; availableKg: number; minOrderKg: number; image: string }, quantity?: number) => void
   removeFromCart: (id: string | number) => void
   updateQuantity: (id: string | number, quantity: number) => void
   clearCart: () => void
@@ -50,7 +56,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items])
 
-  const addToCart = (itemOrProduct: CartItem | { listingId: number; productName: string; sellerName: string; quantity: number; priceCents: number } | RetailProduct, quantity: number = 1) => {
+  const addToCart = (itemOrProduct: CartItem | { listingId: number; productName: string; sellerName: string; quantity: number; priceCents: number } | { id: string; name: string; pricePerKg: number; availableKg: number; minOrderKg: number; image: string }, quantity: number = 1) => {
     setItems((prev) => {
       // Handle new listing format
       if ('listingId' in itemOrProduct && typeof itemOrProduct.listingId === 'number') {
@@ -65,9 +71,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return [...prev, { ...itemOrProduct, quantity }]
       }
       
-      // Handle old RetailProduct format (backward compatibility)
+      // Handle old product format (backward compatibility)
       if ('id' in itemOrProduct && typeof itemOrProduct.id === 'string' && 'pricePerKg' in itemOrProduct) {
-        const product = itemOrProduct as RetailProduct
+        const product = itemOrProduct as { id: string; name: string; pricePerKg: number; availableKg: number; minOrderKg: number; image: string }
         const existing = prev.find((item) => item.product?.id === product.id)
         if (existing) {
           return prev.map((item) =>
@@ -79,7 +85,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return [...prev, { 
           product, 
           productName: product.name,
-          sellerName: product.farmerName || "Unknown",
+          sellerName: "Unknown Farmer",
           priceCents: product.pricePerKg * 100,
           quantity 
         }]
