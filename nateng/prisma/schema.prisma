@@ -41,6 +41,8 @@ model User {
   analyticsEvents AnalyticsEvent[]
   favorites      Favorite[]
   auditLogs      AuditLog[]
+  proposedSchedules DeliverySchedule[] @relation("ScheduleProposer")
+  confirmedSchedules DeliverySchedule[] @relation("ScheduleConfirmer")
 }
 
 model Product {
@@ -87,6 +89,7 @@ model Order {
   deliveryAddress String?  // Delivery address
   isExempt       Boolean?  @default(false) // Whether vehicle is exempt from truck ban
   exemptionType  String?  // Type of exemption (e.g., "water_delivery", "government", "emergency")
+  deliverySchedule DeliverySchedule?
 }
 
 model OrderItem {
@@ -196,4 +199,24 @@ model ContactMessage {
   // relations
   userId    Int?
   user      User?    @relation(fields: [userId], references: [id])
+}
+
+model DeliverySchedule {
+  id          Int      @id @default(autoincrement())
+  orderId     Int      @unique
+  order       Order    @relation(fields: [orderId], references: [id])
+  proposedBy  Int      // User who proposed the schedule
+  proposer    User     @relation("ScheduleProposer", fields: [proposedBy], references: [id])
+  confirmedBy Int?     // User who confirmed the schedule
+  confirmer   User?    @relation("ScheduleConfirmer", fields: [confirmedBy], references: [id])
+  scheduledDate DateTime
+  scheduledTime String
+  status      String   @default("proposed") // "proposed", "confirmed", "rejected", "completed"
+  route       String?
+  isCBD       Boolean  @default(false)
+  truckWeightKg Int?
+  deliveryAddress String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

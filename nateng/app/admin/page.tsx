@@ -7,10 +7,25 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, Users, Package, BarChart3, Search, Edit2, Trash2, Plus, Database, Table, Eye, Settings, Ban, ShieldCheck, MessageSquare, AlertTriangle, Wifi, WifiOff, Circle } from "lucide-react"
+import { Shield, Users, Package, BarChart3, Search, Edit2, Trash2, Plus, Database, Table, Eye, Settings, Ban, ShieldCheck, MessageSquare, AlertTriangle, Wifi, WifiOff, Circle, Calendar, Truck, TrendingUp, PieChart } from "lucide-react"
 import { toast } from "sonner"
 import { getBannedUsers, banUser as addToBanList, unbanUser as removeFromBanList } from "@/utils/auth"
 import { addBannedUser, removeBannedUser, isUserBanned as isBackendBanned } from "@/lib/banned-users"
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+  Legend
+} from "recharts"
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -24,6 +39,13 @@ export default function AdminPage() {
   const [orders, setOrders] = useState<any[]>([])
   const [appeals, setAppeals] = useState<any[]>([])
   const [contactMessages, setContactMessages] = useState<any[]>([])
+  const [deliverySchedules, setDeliverySchedules] = useState<any[]>([])
+  const [analyticsData, setAnalyticsData] = useState({
+    monthlyRevenue: [],
+    userRoles: [],
+    topProducts: [],
+    orderStatuses: []
+  })
   const [bannedUsers, setBannedUsers] = useState<Set<string>>(new Set())
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -59,14 +81,15 @@ export default function AdminPage() {
     setIsLoading(true)
     try {
       // Fetch data from database
-      const [usersData, productsData, listingsData, ordersData, appealsData, messagesData, statsData] = await Promise.all([
+      const [usersData, productsData, listingsData, ordersData, appealsData, messagesData, statsData, schedulesData] = await Promise.all([
         fetch('/api/admin/users'),
         fetch('/api/products'),
         fetch('/api/listings'),
         fetch('/api/orders'),
         fetch('/api/admin/appeals'),
         fetch('/api/contact'),
-        fetch('/api/admin/stats')
+        fetch('/api/admin/stats'),
+        fetch('/api/delivery-schedule')
       ])
 
       if (usersData.ok) {
@@ -125,6 +148,16 @@ export default function AdminPage() {
         })
       }
 
+      if (schedulesData.ok) {
+        const schedulesResult = await schedulesData.json()
+        setDeliverySchedules(Array.isArray(schedulesResult) ? schedulesResult : [])
+      } else {
+        setDeliverySchedules([])
+      }
+
+      // Process analytics data
+      processAnalyticsData(users, products, orders)
+
       // Sync banned users with localStorage
       setBannedUsers(getBannedUsers())
     } catch (error) {
@@ -137,6 +170,13 @@ export default function AdminPage() {
       setOrders([])
       setAppeals([])
       setContactMessages([])
+      setDeliverySchedules([])
+      setAnalyticsData({
+        monthlyRevenue: [],
+        userRoles: [],
+        topProducts: [],
+        orderStatuses: []
+      })
       setStats({
         totalUsers: 0,
         totalProducts: 0,
@@ -148,6 +188,69 @@ export default function AdminPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const processAnalyticsData = (users: any[], products: any[], orders: any[]) => {
+    // Process monthly revenue data
+    const monthlyRevenue = orders.reduce((acc: any[], order) => {
+      const month = new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      const existingMonth = acc.find(item => item.month === month)
+      if (existingMonth) {
+        existingMonth.revenue += order.totalCents / 100
+        existingMonth.orders += 1
+      } else {
+        acc.push({ month, revenue: order.totalCents / 100, orders: 1 })
+      }
+      return acc
+    }, []).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime())
+
+    // Process user roles data
+    const userRoles = users.reduce((acc: any[], user) => {
+      const existingRole = acc.find(item => item.role === user.role)
+      if (existingRole) {
+        existingRole.count += 1
+      } else {
+        acc.push({ role: user.role, count: 1 })
+      }
+      return acc
+    }, [])
+
+    // Process top products
+    const productSales = orders.reduce((acc: any[], order) => {
+      order.items.forEach((item: any) => {
+        const productName = item.listing.product.name
+        const existingProduct = acc.find(item => item.name === productName)
+        if (existingProduct) {
+          existingProduct.quantity += item.quantity
+          existingProduct.revenue += (item.quantity * item.priceCents) / 100
+        } else {
+          acc.push({ 
+            name: productName, 
+            quantity: item.quantity, 
+            revenue: (item.quantity * item.priceCents) / 100 
+          })
+        }
+      })
+      return acc
+    }, []).sort((a, b) => b.revenue - a.revenue).slice(0, 5)
+
+    // Process order statuses
+    const orderStatuses = orders.reduce((acc: any[], order) => {
+      const existingStatus = acc.find(item => item.status === order.status)
+      if (existingStatus) {
+        existingStatus.count += 1
+      } else {
+        acc.push({ status: order.status, count: 1 })
+      }
+      return acc
+    }, [])
+
+    setAnalyticsData({
+      monthlyRevenue,
+      userRoles,
+      topProducts: productSales,
+      orderStatuses
+    })
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -434,6 +537,12 @@ export default function AdminPage() {
     order.seller?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   ) : []
 
+  const filteredSchedules = Array.isArray(deliverySchedules) ? deliverySchedules.filter((schedule: any) =>
+    schedule.proposer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    schedule.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    schedule.orderId?.toString().includes(searchTerm.toLowerCase())
+  ) : []
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -484,6 +593,7 @@ export default function AdminPage() {
               { id: 'products', name: 'Product', icon: Package, count: filteredProducts.length },
               { id: 'listings', name: 'Listing', icon: Table, count: filteredListings.length },
               { id: 'orders', name: 'Order', icon: Settings, count: filteredOrders.length },
+              { id: 'schedules', name: 'Schedules', icon: Calendar, count: deliverySchedules.length },
               { id: 'appeals', name: 'Appeals', icon: AlertTriangle, count: appeals.length },
               { id: 'messages', name: 'Messages', icon: MessageSquare, count: contactMessages.length }
             ].map((tab) => (
@@ -578,6 +688,20 @@ export default function AdminPage() {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-gray-600">Total Orders</p>
                       <p className="text-2xl font-semibold text-gray-900">{stats.totalOrders}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">Delivery Schedules</p>
+                      <p className="text-2xl font-semibold text-gray-900">{deliverySchedules.length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -758,6 +882,64 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'schedules' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="w-5 h-5" />
+                <span>Delivery Schedule Oversight</span>
+              </CardTitle>
+              <CardDescription>
+                Monitor all delivery schedules and their status
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {filteredSchedules.map((schedule: any) => (
+                  <div key={schedule.id} className={`flex items-center justify-between p-4 border rounded-lg ${
+                    schedule.status === 'confirmed' ? 'bg-green-50 border-green-200' : 
+                    schedule.status === 'proposed' ? 'bg-blue-50 border-blue-200' : 
+                    schedule.status === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-white'
+                  }`}>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <p className="font-medium">Order #{schedule.orderId}</p>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          schedule.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                          schedule.status === 'proposed' ? 'bg-blue-100 text-blue-800' : 
+                          schedule.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {schedule.status}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        Proposed by: {schedule.proposer?.name || 'Unknown'}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Date: {new Date(schedule.scheduledDate).toLocaleDateString()} at {schedule.scheduledTime}
+                      </p>
+                      {schedule.deliveryAddress && (
+                        <p className="text-xs text-gray-400">Address: {schedule.deliveryAddress}</p>
+                      )}
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {filteredSchedules.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                    <p>No delivery schedules found</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

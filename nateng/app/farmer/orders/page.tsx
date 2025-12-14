@@ -7,9 +7,11 @@ import { useFetch } from "@/hooks/use-fetch"
 import { ordersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Package, Check, X, Truck, Clock, Building2, UserIcon, Loader2, Calendar, MessageSquare } from "lucide-react"
+import { Package, Check, X, Truck, Clock, Building2, UserIcon, Loader2, Calendar, MessageSquare, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 import { DeliveryScheduler } from "@/components/delivery-scheduler"
+import { DeliverySchedulingDialog } from "@/components/delivery-scheduling-dialog"
+import { ScheduleConfirmationDialog } from "@/components/schedule-confirmation-dialog"
 import { MessageDialog } from "@/components/message-dialog"
 import { ConfirmationDialog } from "@/components/confirmation-dialog"
 
@@ -28,6 +30,21 @@ interface Order {
   isExempt?: boolean | null
   exemptionType?: string | null
   isCBD?: boolean | null
+  deliverySchedule?: {
+    id: number
+    status: string
+    proposedBy: number
+    confirmedBy?: number
+    scheduledDate: string
+    scheduledTime: string
+    route?: string
+    isCBD: boolean
+    truckWeightKg?: number
+    deliveryAddress?: string
+    notes?: string
+    proposer: { id: number; name: string; email: string }
+    confirmer?: { id: number; name: string; email: string }
+  }
   buyer: { id: number; name: string; email: string; role: string }
   items: Array<{
     id: number
@@ -50,6 +67,12 @@ export default function FarmerOrdersPage() {
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false)
   const [cancelOrderId, setCancelOrderId] = useState<number | null>(null)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  
+  // New collaborative scheduling state
+  const [proposingScheduleOrderId, setProposingScheduleOrderId] = useState<number | null>(null)
+  const [schedulingDialogOpen, setSchedulingDialogOpen] = useState(false)
+  const [confirmingSchedule, setConfirmingSchedule] = useState<any>(null)
+  const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false)
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -90,6 +113,32 @@ export default function FarmerOrdersPage() {
     setCancelOrderId(null)
   }
 
+  // Collaborative scheduling functions
+  const handleProposeSchedule = (orderId: number) => {
+    setProposingScheduleOrderId(orderId)
+    setSchedulingDialogOpen(true)
+  }
+
+  const handleScheduleProposed = (schedule: any) => {
+    toast.success("Delivery schedule proposed", {
+      description: "Waiting for the other party to confirm",
+    })
+    refetchOrders()
+  }
+
+  const handleReviewSchedule = (schedule: any) => {
+    setConfirmingSchedule(schedule)
+    setConfirmationDialogOpen(true)
+  }
+
+  const handleScheduleActionComplete = (updatedSchedule: any) => {
+    const action = updatedSchedule.status === 'confirmed' ? 'confirmed' : 'rejected'
+    toast.success(`Schedule ${action}`, {
+      description: `Delivery schedule has been ${action}`,
+    })
+    refetchOrders()
+  }
+
   // Map database statuses to display
   const pendingOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "PENDING") || [] : []
   const confirmedOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "CONFIRMED") || [] : []
@@ -128,20 +177,7 @@ export default function FarmerOrdersPage() {
               }
             />
           </div>
-          <span
-            className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-              order.status === "PENDING"
-                ? "bg-yellow-100 text-yellow-700"
-                : order.status === "CONFIRMED"
-                  ? "bg-blue-100 text-blue-700"
-                  : order.status === "SHIPPED"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-gray-100 text-gray-700"
-            }`}
-          >
-            {order.status}
-          </span>
-        </div>
+          </div>
 
         <div className="space-y-1.5 text-sm mb-3">
           <p className="font-medium text-foreground">
@@ -161,79 +197,88 @@ export default function FarmerOrdersPage() {
           </div>
         </div>
 
-        {hasSchedule && order.status !== "DELIVERED" && (
-          <div className="mb-3 rounded-xl border border-emerald-100 bg-emerald-50/80 p-3 text-xs text-emerald-900 space-y-2">
+        {order.deliverySchedule && order.deliverySchedule.status === 'proposed' && order.deliverySchedule.proposedBy !== user?.id && (
+          <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50/80 p-3 text-xs text-blue-900 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                  <Truck className="w-3 h-3" />
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                  <Calendar className="w-3 h-3" />
                 </span>
                 <div className="flex flex-col">
-                  <span className="font-semibold">Pickup schedule from buyer</span>
-                  <span className="text-[11px] text-emerald-800/80">Review and confirm or propose changes.</span>
+                  <span className="font-semibold">Schedule proposed by {order.deliverySchedule.proposer.name}</span>
+                  <span className="text-[11px] text-blue-800/80">Review and confirm or reject this proposal.</span>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-1">
               <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] uppercase tracking-wide text-emerald-700/80">Date</span>
+                <span className="text-[10px] uppercase tracking-wide text-blue-700/80">Date</span>
                 <span className="text-[11px] font-medium">
-                  {order.scheduledDate
-                    ? new Date(order.scheduledDate).toLocaleDateString()
-                    : "—"}
+                  {new Date(order.deliverySchedule.scheduledDate).toLocaleDateString()}
                 </span>
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] uppercase tracking-wide text-emerald-700/80">Time</span>
-                <span className="text-[11px] font-medium">{order.scheduledTime || "—"}</span>
+                <span className="text-[10px] uppercase tracking-wide text-blue-700/80">Time</span>
+                <span className="text-[11px] font-medium">{order.deliverySchedule.scheduledTime}</span>
               </div>
-              {order.deliveryAddress && (
+              {order.deliverySchedule.deliveryAddress && (
                 <div className="flex flex-col gap-0.5 col-span-2">
-                  <span className="text-[10px] uppercase tracking-wide text-emerald-700/80">Address</span>
-                  <span
-                    className="text-[11px] font-medium truncate"
-                    title={order.deliveryAddress}
-                  >
-                    {order.deliveryAddress}
+                  <span className="text-[10px] uppercase tracking-wide text-blue-700/80">Address</span>
+                  <span className="text-[11px] font-medium truncate" title={order.deliverySchedule.deliveryAddress}>
+                    {order.deliverySchedule.deliveryAddress}
                   </span>
-                </div>
-              )}
-              {order.truckWeightKg != null && (
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[10px] uppercase tracking-wide text-emerald-700/80">Truck Weight</span>
-                  <span className="text-[11px] font-medium">{order.truckWeightKg} kg</span>
                 </div>
               )}
             </div>
 
-            {isBusinessBuyer && order.status !== "DELIVERED" && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 border-emerald-300 bg-white/80 px-3 text-[11px] font-medium text-emerald-800 hover:bg-emerald-600 hover:text-white"
-                  onClick={() => {
-                    toast.success("Pickup schedule accepted", {
-                      description: `You have accepted the buyer's pickup arrangement for order #${order.id}`,
-                    })
-                  }}
-                >
-                  Accept schedule
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 px-3 text-[11px] font-medium text-emerald-800 hover:bg-emerald-100"
-                  onClick={() => {
-                    setSchedulingOrderId(order.id)
-                    setScheduleDialogOpen(true)
-                  }}
-                >
-                  Counter request
-                </Button>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 border-blue-300 bg-white/80 px-3 text-[11px] font-medium text-blue-800 hover:bg-blue-600 hover:text-white"
+                onClick={() => handleReviewSchedule(order.deliverySchedule)}
+              >
+                Review Proposal
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {order.deliverySchedule && order.deliverySchedule.status === 'confirmed' && (
+          <div className="mb-3 rounded-xl border border-green-100 bg-green-50/80 p-3 text-xs text-green-900 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
+                  <CheckCircle className="w-3 h-3" />
+                </span>
+                <div className="flex flex-col">
+                  <span className="font-semibold">Delivery schedule confirmed</span>
+                  <span className="text-[11px] text-green-800/80">Both parties have agreed on this schedule.</span>
+                </div>
               </div>
-            )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-1">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] uppercase tracking-wide text-green-700/80">Date</span>
+                <span className="text-[11px] font-medium">
+                  {new Date(order.deliverySchedule.scheduledDate).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] uppercase tracking-wide text-green-700/80">Time</span>
+                <span className="text-[11px] font-medium">{order.deliverySchedule.scheduledTime}</span>
+              </div>
+              {order.deliverySchedule.deliveryAddress && (
+                <div className="flex flex-col gap-0.5 col-span-2">
+                  <span className="text-[10px] uppercase tracking-wide text-green-700/80">Address</span>
+                  <span className="text-[11px] font-medium truncate" title={order.deliverySchedule.deliveryAddress}>
+                    {order.deliverySchedule.deliveryAddress}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -266,66 +311,17 @@ export default function FarmerOrdersPage() {
           </div>
         )}
 
-        {order.status === "CONFIRMED" && (
+        {order.status === "CONFIRMED" && !order.deliverySchedule && (
           <div className="space-y-2">
-            <Dialog open={scheduleDialogOpen && schedulingOrderId === order.id} onOpenChange={(open) => {
-              setScheduleDialogOpen(open)
-              if (!open) setSchedulingOrderId(null)
-            }}>
-              {(!hasSchedule || !isBusinessBuyer) && (
-                <DialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full gap-1"
-                    onClick={() => {
-                      setSchedulingOrderId(order.id)
-                      setScheduleDialogOpen(true)
-                    }}
-                  >
-                    <Calendar className="w-4 h-4" />
-                    Schedule Delivery
-                  </Button>
-                </DialogTrigger>
-              )}
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Schedule Delivery - Order #{order.id}</DialogTitle>
-                </DialogHeader>
-                <DeliveryScheduler
-                  orderId={order.id}
-                  initialSchedule={
-                    hasSchedule
-                      ? {
-                          scheduledDate: order.scheduledDate || undefined,
-                          scheduledTime: order.scheduledTime || undefined,
-                          route: order.route || undefined,
-                          isCBD: order.isCBD ?? false,
-                          truckWeightKg: order.truckWeightKg ?? undefined,
-                          deliveryAddress: order.deliveryAddress || undefined,
-                          isExempt: order.isExempt ?? false,
-                          exemptionType: order.exemptionType || undefined,
-                        }
-                      : undefined
-                  }
-                  onSchedule={async (scheduleData) => {
-                    try {
-                      const response = await fetch(`/api/orders/${order.id}/schedule`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(scheduleData),
-                      })
-                      if (!response.ok) throw new Error('Failed to schedule delivery')
-                      toast.success("Delivery scheduled successfully!")
-                      setScheduleDialogOpen(false)
-                      setSchedulingOrderId(null)
-                    } catch (error: any) {
-                      toast.error(error.message || "Failed to schedule delivery")
-                    }
-                  }}
-                />
-              </DialogContent>
-            </Dialog>
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full gap-1"
+              onClick={() => handleProposeSchedule(order.id)}
+            >
+              <Calendar className="w-4 h-4" />
+              Propose Delivery Schedule
+            </Button>
             <Button
               size="sm"
               className="w-full bg-green-600 hover:bg-green-700 text-white gap-1"
@@ -436,11 +432,30 @@ export default function FarmerOrdersPage() {
         onOpenChange={setCancelDialogOpen}
         title="Cancel Order"
         description={`Are you sure you want to cancel order #${cancelOrderId}? This action cannot be undone.`}
-        confirmLabel="Cancel Order"
-        cancelLabel="Keep Order"
         onConfirm={confirmCancelOrder}
         variant="destructive"
       />
+
+      {/* Collaborative Scheduling Dialogs */}
+      {proposingScheduleOrderId && (
+        <DeliverySchedulingDialog
+          open={schedulingDialogOpen}
+          onOpenChange={setSchedulingDialogOpen}
+          order={orders?.find(o => o.id === proposingScheduleOrderId)}
+          user={user}
+          onScheduleProposed={handleScheduleProposed}
+        />
+      )}
+
+      {confirmingSchedule && (
+        <ScheduleConfirmationDialog
+          open={confirmationDialogOpen}
+          onOpenChange={setConfirmationDialogOpen}
+          schedule={confirmingSchedule}
+          user={user}
+          onActionComplete={handleScheduleActionComplete}
+        />
+      )}
     </div>
   )
 }
