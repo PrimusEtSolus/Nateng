@@ -25,6 +25,9 @@ class Analytics {
 
   async track(event: AnalyticsEvent) {
     try {
+      // Only track on client-side
+      if (typeof window === 'undefined') return
+      
       const eventData = {
         ...event,
         sessionId: event.sessionId || this.sessionId,
@@ -38,7 +41,8 @@ class Analytics {
         body: JSON.stringify(eventData),
       })
     } catch (error) {
-      console.error('Failed to track analytics event:', error)
+      // Silently fail to avoid breaking the application
+      console.debug('Analytics tracking failed (non-critical):', error)
     }
   }
 

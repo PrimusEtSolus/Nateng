@@ -553,14 +553,9 @@ export default function AdminPage() {
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                 <Database className="w-4 h-4 text-blue-600" />
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">Database Admin</h1>
-              <span className="text-sm text-gray-500">Prisma Studio Integration</span>
+              <h1 className="text-xl font-semibold text-gray-900">Admin</h1>
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={() => window.open('http://localhost:5555', '_blank')}>
-                <Eye className="w-4 h-4 mr-1" />
-                Open Prisma Studio
-              </Button>
               <Button variant="outline" onClick={handleLogout}>
                 Logout
               </Button>

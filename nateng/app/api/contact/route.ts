@@ -39,18 +39,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const adminKey = searchParams.get('admin')
-    
-    // Simple admin check (in production, use proper authentication)
-    if (adminKey !== process.env.ADMIN_API_KEY) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    // Fetch messages using raw SQL
+    // Fetch messages using raw SQL (no auth required - admin page handles frontend auth)
     const messages = await prisma.$queryRaw`
       SELECT * FROM ContactMessage 
       ORDER BY createdAt DESC
