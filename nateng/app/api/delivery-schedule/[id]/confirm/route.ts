@@ -9,9 +9,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const scheduleId = Number(params.id)
+    console.log('API called with params:', params)
+    console.log('Raw params.id:', params.id)
+
     const body = await req.json()
-    const { action, notes } = body // action: 'confirm' or 'reject'
+    const { action, notes, orderId } = body // action: 'confirm' or 'reject'
+
+    const parsedScheduleId = Number(params.id)
+    const hasValidScheduleId = Boolean(params.id) && !isNaN(parsedScheduleId) && parsedScheduleId > 0
+    const parsedOrderId = Number(orderId)
+    const hasValidOrderId = orderId !== undefined && orderId !== null && !isNaN(parsedOrderId) && parsedOrderId > 0
+
+    console.log('Parsed scheduleId:', parsedScheduleId)
+    console.log('Has valid scheduleId?:', hasValidScheduleId)
+    console.log('Parsed orderId (body):', parsedOrderId)
+    console.log('Has valid orderId?:', hasValidOrderId)
+
+    if (!hasValidScheduleId && !hasValidOrderId) {
+      console.error('Invalid schedule ID and no valid orderId fallback:', params.id, orderId)
+      return NextResponse.json({ error: 'Invalid schedule ID' }, { status: 400 })
+    }
 
     if (!action || !['confirm', 'reject'].includes(action)) {
       return NextResponse.json({ 
@@ -19,17 +36,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       }, { status: 400 })
     }
 
-    // Get the schedule with order details
-    const schedule = await prisma.deliverySchedule.findUnique({
-      where: { id: scheduleId },
+    // Get the schedule with order details using Prisma
+    console.log('Looking for schedule with:', hasValidScheduleId ? { id: parsedScheduleId } : { orderId: parsedOrderId })
+    const schedule = await prisma.deliverySchedule.findFirst({
+      where: hasValidScheduleId ? { id: parsedScheduleId } : { orderId: parsedOrderId },
       include: {
         order: {
           include: {
-            buyer: { select: { id: true, name: true, email: true } },
-            seller: { select: { id: true, name: true, email: true } }
+            buyer: { select: { id: true, name: true, email: true, role: true } },
+            seller: { select: { id: true, name: true, email: true, role: true } }
           }
         },
-        proposer: { select: { id: true, name: true } }
+        proposer: { select: { id: true, name: true, email: true, role: true } }
       }
     })
 
@@ -60,28 +78,30 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       }, { status: 403 })
     }
 
-    // Update the schedule
+    // Update the schedule using Prisma
+    const newStatus = action === 'confirm' ? 'confirmed' : 'rejected'
+    const confirmedBy = user.id
+    
     const updatedSchedule = await prisma.deliverySchedule.update({
-      where: { id: scheduleId },
+      where: { id: schedule.id },
       data: {
-        status: action === 'confirm' ? 'confirmed' : 'rejected',
-        confirmedBy: user.id,
-        notes: notes || schedule.notes,
-        updatedAt: new Date()
+        status: newStatus,
+        confirmedBy: confirmedBy,
+        notes: notes || schedule.notes
       },
       include: {
         order: {
           include: {
-            buyer: { select: { id: true, name: true, email: true } },
-            seller: { select: { id: true, name: true, email: true } }
+            buyer: { select: { id: true, name: true, email: true, role: true } },
+            seller: { select: { id: true, name: true, email: true, role: true } }
           }
         },
-        proposer: { select: { id: true, name: true, email: true } },
-        confirmer: { select: { id: true, name: true, email: true } }
+        proposer: { select: { id: true, name: true, email: true, role: true } },
+        confirmer: { select: { id: true, name: true, email: true, role: true } }
       }
     })
 
-    // Create notification for the proposer
+    // Create notification for the proposer using Prisma
     const actionText = action === 'confirm' ? 'confirmed' : 'rejected'
     await prisma.notification.create({
       data: {
@@ -89,7 +109,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         type: `schedule_${action}`,
         title: `Delivery Schedule ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}`,
         message: `${user.name} has ${actionText} your delivery schedule proposal for order #${schedule.orderId}`,
-        link: `/orders/${schedule.orderId}/schedule`,
+        link: `/orders/${schedule.orderId}/schedule`
       }
     })
 
@@ -104,7 +124,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           isCBD: schedule.isCBD,
           truckWeightKg: schedule.truckWeightKg,
           deliveryAddress: schedule.deliveryAddress,
-          status: 'CONFIRMED' // Update order status to confirmed
+          status: 'CONFIRMED'
         }
       })
     }

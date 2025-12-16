@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, role, stallLocation } = await req.json();
+    const { name, email, password, role, stallLocation, municipality, businessType } = await req.json();
 
     // Input validation
     if (!name || !email || !password || !role) {
@@ -22,13 +22,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      );
+    // Email/Mobile format validation
+    if (role === 'farmer') {
+      // Farmers use mobile numbers as identifier
+      const mobileRegex = /^09\d{9}$/;
+      if (!mobileRegex.test(email)) {
+        return NextResponse.json(
+          { error: 'Invalid mobile number format. Use format: 09123456789' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Other roles use email addresses
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return NextResponse.json(
+          { error: 'Invalid email format' },
+          { status: 400 }
+        );
+      }
     }
 
     const validRoles = ['farmer', 'buyer', 'business', 'reseller', 'admin'];
@@ -62,11 +74,30 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: {
         name,
-        email: email.toLowerCase(),
+        email: role === 'farmer' ? email : email.toLowerCase(), // Farmers keep mobile format, others use lowercase email
         password: hashedPassword,
         role,
-        // Save stall location for resellers in the address field
-        ...(role === 'reseller' && stallLocation && { address: stallLocation }),
+        // Save phone number for farmers
+        ...(role === 'farmer' && { phone: email }),
+        // Save location data based on role
+        ...(role === 'farmer' && municipality && { 
+          address: municipality,
+          city: municipality,
+          province: 'Benguet',
+          country: 'Philippines'
+        }),
+        ...(role === 'reseller' && stallLocation && { 
+          address: stallLocation
+        }),
+        ...(role === 'business' && businessType && { 
+          businessType: businessType
+        }),
+        // Default location data
+        ...(role === 'buyer' && {
+          city: 'Baguio',
+          province: 'Benguet', 
+          country: 'Philippines'
+        }),
       },
     });
 

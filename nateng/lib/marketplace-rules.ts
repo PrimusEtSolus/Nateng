@@ -8,7 +8,7 @@
  * - Business and Reseller users may purchase only from Farmers
  */
 
-import type { UserRole } from './types';
+import type { UserRole } from '@/lib/types';
 
 export interface MarketplaceRuleViolation {
   allowed: boolean
@@ -53,7 +53,7 @@ export function canSellTo(sellerRole: UserRole, buyerRole: UserRole): Marketplac
   if (sellerRole === 'business') {
     return {
       allowed: false,
-      reason: 'Business users cannot sell products, they can only purchase'
+      reason: 'This seller cannot offer products'
     }
   }
 
@@ -61,7 +61,7 @@ export function canSellTo(sellerRole: UserRole, buyerRole: UserRole): Marketplac
   if (sellerRole === 'buyer') {
     return {
       allowed: false,
-      reason: 'Buyer users cannot sell products, they can only purchase'
+      reason: 'This seller cannot offer products'
     }
   }
 
@@ -193,6 +193,6 @@ export function canCreateListings(userRole: UserRole): MarketplaceRuleViolation 
   // Buyers and Business users cannot create listings
   return {
     allowed: false,
-    reason: `${userRole} users cannot create listings. Only Farmers and Resellers can sell products.`
+    reason: 'Only Farmers and Resellers can create listings'
   }
 }

@@ -11,6 +11,16 @@ export interface User {
   createdAt?: string
   businessName?: string
   isBanned?: boolean
+  // Additional fields for user data
+  phone?: string
+  address?: string
+  city?: string
+  province?: string
+  country?: string
+  barangay?: string
+  farmSize?: string
+  businessType?: string
+  taxId?: string
 }
 
 export interface Product {
@@ -81,13 +91,27 @@ export interface Order {
   deliveryAddress?: string | null
   isExempt?: boolean | null
   exemptionType?: string | null
+  deliverySchedule?: {
+    id: number
+    status: string
+    proposedBy: number
+    confirmedBy?: number
+    scheduledDate: string
+    scheduledTime: string
+    route?: string
+    isCBD: boolean
+    truckWeightKg?: number
+    deliveryAddress?: string
+    notes?: string
+    proposer: { id: number; name: string; email: string; role: string }
+    confirmer?: { id: number; name: string; email: string; role: string }
+  }
   items: OrderItem[]
   buyer?: User | null
   seller: {
     id: number
     name: string
     email?: string
-    role?: string
   }
 }
 

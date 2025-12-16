@@ -7,11 +7,12 @@ import { useFetch } from "@/hooks/use-fetch"
 import { ordersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Package, Check, X, Truck, Clock, Building2, UserIcon, Loader2, Calendar, MessageSquare, CheckCircle } from "lucide-react"
+import { Package, Check, X, Truck, Clock, Building2, UserIcon, Loader2, Calendar, MessageSquare, CheckCircle, XCircle, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 import { DeliveryScheduler } from "@/components/delivery-scheduler"
 import { DeliverySchedulingDialog } from "@/components/delivery-scheduling-dialog"
 import { ScheduleConfirmationDialog } from "@/components/schedule-confirmation-dialog"
+import { ViewScheduleDialog } from "@/components/view-schedule-dialog"
 import { MessageDialog } from "@/components/message-dialog"
 import { ConfirmationDialog } from "@/components/confirmation-dialog"
 
@@ -73,6 +74,8 @@ export default function FarmerOrdersPage() {
   const [schedulingDialogOpen, setSchedulingDialogOpen] = useState(false)
   const [confirmingSchedule, setConfirmingSchedule] = useState<any>(null)
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false)
+  const [viewingSchedule, setViewingSchedule] = useState<any>(null)
+  const [viewDialogOpen, setViewDialogOpen] = useState(false)
 
   useEffect(() => {
     setUser(getCurrentUser())
@@ -127,8 +130,44 @@ export default function FarmerOrdersPage() {
   }
 
   const handleReviewSchedule = (schedule: any) => {
+    console.log('handleReviewSchedule called with:', schedule)
+    
+    // Add comprehensive validation
+    if (!schedule) {
+      console.error('Schedule is null/undefined')
+      toast.error("No schedule data available", {
+        description: "The delivery schedule information is missing"
+      })
+      return
+    }
+    
+    if (!schedule.id) {
+      console.error('Schedule missing ID field:', schedule)
+      console.log('Schedule keys:', Object.keys(schedule))
+      
+      // Try to find schedule by orderId if available
+      if (schedule.orderId) {
+        console.log('Attempting to find schedule by orderId:', schedule.orderId)
+        // We'll handle this in the dialog with fallback logic
+        setConfirmingSchedule(schedule)
+        setConfirmationDialogOpen(true)
+        return
+      }
+      
+      toast.error("Invalid schedule data", {
+        description: "The schedule information is missing required ID field"
+      })
+      return
+    }
+    
+    console.log('Valid schedule with ID:', schedule.id)
     setConfirmingSchedule(schedule)
     setConfirmationDialogOpen(true)
+  }
+
+  const handleViewSchedule = (schedule: any) => {
+    setViewingSchedule(schedule)
+    setViewDialogOpen(true)
   }
 
   const handleScheduleActionComplete = (updatedSchedule: any) => {
@@ -148,7 +187,7 @@ export default function FarmerOrdersPage() {
   const OrderCard = ({ order }: { order: Order }) => {
     const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
     const isUpdating = updatingStatus === order.id
-    const hasSchedule = Boolean(order.scheduledDate || order.scheduledTime)
+    const latestSchedule = order.deliverySchedule // Get the schedule (singular)
     const isBusinessBuyer = order.buyer.role === "business"
 
     return (
@@ -197,7 +236,7 @@ export default function FarmerOrdersPage() {
           </div>
         </div>
 
-        {order.deliverySchedule && order.deliverySchedule.status === 'proposed' && order.deliverySchedule.proposedBy !== user?.id && (
+        {latestSchedule && latestSchedule.status === 'proposed' && latestSchedule.proposedBy !== user?.id && (
           <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50/80 p-3 text-xs text-blue-900 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -205,7 +244,7 @@ export default function FarmerOrdersPage() {
                   <Calendar className="w-3 h-3" />
                 </span>
                 <div className="flex flex-col">
-                  <span className="font-semibold">Schedule proposed by {order.deliverySchedule.proposer.name}</span>
+                  <span className="font-semibold">Schedule proposed by {latestSchedule.proposer.name}</span>
                   <span className="text-[11px] text-blue-800/80">Review and confirm or reject this proposal.</span>
                 </div>
               </div>
@@ -215,18 +254,18 @@ export default function FarmerOrdersPage() {
               <div className="flex flex-col gap-0.5">
                 <span className="text-[10px] uppercase tracking-wide text-blue-700/80">Date</span>
                 <span className="text-[11px] font-medium">
-                  {new Date(order.deliverySchedule.scheduledDate).toLocaleDateString()}
+                  {new Date(latestSchedule.scheduledDate).toLocaleDateString()}
                 </span>
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="text-[10px] uppercase tracking-wide text-blue-700/80">Time</span>
-                <span className="text-[11px] font-medium">{order.deliverySchedule.scheduledTime}</span>
+                <span className="text-[11px] font-medium">{latestSchedule.scheduledTime}</span>
               </div>
-              {order.deliverySchedule.deliveryAddress && (
+              {latestSchedule.deliveryAddress && (
                 <div className="flex flex-col gap-0.5 col-span-2">
                   <span className="text-[10px] uppercase tracking-wide text-blue-700/80">Address</span>
-                  <span className="text-[11px] font-medium truncate" title={order.deliverySchedule.deliveryAddress}>
-                    {order.deliverySchedule.deliveryAddress}
+                  <span className="text-[11px] font-medium truncate" title={latestSchedule.deliveryAddress}>
+                    {latestSchedule.deliveryAddress}
                   </span>
                 </div>
               )}
@@ -237,7 +276,10 @@ export default function FarmerOrdersPage() {
                 size="sm"
                 variant="outline"
                 className="h-7 border-blue-300 bg-white/80 px-3 text-[11px] font-medium text-blue-800 hover:bg-blue-600 hover:text-white"
-                onClick={() => handleReviewSchedule(order.deliverySchedule)}
+                onClick={() => {
+                  console.log('Review button clicked, schedule:', latestSchedule)
+                  handleReviewSchedule(latestSchedule)
+                }}
               >
                 Review Proposal
               </Button>
@@ -245,36 +287,94 @@ export default function FarmerOrdersPage() {
           </div>
         )}
 
-        {order.deliverySchedule && order.deliverySchedule.status === 'confirmed' && (
-          <div className="mb-3 rounded-xl border border-green-100 bg-green-50/80 p-3 text-xs text-green-900 space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
-                  <CheckCircle className="w-3 h-3" />
+        {latestSchedule && latestSchedule.status === 'rejected' && (
+          <div className="mb-3 rounded-xl border border-red-100 bg-red-50/80 p-3 text-xs text-red-900 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-700">
+                <XCircle className="w-3 h-3" />
+              </span>
+              <div className="flex flex-col">
+                <span className="font-semibold">Delivery schedule rejected</span>
+                <span className="text-[11px] text-red-800/80">
+                  {latestSchedule.confirmer?.name || 'The other party'} rejected this schedule.
                 </span>
-                <div className="flex flex-col">
-                  <span className="font-semibold">Delivery schedule confirmed</span>
-                  <span className="text-[11px] text-green-800/80">Both parties have agreed on this schedule.</span>
-                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-1">
               <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] uppercase tracking-wide text-red-700/80">Date</span>
+                <span className="text-[11px] font-medium">
+                  {new Date(latestSchedule.scheduledDate).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] uppercase tracking-wide text-red-700/80">Time</span>
+                <span className="text-[11px] font-medium">{latestSchedule.scheduledTime}</span>
+              </div>
+              {latestSchedule.deliveryAddress && (
+                <div className="flex flex-col gap-0.5 col-span-2">
+                  <span className="text-[10px] uppercase tracking-wide text-red-700/80">Address</span>
+                  <span className="text-[11px] font-medium truncate" title={latestSchedule.deliveryAddress}>
+                    {latestSchedule.deliveryAddress}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {latestSchedule.notes && (
+              <div className="bg-red-100/50 border border-red-200 p-2 rounded">
+                <span className="text-[10px] font-medium text-red-800">Notes: {latestSchedule.notes}</span>
+              </div>
+            )}
+
+            <Button
+              size="sm"
+              className="w-full gap-1"
+              onClick={() => handleProposeSchedule(order.id)}
+            >
+              <RotateCcw className="w-4 h-4" />
+              Propose New Schedule
+            </Button>
+          </div>
+        )}
+
+        {latestSchedule && latestSchedule.status === 'confirmed' && (
+          <div className="mb-3 rounded-xl border border-green-100 bg-green-50/80 p-3 text-xs text-green-900 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
+                <CheckCircle className="w-3 h-3" />
+              </span>
+              <div className="flex flex-col">
+                <span className="font-semibold">Delivery schedule confirmed</span>
+                <span className="text-[11px] text-green-800/80">Both parties have agreed on this schedule.</span>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 border-green-300 bg-white/80 px-3 text-[11px] font-medium text-green-800 hover:bg-green-600 hover:text-white"
+              onClick={() => handleViewSchedule(latestSchedule)}
+            >
+              View Schedule
+            </Button>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-1">
+              <div className="flex flex-col gap-0.5">
                 <span className="text-[10px] uppercase tracking-wide text-green-700/80">Date</span>
                 <span className="text-[11px] font-medium">
-                  {new Date(order.deliverySchedule.scheduledDate).toLocaleDateString()}
+                  {new Date(latestSchedule.scheduledDate).toLocaleDateString()}
                 </span>
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="text-[10px] uppercase tracking-wide text-green-700/80">Time</span>
-                <span className="text-[11px] font-medium">{order.deliverySchedule.scheduledTime}</span>
+                <span className="text-[11px] font-medium">{latestSchedule.scheduledTime}</span>
               </div>
-              {order.deliverySchedule.deliveryAddress && (
+              {latestSchedule.deliveryAddress && (
                 <div className="flex flex-col gap-0.5 col-span-2">
                   <span className="text-[10px] uppercase tracking-wide text-green-700/80">Address</span>
-                  <span className="text-[11px] font-medium truncate" title={order.deliverySchedule.deliveryAddress}>
-                    {order.deliverySchedule.deliveryAddress}
+                  <span className="text-[11px] font-medium truncate" title={latestSchedule.deliveryAddress}>
+                    {latestSchedule.deliveryAddress}
                   </span>
                 </div>
               )}
@@ -311,7 +411,7 @@ export default function FarmerOrdersPage() {
           </div>
         )}
 
-        {order.status === "CONFIRMED" && !order.deliverySchedule && (
+        {order.status === "CONFIRMED" && (!latestSchedule || latestSchedule.status === 'rejected') && (
           <div className="space-y-2">
             <Button
               size="sm"
@@ -320,7 +420,7 @@ export default function FarmerOrdersPage() {
               onClick={() => handleProposeSchedule(order.id)}
             >
               <Calendar className="w-4 h-4" />
-              Propose Delivery Schedule
+              {latestSchedule?.status === 'rejected' ? 'Propose New Schedule' : 'Propose Delivery Schedule'}
             </Button>
             <Button
               size="sm"
@@ -454,6 +554,15 @@ export default function FarmerOrdersPage() {
           schedule={confirmingSchedule}
           user={user}
           onActionComplete={handleScheduleActionComplete}
+        />
+      )}
+
+      {viewingSchedule && (
+        <ViewScheduleDialog
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+          schedule={viewingSchedule}
+          user={user}
         />
       )}
     </div>

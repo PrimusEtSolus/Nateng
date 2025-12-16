@@ -35,6 +35,17 @@ export default function BuyerSignupPage() {
       return
     }
     
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!formData.email) {
+      setError("Email address is required")
+      return
+    }
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address (e.g., user@example.com)")
+      return
+    }
+    
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match")
       return
@@ -97,12 +108,12 @@ export default function BuyerSignupPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-lg text-foreground">
-                Email Address / Mobile Number
+                Email Address
               </Label>
               <Input
                 id="email"
-                type="text"
-                placeholder="Enter your email or mobile"
+                type="email"
+                placeholder="Enter your email address"
                 className="h-14 bg-muted border-border text-lg"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}

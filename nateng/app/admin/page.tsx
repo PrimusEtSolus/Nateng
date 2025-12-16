@@ -472,7 +472,7 @@ export default function AdminPage() {
             </div>
             <CardTitle className="text-2xl">Admin Access</CardTitle>
             <CardDescription>
-              Database Admin Panel - Prisma Studio Integration
+              Admin Panel
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -506,7 +506,7 @@ export default function AdminPage() {
             <Alert className="mt-4">
               <Database className="w-4 h-4" />
               <AlertDescription>
-                Direct database access with Prisma Studio integration
+                Admin dashboard for managing users, orders, and system data
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -579,7 +579,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Tab Navigation - Prisma Studio Style */}
+        {/* Tab Navigation */}
         <div className="border-b border-gray-200 mb-8">
           <nav className="-mb-px flex space-x-8">
             {[

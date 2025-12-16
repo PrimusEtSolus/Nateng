@@ -37,6 +37,17 @@ export default function BusinessSignupPage() {
       return
     }
     
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!formData.email) {
+      setError("Email address is required")
+      return
+    }
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address (e.g., user@example.com)")
+      return
+    }
+    
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match")
       return
@@ -50,7 +61,7 @@ export default function BusinessSignupPage() {
     setIsLoading(true)
 
     try {
-      const user = await register(formData.businessName, formData.email, formData.password, "business")
+      const user = await register(formData.businessName, formData.email, formData.password, "business", undefined, undefined, formData.businessType)
       if (user) {
         toast.success("Account created successfully!")
         router.push(getRedirectPath(user.role))

@@ -8,6 +8,7 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { formatDate } from "@/lib/date-utils"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+import { type User } from "@/lib/types"
 import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import BannedUserDashboard from "@/components/banned-user-dashboard"
 import { Input } from "@/components/ui/input"
@@ -60,6 +61,7 @@ interface Listing {
 
 export default function BuyerDashboardPage() {
   const router = useRouter()
+  const [user, setUser] = useState<User | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
   const [selectedCategory, setSelectedCategory] = useState("All")
@@ -87,6 +89,8 @@ export default function BuyerDashboardPage() {
       router.push('/login')
       return
     }
+    
+    setUser(currentUser)
     
     // Check if user is banned
     if (currentUser.isBanned) {
@@ -220,7 +224,7 @@ export default function BuyerDashboardPage() {
           {/* Header */}
           <div className="flex items-start justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Fresh from Benguet</h1>
+              <h1 className="text-3xl font-bold text-foreground">Welcome, {user?.name?.split(" ")[0] || "Buyer"}</h1>
               <p className="text-muted-foreground mt-1">Shop farm-fresh vegetables delivered to your doorstep</p>
             </div>
             <Link href="/buyer/cart">

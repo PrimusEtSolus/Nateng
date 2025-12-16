@@ -38,7 +38,7 @@ export default function FarmerSignupPage() {
   const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
+    mobileNumber: "",
     municipality: "",
     password: "",
     confirmPassword: "",
@@ -50,6 +50,17 @@ export default function FarmerSignupPage() {
     
     if (!formData.name) {
       setError("Name is required")
+      return
+    }
+    
+    // Mobile number validation
+    const mobileRegex = /^09\d{9}$/
+    if (!formData.mobileNumber) {
+      setError("Mobile number is required")
+      return
+    }
+    if (!mobileRegex.test(formData.mobileNumber)) {
+      setError("Please enter a valid mobile number (e.g., 09123456789)")
       return
     }
     
@@ -66,7 +77,7 @@ export default function FarmerSignupPage() {
     setIsLoading(true)
 
     try {
-      const user = await register(formData.name, formData.email, formData.password, "farmer")
+      const user = await register(formData.name, formData.mobileNumber, formData.password, "farmer", undefined, formData.municipality)
       if (user) {
         toast.success("Account created successfully!")
         router.push(getRedirectPath(user.role))
@@ -115,16 +126,16 @@ export default function FarmerSignupPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-lg text-foreground">
-                Email Address / Mobile Number
+              <Label htmlFor="mobileNumber" className="text-lg text-foreground">
+                Mobile Number
               </Label>
               <Input
-                id="email"
-                type="text"
-                placeholder="Enter your email or mobile"
+                id="mobileNumber"
+                type="tel"
+                placeholder="Enter your mobile number (e.g., 09123456789)"
                 className="h-12 bg-muted border-border text-lg"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={formData.mobileNumber}
+                onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
                 required
               />
             </div>

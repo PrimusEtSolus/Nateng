@@ -58,6 +58,11 @@ export default function BusinessBrowsePage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [showCartModal, setShowCartModal] = useState(false)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const currentUser = getCurrentUser()
@@ -89,7 +94,7 @@ export default function BusinessBrowsePage() {
     }
   }, [cart])
 
-  // Fetch available listings - filtered for business users
+  // Fetch available listings from farmers
   const { data: listings, loading: listingsLoading } = useFetch<Listing[]>('/api/listings?available=true&userRole=business')
 
   const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]
@@ -97,7 +102,9 @@ export default function BusinessBrowsePage() {
   const filteredListings = Array.isArray(listings) ? listings.filter((listing) => {
     const matchesSearch = listing.product.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === "All" || true
-    return matchesSearch && matchesCategory && listing.available && listing.quantity > 0
+    // Show only listings from farmers
+    const isFromFarmer = listing.seller.role === 'farmer'
+    return matchesSearch && matchesCategory && listing.available && listing.quantity > 0 && isFromFarmer
   }) || [] : []
 
   useEffect(() => {
@@ -111,6 +118,12 @@ export default function BusinessBrowsePage() {
 
   const handleAddToOrder = () => {
     if (selectedListing && orderQuantity) {
+      // Validate that seller is a farmer
+      if (selectedListing.seller.role !== 'farmer') {
+        toast.error("Only available from farmers")
+        return
+      }
+      
       const qty = Number(orderQuantity)
       const minOrder = selectedListing.seller.role === 'farmer' 
         ? (selectedListing.seller.minimumOrderKg || selectedListing.product.farmer?.minimumOrderKg || 50)
@@ -142,10 +155,17 @@ export default function BusinessBrowsePage() {
       return
     }
 
+    // Validate that all items in cart are from farmers
+    const invalidItems = cart.filter((item: CartItem) => item.listing.seller.role !== 'farmer')
+    if (invalidItems.length > 0) {
+      toast.error("Some items are not available. Please remove them and try again.")
+      return
+    }
+
     setIsPlacingOrder(true)
     try {
       // Group items by seller for order creation
-      const itemsBySeller = cart.reduce((acc, item) => {
+      const itemsBySeller = cart.reduce<Record<number, Array<{ listingId: number; quantity: number }>>>((acc, item: CartItem) => {
         const sellerId = item.listing.sellerId
         if (!acc[sellerId]) {
           acc[sellerId] = []
@@ -155,7 +175,7 @@ export default function BusinessBrowsePage() {
           quantity: item.quantity,
         })
         return acc
-      }, {} as Record<number, Array<{ listingId: number; quantity: number }>>)
+      }, {})
 
       // Create orders for each seller
       const orderPromises = Object.entries(itemsBySeller).map(([sellerId, items]) =>
@@ -181,12 +201,20 @@ export default function BusinessBrowsePage() {
     }
   }
 
-  const totalCartValue = cart.reduce((sum, item) => sum + (item.listing.priceCents * item.quantity / 100), 0)
+  const totalCartValue = cart.reduce((sum: number, item: CartItem) => sum + (item.listing.priceCents * item.quantity / 100), 0)
 
   return (
     <div className="p-8">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-8">
+      {!mounted ? (
+        // Loading placeholder to prevent hydration mismatch
+        <div className="text-center py-12">
+          <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-4 animate-spin" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      ) : (
+        <>
+          {/* Header */}
+          <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Wholesale Market</h1>
           <p className="text-muted-foreground mt-1">Browse fresh produce directly from Benguet farmers</p>
@@ -544,6 +572,8 @@ export default function BusinessBrowsePage() {
           )}
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </div>
   )
 }

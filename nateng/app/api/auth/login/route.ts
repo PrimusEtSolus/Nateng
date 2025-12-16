@@ -9,13 +9,15 @@ export async function POST(req: NextRequest) {
 
     // Input validation
     if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+      return NextResponse.json({ error: 'Email or mobile number and password are required' }, { status: 400 });
     }
 
-    // Email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    // Determine if input is email or mobile number
+    const isMobile = /^09\d{9}$/.test(email);
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    if (!isMobile && !isEmail) {
+      return NextResponse.json({ error: 'Invalid email or mobile number format' }, { status: 400 });
     }
 
     // Password length validation
@@ -23,19 +25,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+    // Find user by email or mobile number
+    let user;
+    if (isMobile) {
+      // For mobile numbers, search by phone field (farmers) or email field (backward compatibility)
+      user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { phone: email },
+            { email: email } // Fallback for existing farmers
+          ]
+        }
+      });
+    } else {
+      // For email addresses, search by email field
+      user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+    }
 
     if (!user) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid email or mobile number or password' }, { status: 401 });
     }
 
     // Always use bcrypt for password verification
     const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid email or mobile number or password' }, { status: 401 });
     }
 
     // Check if user is banned (from database)

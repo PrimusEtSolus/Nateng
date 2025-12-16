@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     
     // Users can only see their own orders unless they're admin
     if (user.role !== 'admin') {
-      if (user.role === 'buyer') {
+      if (user.role === 'buyer' || user.role === 'business') {
         where.buyerId = user.id;
       } else if (user.role === 'farmer' || user.role === 'reseller') {
         where.sellerId = user.id;
@@ -45,22 +45,22 @@ export async function GET(req: NextRequest) {
         items: { include: { listing: { include: { product: { include: { farmer: true } } } } } },
         buyer: { select: { id: true, name: true, email: true, role: true } },
         seller: { select: { id: true, name: true, email: true, role: true } },
+        deliverySchedule: {
+          include: {
+            proposer: { select: { id: true, name: true, email: true, role: true } },
+            confirmer: { select: { id: true, name: true, email: true, role: true } }
+          }
+        }
       },
       orderBy: { createdAt: 'desc' },
     });
-    return NextResponse.json(orders);
-  } catch (error: any) {
-    const message = typeof error?.message === 'string' ? error.message : 'Internal server error';
-    const isBusinessError =
-      typeof message === 'string' &&
-      (message.includes('minimum order requirement not met') ||
-        message.includes('insufficient quantity') ||
-        message.includes('listing') ||
-        message.includes('quantity'));
 
+    return NextResponse.json(orders);
+  } catch (error: unknown) {
+    console.error('Error fetching orders:', error);
     return NextResponse.json(
-      { error: message },
-      { status: isBusinessError ? 400 : 500 }
+      { error: 'Failed to fetch orders' },
+      { status: 500 }
     );
   }
 }
@@ -107,108 +107,126 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
     }
 
-    const transactionValidation = validateMarketplaceTransaction(
+    // Validate marketplace rules
+    const validationResult = validateMarketplaceTransaction(
       seller.role as UserRole,
       buyer.role as UserRole
     );
 
-    if (!transactionValidation.allowed) {
+    if (!validationResult.allowed) {
       return NextResponse.json(
-        { error: transactionValidation.reason || 'Transaction not allowed by marketplace rules' },
-        { status: 403 }
+        { error: validationResult.reason || 'Transaction not allowed' },
+        { status: 400 }
       );
     }
 
-    // Transactional create: check quantities, decrement, create order
-    const createdOrder = await prisma.$transaction(async (tx) => {
+    // Create order and update listings in a transaction
+    const order = await prisma.$transaction(async (tx: any) => {
+      // Calculate total price
       let totalCents = 0;
-      const order = await tx.order.create({
-        data: {
-          buyerId: Number(buyerId),
-          sellerId: Number(sellerId),
-          totalCents: 0,
-          status: 'PENDING',
-        },
-      });
+      const orderItems = [];
 
-      for (const it of items) {
-        const listing = await tx.listing.findUnique({ 
-          where: { id: Number(it.listingId) },
-          include: { seller: { select: { role: true, minimumOrderKg: true } }, product: { include: { farmer: { select: { minimumOrderKg: true } } } } }
+      for (const item of items) {
+        const listing = await tx.listing.findUnique({
+          where: { id: item.listingId },
+          include: { product: true }
         });
-        if (!listing) throw new Error(`listing ${it.listingId} not found`);
-        
-        // Check minimum order requirement for farmers
-        if (listing.seller.role === 'farmer') {
-          const minOrder = listing.seller.minimumOrderKg || listing.product.farmer?.minimumOrderKg || 50;
-          if (Number(it.quantity) < minOrder) {
-            throw new Error(`minimum order requirement not met for listing ${it.listingId}. Minimum: ${minOrder}kg, Requested: ${it.quantity}kg`);
+
+        if (!listing) {
+          throw new Error(`Listing ${item.listingId} not found`);
+        }
+
+        if (listing.quantity < item.quantity) {
+          throw new Error(`Insufficient quantity for listing ${item.listingId}`);
+        }
+
+        // Validate minimum order requirements
+        if (buyer.role === 'business' && listing.product.minimumOrderKg) {
+          const totalKgNeeded = item.quantity;
+          if (totalKgNeeded < listing.product.minimumOrderKg) {
+            throw new Error(`Minimum order requirement not met for ${listing.product.name}`);
           }
         }
-        
-        if (listing.quantity < Number(it.quantity)) {
-          throw new Error(`insufficient quantity for listing ${it.listingId}. Available: ${listing.quantity}, Requested: ${it.quantity}`);
-        }
 
-        const itemTotal = Number(it.quantity) * listing.priceCents;
-        totalCents += itemTotal;
+        const itemTotalCents = item.quantity * listing.priceCents;
+        totalCents += itemTotalCents;
 
-        await tx.orderItem.create({
+        // Update listing quantity
+        await tx.listing.update({
+          where: { id: item.listingId },
           data: {
-            orderId: order.id,
-            listingId: listing.id,
-            quantity: Number(it.quantity),
-            priceCents: listing.priceCents,
-          },
+            quantity: listing.quantity - item.quantity,
+            available: (listing.quantity - item.quantity) > 0
+          }
         });
 
-        await tx.listing.update({
-          where: { id: listing.id },
-          data: { quantity: listing.quantity - Number(it.quantity) },
+        orderItems.push({
+          listingId: item.listingId,
+          quantity: item.quantity,
+          priceCents: listing.priceCents
         });
       }
 
-      await tx.order.update({
-        where: { id: order.id },
-        data: { totalCents },
+      // Create the order
+      const newOrder = await tx.order.create({
+        data: {
+          buyerId: Number(buyerId),
+          sellerId: Number(sellerId),
+          totalCents,
+          status: 'PENDING',
+          items: {
+            create: orderItems
+          }
+        },
+        include: {
+          items: {
+            include: {
+              listing: {
+                include: {
+                  product: {
+                    include: {
+                      farmer: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          buyer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true
+            }
+          },
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true
+            }
+          }
+        }
       });
 
-      return order;
+      return newOrder;
     });
 
-    const fullOrder = await prisma.order.findUnique({
-      where: { id: createdOrder.id },
-      include: {
-        items: { include: { listing: { include: { product: true } } } },
-        buyer: true,
-        seller: true,
-      },
-    });
-
-    // Create notification for seller
-    await prisma.notification.create({
-      data: {
-        userId: Number(sellerId),
-        type: 'order_placed',
-        title: 'New Order Received',
-        message: `You have received a new order from ${fullOrder?.buyer.name || 'a buyer'}`,
-        link: `/orders/${createdOrder.id}`,
-      },
-    });
-
-    // Create notification for buyer
-    await prisma.notification.create({
-      data: {
-        userId: Number(buyerId),
-        type: 'order_placed',
-        title: 'Order Placed',
-        message: `Your order has been placed successfully. Total: ₱${((fullOrder?.totalCents || 0) / 100).toFixed(2)}`,
-        link: `/orders/${createdOrder.id}`,
-      },
-    });
-
-    return NextResponse.json(fullOrder, { status: 201 });
+    return NextResponse.json(order);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = typeof error?.message === 'string' ? error.message : 'Internal server error';
+    const isBusinessError =
+      typeof message === 'string' &&
+      (message.includes('minimum order requirement not met') ||
+        message.includes('insufficient quantity') ||
+        message.includes('listing') ||
+        message.includes('quantity'));
+
+    return NextResponse.json(
+      { error: message },
+      { status: isBusinessError ? 400 : 500 }
+    );
   }
 }

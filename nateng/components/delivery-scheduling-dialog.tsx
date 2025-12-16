@@ -1,13 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Calendar, Clock, MapPin, Truck } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Calendar, Clock, MapPin, Truck, AlertTriangle } from "lucide-react"
+import { toast } from "sonner"
 
 interface DeliverySchedulingDialogProps {
   open: boolean
@@ -30,19 +32,87 @@ export function DeliverySchedulingDialog({
     route: "",
     isCBD: false,
     truckWeightKg: "",
+    truckWeightType: "",
     deliveryAddress: "",
     notes: ""
   })
   const [loading, setLoading] = useState(false)
+  const [truckBanWarning, setTruckBanWarning] = useState<string | null>(null)
+
+  const routes = [
+    "Marcos Highway",
+    "Kennon Road", 
+    "Naguilian Road",
+    "Halsema Highway",
+    "Asin–Nangalisan Road",
+    "La Trinidad",
+    "others"
+  ]
+
+  const truckWeightTypes = [
+    { value: "pickup", label: "Pickup Trucks", weight: 2000 },
+    { value: "light-van", label: "Light Vans & Small Cargo Vans", weight: 3000 },
+    { value: "light-truck", label: "Light Trucks (4-Wheel Light Commercial Trucks)", weight: 4000 },
+    { value: "small-vehicle", label: "Smaller Vehicles (SUV, MPV)", weight: 2500 }
+  ]
+
+  // Check for Baguio City truck ban restrictions
+  useEffect(() => {
+    if (formData.scheduledTime && formData.truckWeightType) {
+      const selectedTruck = truckWeightTypes.find(t => t.value === formData.truckWeightType)
+      if (selectedTruck && selectedTruck.weight >= 4500) {
+        const hour = parseInt(formData.scheduledTime.split(':')[0])
+        const minute = parseInt(formData.scheduledTime.split(':')[1])
+        const timeInMinutes = hour * 60 + minute
+        
+        // Peak rush hours: 6-9 AM (360-540 minutes) and 4-9 PM (960-1140 minutes)
+        const isRushHour = (timeInMinutes >= 360 && timeInMinutes <= 540) || (timeInMinutes >= 960 && timeInMinutes <= 1140)
+        
+        if (isRushHour) {
+          setTruckBanWarning(`Baguio City Truck Ban: Heavy vehicles (${selectedTruck.weight}kg+) are restricted from main roads during peak hours (6-9 AM and 4-9 PM). Consider scheduling outside these hours or choosing a lighter vehicle.`)
+        } else {
+          setTruckBanWarning(null)
+        }
+      } else {
+        setTruckBanWarning(null)
+      }
+    } else {
+      setTruckBanWarning(null)
+    }
+  }, [formData.scheduledTime, formData.truckWeightType])
+
+  const handleTruckTypeChange = (value: string) => {
+    const selectedTruck = truckWeightTypes.find(t => t.value === value)
+    setFormData({ 
+      ...formData, 
+      truckWeightType: value,
+      truckWeightKg: selectedTruck?.weight.toString() || ""
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
+      // Get current user for authentication
+      const currentUser = localStorage.getItem('natenghub_user')
+      const user = currentUser ? JSON.parse(currentUser) : null
+      
+      if (!user) {
+        toast.error("Authentication required", {
+          description: "Please log in again to continue"
+        })
+        setLoading(false)
+        return
+      }
+
       const response = await fetch('/api/delivery-schedule', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer token_${user.id}_${Date.now()}`
+        },
         body: JSON.stringify({
           orderId: order.id,
           ...formData
@@ -63,6 +133,7 @@ export function DeliverySchedulingDialog({
         route: "",
         isCBD: false,
         truckWeightKg: "",
+        truckWeightType: "",
         deliveryAddress: "",
         notes: ""
       })
@@ -141,12 +212,18 @@ export function DeliverySchedulingDialog({
               <MapPin className="w-4 h-4" />
               Preferred Route
             </Label>
-            <Input
-              id="route"
-              value={formData.route}
-              onChange={(e) => setFormData({ ...formData, route: e.target.value })}
-              placeholder="e.g., Kennon Road, Quirino Highway"
-            />
+            <Select value={formData.route} onValueChange={(value) => setFormData({ ...formData, route: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a route" />
+              </SelectTrigger>
+              <SelectContent>
+                {routes.map((route) => (
+                  <SelectItem key={route} value={route}>
+                    {route}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-3">
@@ -162,18 +239,32 @@ export function DeliverySchedulingDialog({
             </div>
 
             <div>
-              <Label htmlFor="truckWeightKg" className="flex items-center gap-2">
+              <Label htmlFor="truckWeightType" className="flex items-center gap-2">
                 <Truck className="w-4 h-4" />
-                Truck Weight (kg)
+                Vehicle Type
               </Label>
-              <Input
-                id="truckWeightKg"
-                type="number"
-                value={formData.truckWeightKg}
-                onChange={(e) => setFormData({ ...formData, truckWeightKg: e.target.value })}
-                placeholder="Optional - for truck ban compliance"
-              />
+              <Select value={formData.truckWeightType} onValueChange={handleTruckTypeChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select vehicle type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {truckWeightTypes.map((truck) => (
+                    <SelectItem key={truck.value} value={truck.value}>
+                      {truck.label} ({truck.weight}kg)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            {truckBanWarning && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-amber-800">{truckBanWarning}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>

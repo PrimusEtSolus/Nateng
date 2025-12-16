@@ -40,11 +40,11 @@ export default function FarmerSettingsPage() {
       setUser(currentUser)
       setFormData({
         name: currentUser.name,
-        email: currentUser.email,
-        phone: "", // Not stored in User model yet
-        municipality: "", // Not stored in User model yet
-        barangay: "",
-        farmSize: "",
+        email: currentUser.phone || currentUser.email, // Farmers use mobile number as primary contact
+        phone: currentUser.phone || currentUser.email, // Show mobile number
+        municipality: currentUser.city || currentUser.address || "",
+        barangay: currentUser.barangay || "",
+        farmSize: currentUser.farmSize || "",
       })
       // Set existing profile photo if available
       if (currentUser.profilePhotoUrl) {
@@ -163,17 +163,26 @@ export default function FarmerSettingsPage() {
     }
 
     // Validate required fields
-    if (!formData.name || !formData.email) {
-      toast.error("Name and email are required")
+    if (!formData.name || !formData.phone) {
+      toast.error("Name and mobile number are required")
+      return
+    }
+
+    // Validate mobile number format
+    const mobileRegex = /^09\d{9}$/
+    if (!mobileRegex.test(formData.phone)) {
+      toast.error("Please enter a valid mobile number (e.g., 09123456789)")
       return
     }
 
     setIsSaving(true)
     try {
-      // Only save fields that exist in the User model (name, email)
+      // Save name and phone number for farmers
       const updatedUser = await usersAPI.update(user.id, {
         name: formData.name,
-        email: formData.email,
+        phone: formData.phone,
+        // Keep email field for backward compatibility
+        email: user.email,
       })
 
       // Update state
@@ -293,26 +302,17 @@ export default function FarmerSettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="mobile">Mobile Number</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="h-12"
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
+                    id="mobile"
+                    type="tel"
+                    placeholder="09123456789"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="h-12"
-                    placeholder="+63 XXX XXX XXXX"
                   />
                 </div>
-              </div>
+                              </div>
             </div>
           )}
 

@@ -54,12 +54,12 @@ export function getCurrentUser(): User | null {
   return null
 }
 
-export async function register(name: string, email: string, password: string, role: UserRole, stallLocation?: string): Promise<User | null> {
+export async function register(name: string, email: string, password: string, role: UserRole, stallLocation?: string, municipality?: string, businessType?: string): Promise<User | null> {
   try {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, role, stallLocation }),
+      body: JSON.stringify({ name, email, password, role, stallLocation, municipality, businessType }),
     })
 
     if (!response.ok) {

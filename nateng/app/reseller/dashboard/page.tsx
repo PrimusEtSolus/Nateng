@@ -107,6 +107,11 @@ export default function ResellerDashboardPage() {
     { skip: !user }
   )
 
+  // Fetch available farmer products for wholesale ordering (like business users)
+  const { data: availableListings, loading: availableListingsLoading } = useFetch<Listing[]>(
+    '/api/listings?available=true&userRole=reseller'
+  )
+
   // Fetch reseller's orders (as buyer - wholesale orders from farmers)
   const { data: wholesaleOrders, loading: ordersLoading } = useFetch<Order[]>(
     user ? `/api/orders?buyerId=${user.id}` : '',
@@ -158,7 +163,7 @@ export default function ResellerDashboardPage() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Welcome, {user?.businessName || "Reseller"}</h1>
+        <h1 className="text-3xl font-bold text-foreground">Welcome, {user?.name?.split(" ")[0] || "Reseller"}</h1>
         <p className="text-muted-foreground mt-1">Buy wholesale from farmers and manage your retail inventory</p>
       </div>
 

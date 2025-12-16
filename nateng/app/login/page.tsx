@@ -24,8 +24,31 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError("")
+
+    // Email/Mobile validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const mobileRegex = /^09\d{9}$/
+    
+    if (!formData.email) {
+      setError("Email address or mobile number is required")
+      return
+    }
+    
+    const isEmail = emailRegex.test(formData.email)
+    const isMobile = mobileRegex.test(formData.email)
+    
+    if (!isEmail && !isMobile) {
+      setError("Please enter a valid email address (user@example.com) or mobile number (09123456789)")
+      return
+    }
+
+    if (!formData.password) {
+      setError("Password is required")
+      return
+    }
+
+    setIsLoading(true)
 
     try {
       const user = await login(formData.email, formData.password)
@@ -62,12 +85,12 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-lg text-foreground">
-                Email Address / Mobile Number
+                Email Address or Mobile Number
               </Label>
               <Input
                 id="email"
                 type="text"
-                placeholder="Enter your email or mobile"
+                placeholder="Enter email or mobile number"
                 className="h-14 bg-muted border-border text-lg"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}

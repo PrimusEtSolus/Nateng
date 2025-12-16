@@ -30,9 +30,9 @@ export default function ResellerSettingsPage() {
       setFormData({
         name: currentUser.name,
         email: currentUser.email,
-        phone: "", // Not stored in User model yet
-        address: "", // Not stored in User model yet
-        businessName: currentUser.businessName || "",
+        phone: currentUser.phone || "",
+        address: currentUser.address || "",
+        businessName: currentUser.businessName || currentUser.name,
       })
     }
   }, [])
@@ -121,7 +121,7 @@ export default function ResellerSettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Email</Label>
+                  <Label>Email Address</Label>
                   <Input 
                     type="email"
                     value={formData.email} 

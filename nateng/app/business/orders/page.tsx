@@ -9,10 +9,13 @@ import type { Order } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { DeliveryScheduler } from "@/components/delivery-scheduler"
+import { DeliverySchedulingDialog } from "@/components/delivery-scheduling-dialog"
+import { ScheduleConfirmationDialog } from "@/components/schedule-confirmation-dialog"
+import { ViewScheduleDialog } from "@/components/view-schedule-dialog"
+import { ConfirmationDialog } from "@/components/confirmation-dialog"
 import { MessageDialog } from "@/components/message-dialog"
 import { toast } from "sonner"
-import { Package, Clock, Truck, CheckCircle, XCircle, MapPin, Loader2, PackageCheck } from "lucide-react"
+import { Package, Clock, Truck, CheckCircle, XCircle, MapPin, Loader2, PackageCheck, Calendar } from "lucide-react"
 
 export default function BusinessOrdersPage() {
   const router = useRouter()
@@ -20,6 +23,14 @@ export default function BusinessOrdersPage() {
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "confirmed" | "shipped" | "delivered">("all")
   const [schedulingOrderId, setSchedulingOrderId] = useState<number | null>(null)
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false)
+  
+  // New collaborative scheduling state
+  const [proposingScheduleOrderId, setProposingScheduleOrderId] = useState<number | null>(null)
+  const [schedulingDialogOpen, setSchedulingDialogOpen] = useState(false)
+  const [confirmingSchedule, setConfirmingSchedule] = useState<any>(null)
+  const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false)
+  const [viewingSchedule, setViewingSchedule] = useState<any>(null)
+  const [viewDialogOpen, setViewDialogOpen] = useState(false)
 
   // Fetch orders for the logged-in business user
   const { data: orders = [], loading: ordersLoading, error: ordersError } = useFetch<Order[]>(
@@ -35,6 +46,70 @@ export default function BusinessOrdersPage() {
     }
     setUser(currentUser)
   }, [router])
+
+  // Collaborative scheduling functions
+  const handleProposeSchedule = (orderId: number) => {
+    setProposingScheduleOrderId(orderId)
+    setSchedulingDialogOpen(true)
+  }
+
+  const handleScheduleProposed = (schedule: any) => {
+    toast.success("Pickup schedule proposed", {
+      description: "Waiting for the seller to confirm",
+    })
+    // Refetch orders to update the UI
+    window.location.reload()
+  }
+
+  const handleReviewSchedule = (schedule: any) => {
+    console.log('handleReviewSchedule called with:', schedule)
+    
+    // Add comprehensive validation
+    if (!schedule) {
+      console.error('Schedule is null/undefined')
+      toast.error("No schedule data available", {
+        description: "The delivery schedule information is missing"
+      })
+      return
+    }
+    
+    if (!schedule.id) {
+      console.error('Schedule missing ID field:', schedule)
+      console.log('Schedule keys:', Object.keys(schedule))
+      
+      // Try to find schedule by orderId if available
+      if (schedule.orderId) {
+        console.log('Attempting to find schedule by orderId:', schedule.orderId)
+        // We'll handle this in the dialog with fallback logic
+        setConfirmingSchedule(schedule)
+        setConfirmationDialogOpen(true)
+        return
+      }
+      
+      toast.error("Invalid schedule data", {
+        description: "The schedule information is missing required ID field"
+      })
+      return
+    }
+    
+    console.log('Valid schedule with ID:', schedule.id)
+    setConfirmingSchedule(schedule)
+    setConfirmationDialogOpen(true)
+  }
+
+  const handleViewSchedule = (schedule: any) => {
+    setViewingSchedule(schedule)
+    setViewDialogOpen(true)
+  }
+
+  const handleScheduleActionComplete = (updatedSchedule: any) => {
+    const action = updatedSchedule.status === 'confirmed' ? 'confirmed' : 'rejected'
+    toast.success(`Schedule ${action}`, {
+      description: `Pickup schedule has been ${action}`,
+    })
+    // Refetch orders to update the UI
+    window.location.reload()
+  }
 
   // Filter orders by status
   const ordersData = orders || []
@@ -143,6 +218,7 @@ export default function BusinessOrdersPage() {
             const totalQuantity = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0
             const sellerName = order.seller?.name || "Unknown"
             const hasSchedule = Boolean(order.scheduledDate || order.scheduledTime)
+            const latestSchedule = order.deliverySchedule // Get the schedule (singular)
             
             return (
               <div
@@ -179,41 +255,96 @@ export default function BusinessOrdersPage() {
                   </div>
                 </div>
 
-                {hasSchedule && order.status !== "DELIVERED" && (
-                  <div className="mb-3 rounded-xl border border-business/10 bg-business/5 px-4 py-3 text-xs text-business space-y-1.5">
+
+                {latestSchedule && latestSchedule.status === 'proposed' && latestSchedule.proposedBy !== user?.id && (
+                  <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50/80 p-3 text-xs text-blue-900 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-business/10 text-business">
-                          <Truck className="w-3 h-3" />
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                          <Calendar className="w-3 h-3" />
                         </span>
                         <div className="flex flex-col">
-                          <span className="font-semibold text-business">Pickup schedule confirmed</span>
-                          <span className="text-[11px] text-business/80">Your seller has a pickup schedule for this order.</span>
+                          <span className="font-semibold">Pickup proposed by {latestSchedule.proposer.name}</span>
+                          <span className="text-[11px] text-blue-800/80">Review and confirm or reject this proposal.</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-1">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] uppercase tracking-wide text-business/70">Date</span>
+                        <span className="text-[10px] uppercase tracking-wide text-blue-700/80">Date</span>
                         <span className="text-[11px] font-medium">
-                          {order.scheduledDate
-                            ? new Date(order.scheduledDate).toLocaleDateString()
-                            : "—"}
+                          {new Date(latestSchedule.scheduledDate).toLocaleDateString()}
                         </span>
                       </div>
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[10px] uppercase tracking-wide text-business/70">Time</span>
-                        <span className="text-[11px] font-medium">{order.scheduledTime || "—"}</span>
+                        <span className="text-[10px] uppercase tracking-wide text-blue-700/80">Time</span>
+                        <span className="text-[11px] font-medium">{latestSchedule.scheduledTime}</span>
                       </div>
-                      {order.deliveryAddress && (
+                      {latestSchedule.deliveryAddress && (
                         <div className="flex flex-col gap-0.5 col-span-2">
-                          <span className="text-[10px] uppercase tracking-wide text-business/70">Address</span>
-                          <span
-                            className="text-[11px] font-medium truncate"
-                            title={order.deliveryAddress || ''}
-                          >
-                            {order.deliveryAddress}
+                          <span className="text-[10px] uppercase tracking-wide text-blue-700/80">Address</span>
+                          <span className="text-[11px] font-medium truncate" title={latestSchedule.deliveryAddress}>
+                            {latestSchedule.deliveryAddress}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 border-blue-300 bg-white/80 px-3 text-[11px] font-medium text-blue-800 hover:bg-blue-600 hover:text-white"
+                        onClick={() => {
+                          console.log('Review button clicked, schedule:', latestSchedule)
+                          handleReviewSchedule(latestSchedule)
+                        }}
+                      >
+                        Review Proposal
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {latestSchedule && latestSchedule.status === 'confirmed' && (
+                  <div className="mb-3 rounded-xl border border-green-100 bg-green-50/80 p-3 text-xs text-green-900 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-700">
+                          <CheckCircle className="w-3 h-3" />
+                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-semibold">Pickup schedule confirmed</span>
+                          <span className="text-[11px] text-green-800/80">Both parties have agreed on this schedule.</span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 border-green-300 bg-white/80 px-3 text-[11px] font-medium text-green-800 hover:bg-green-600 hover:text-white"
+                        onClick={() => handleViewSchedule(latestSchedule)}
+                      >
+                        View Schedule
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-1">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] uppercase tracking-wide text-green-700/80">Date</span>
+                        <span className="text-[11px] font-medium">
+                          {new Date(latestSchedule.scheduledDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] uppercase tracking-wide text-green-700/80">Time</span>
+                        <span className="text-[11px] font-medium">{latestSchedule.scheduledTime}</span>
+                      </div>
+                      {latestSchedule.deliveryAddress && (
+                        <div className="flex flex-col gap-0.5 col-span-2">
+                          <span className="text-[10px] uppercase tracking-wide text-green-700/80">Address</span>
+                          <span className="text-[11px] font-medium truncate" title={latestSchedule.deliveryAddress}>
+                            {latestSchedule.deliveryAddress}
                           </span>
                         </div>
                       )}
@@ -242,73 +373,16 @@ export default function BusinessOrdersPage() {
                       }
                     />
                   </div>
-                  {(order.status?.toUpperCase() === "SHIPPED" || order.status?.toUpperCase() === "CONFIRMED") && (
-                    <Dialog
-                      open={scheduleDialogOpen && schedulingOrderId === order.id}
-                      onOpenChange={(open) => {
-                        setScheduleDialogOpen(open)
-                        if (!open) setSchedulingOrderId(null)
-                      }}
+                  {(order.status?.toUpperCase() === "CONFIRMED" && !latestSchedule) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                      onClick={() => handleProposeSchedule(order.id)}
                     >
-                      <DialogTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant={hasSchedule ? "outline" : "default"}
-                          className={
-                            hasSchedule
-                              ? "gap-2 border-business/40 text-business hover:bg-business-bg"
-                              : "gap-2 bg-green-600 hover:bg-green-700 text-white"
-                          }
-                          onClick={() => {
-                            setSchedulingOrderId(order.id)
-                            setScheduleDialogOpen(true)
-                          }}
-                        >
-                          <Truck className="w-4 h-4" />
-                          {hasSchedule ? "View / Edit Pickup" : "Arrange Pickup"}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Arrange Pickup - Order #{order.id}</DialogTitle>
-                        </DialogHeader>
-                        <DeliveryScheduler
-                          orderId={order.id}
-                          initialSchedule={
-                            hasSchedule
-                              ? {
-                                  scheduledDate: order.scheduledDate || undefined,
-                                  scheduledTime: order.scheduledTime || undefined,
-                                  route: order.route || undefined,
-                                  isCBD: order.isCBD ?? false,
-                                  truckWeightKg: order.truckWeightKg ?? undefined,
-                                  deliveryAddress: order.deliveryAddress || undefined,
-                                  isExempt: order.isExempt ?? false,
-                                  exemptionType: order.exemptionType || undefined,
-                                }
-                              : undefined
-                          }
-                          onSchedule={async (scheduleData) => {
-                            try {
-                              const response = await fetch(`/api/orders/${order.id}/schedule`, {
-                                method: "PATCH",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify(scheduleData),
-                              })
-                              if (!response.ok) {
-                                const error = await response.json().catch(() => ({}))
-                                throw new Error(error.error || "Failed to arrange pickup")
-                              }
-                              toast.success("Pickup arranged successfully!")
-                              setScheduleDialogOpen(false)
-                              setSchedulingOrderId(null)
-                            } catch (error: any) {
-                              toast.error(error.message || "Failed to arrange pickup")
-                            }
-                          }}
-                        />
-                      </DialogContent>
-                    </Dialog>
+                      <Truck className="w-4 h-4" />
+                      Propose Pickup Schedule
+                    </Button>
                   )}
                 </div>
               </div>
@@ -316,6 +390,36 @@ export default function BusinessOrdersPage() {
           })
         )}
       </div>
+
+      {/* Collaborative Scheduling Dialogs */}
+      {proposingScheduleOrderId && (
+        <DeliverySchedulingDialog
+          open={schedulingDialogOpen}
+          onOpenChange={setSchedulingDialogOpen}
+          order={orders?.find(o => o.id === proposingScheduleOrderId)}
+          user={user}
+          onScheduleProposed={handleScheduleProposed}
+        />
+      )}
+
+      {confirmingSchedule && (
+        <ScheduleConfirmationDialog
+          open={confirmationDialogOpen}
+          onOpenChange={setConfirmationDialogOpen}
+          schedule={confirmingSchedule}
+          user={user}
+          onActionComplete={handleScheduleActionComplete}
+        />
+      )}
+
+      {viewingSchedule && (
+        <ViewScheduleDialog
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+          schedule={viewingSchedule}
+          user={user}
+        />
+      )}
     </div>
   )
 }

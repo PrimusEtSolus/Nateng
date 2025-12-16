@@ -5,8 +5,10 @@ import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { formatDate } from "@/lib/date-utils"
-import { TrendingUp, DollarSign, Package, Users, ArrowUpRight, Calendar, BarChart3, PieChart } from "lucide-react"
+import { TrendingUp, DollarSign, Package, Users, ArrowUpRight, Calendar, BarChart3, PieChart, Eye, TrendingDown, ChevronRight, Info } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { 
   BarChart, 
   Bar, 
@@ -54,6 +56,8 @@ interface Product {
 
 export default function FarmerAnalyticsPage() {
   const [user, setUser] = useState<User | null>(null)
+  const [selectedCrop, setSelectedCrop] = useState<any>(null)
+  const [cropDialogOpen, setCropDialogOpen] = useState(false)
 
   useEffect(() => {
     setUser(getCurrentUser())

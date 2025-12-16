@@ -136,8 +136,8 @@ export default function FarmerDashboardPage() {
     },
     {
       label: "Pending Orders",
-      value: pendingOrders.toString(),
-      change: `${pendingOrders} new`,
+      value: pendingOrders.length.toString(),
+      change: `${pendingOrders.length} new`,
       increasing: true,
       icon: Package,
       color: "bg-amber-500",

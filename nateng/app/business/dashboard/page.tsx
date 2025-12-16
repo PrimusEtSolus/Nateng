@@ -93,7 +93,7 @@ export default function BusinessDashboardPage() {
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">Welcome, {user?.businessName || "Business"}</h1>
+        <h1 className="text-3xl font-bold text-foreground">Welcome, {user?.name?.split(" ")[0] || "Business"}</h1>
         <p className="text-muted-foreground mt-1">
           Source fresh produce for your business
         </p>

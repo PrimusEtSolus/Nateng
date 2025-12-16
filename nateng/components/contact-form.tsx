@@ -95,7 +95,7 @@ export function ContactForm() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-2">Email</label>
+          <label className="block text-sm font-medium mb-2">Email Address</label>
           <input 
             type="email" 
             name="email"

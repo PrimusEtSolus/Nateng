@@ -36,6 +36,17 @@ export default function ResellerSignupPage() {
       return
     }
     
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!formData.email) {
+      setError("Email address is required")
+      return
+    }
+    if (!emailRegex.test(formData.email)) {
+      setError("Please enter a valid email address (e.g., user@example.com)")
+      return
+    }
+    
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match")
       return

@@ -33,13 +33,13 @@ export default function BusinessSettingsPage() {
     if (currentUser) {
       setUser(currentUser)
       setFormData({
-        businessName: currentUser.businessName || "",
+        businessName: currentUser.businessName || currentUser.name,
         ownerName: currentUser.name,
         email: currentUser.email,
-        phone: "", // Not stored in User model yet
-        address: "", // Not stored in User model yet
-        businessType: "", // Not stored in User model yet
-        taxId: "",
+        phone: currentUser.phone || "",
+        address: currentUser.address || "",
+        businessType: currentUser.businessType || "",
+        taxId: currentUser.taxId || "",
       })
     }
   }, [])
