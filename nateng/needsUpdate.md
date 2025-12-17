@@ -73,19 +73,25 @@ This comprehensive analysis identifies critical issues, bugs, and areas requirin
 
 ### 4. Frontend UX/UI Issues
 
-#### 4.1 Cart Persistence Issues
+#### 4.1 Missing Terms and Conditions Agreement
+**Location**: `app/login/page.tsx`, `app/signup/page.tsx`
+**Issue**: Users can sign up and sign in without agreeing to terms and conditions
+**Impact**: Legal compliance issue, no user consent tracking
+**Fix Required**: Implement mandatory terms and conditions acceptance before account creation and login
+
+#### 4.2 Cart Persistence Issues
 **Location**: `lib/cart-context.tsx`
 **Issue**: Cart data stored in localStorage without synchronization across tabs
 **Impact**: Cart inconsistencies when using multiple tabs
 **Fix Required**: Implement cross-tab synchronization or session storage
 
-#### 4.2 Loading State Inconsistencies
+#### 4.3 Loading State Inconsistencies
 **Location**: Multiple components using `useFetch` hook
 **Issue**: Loading states not consistently handled, leading to poor UX
 **Impact**: Users see empty states during loading
 **Fix Required**: Standardize loading state components
 
-#### 4.3 Error Handling User Experience
+#### 4.4 Error Handling User Experience
 **Location**: Throughout frontend components
 **Issue**: Error messages are technical and not user-friendly
 **Impact**: Users don't understand error messages
@@ -199,6 +205,7 @@ This comprehensive analysis identifies critical issues, bugs, and areas requirin
 3. **Implement order confirmation workflow** - Business logic gap
 4. **Add comprehensive input validation** - Security vulnerability
 5. **Standardize error response format** - API consistency
+6. **Implement mandatory terms and conditions acceptance** - Legal compliance requirement
 
 ### Medium Priority (Fix Within Sprint)
 1. **Implement proper order status state machine** - Business logic improvement
