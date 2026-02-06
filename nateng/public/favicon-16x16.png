@@ -1,0 +1,31 @@
+<svg width="16" height="16" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @media (prefers-color-scheme: light) {
+      .background { fill: #50EAB2; }
+      .foreground { fill: #1a1a1a; }
+    }
+    @media (prefers-color-scheme: dark) {
+      .background { fill: #1a1a1a; }
+      .foreground { fill: #50EAB2; }
+    }
+  </style>
+  <g clip-path="url(#clip0_7960_43945)">
+    <rect class="background" width="180" height="180" rx="37" />
+    <g style="transform: scale(0.089); transform-origin: center">
+      <!-- Leaf shape -->
+      <path class="foreground"
+        d="M90 30 C70 30, 50 50, 70 90,70 C110,70 130,50 130,30 C130,10 110,10 90,10 C70,10 50,10 30,30 C10,50 10,70 30,90 C50,110 70,130 90,130 C110,130 130,110 130,90 C130,70 110,50 90,30 Z" />
+      <!-- Leaf vein -->
+      <path class="foreground"
+        d="M90 30 L90 130 M70 50 L90 80 L110 50 M90 60 L90 100 M90 70 L90 90 M90 80 L90 110 M90 90 L90 100 M90 100 L90 110" />
+      <!-- Leaf stem -->
+      <path class="foreground"
+        d="M90 130 L90 170 M85 170 L95 170" />
+    </g>
+  </g>
+  <defs>
+    <clipPath id="clip0_7960_43945">
+      <rect width="180" height="180" fill="white" />
+    </clipPath>
+  </defs>
+</svg>

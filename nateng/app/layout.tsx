@@ -22,7 +22,12 @@ export const metadata: Metadata = {
   title: "NatengHub - Fresh Vegetables From Benguet Farmers",
   description:
     "Connect directly with Benguet farmers for fresh, wholesale vegetables. Buy, sell, and manage your agricultural business.",
-    generator: 'v0.app'
+  generator: 'v0.app',
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/favicon-32x32.png',
+    shortcut: '/favicon-16x16.png'
+  }
 }
 
 export default function RootLayout({
