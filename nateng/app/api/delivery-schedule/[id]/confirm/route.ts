@@ -2,21 +2,22 @@ import { NextResponse, NextRequest } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-server'
 import prisma from '@/lib/prisma'
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const user = await getCurrentUser(req)
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    console.log('API called with params:', params)
-    console.log('Raw params.id:', params.id)
+    console.log('API called with params:', { id })
+    console.log('Raw params.id:', id)
 
     const body = await req.json()
     const { action, notes, orderId } = body // action: 'confirm' or 'reject'
 
-    const parsedScheduleId = Number(params.id)
-    const hasValidScheduleId = Boolean(params.id) && !isNaN(parsedScheduleId) && parsedScheduleId > 0
+    const parsedScheduleId = Number(id)
+    const hasValidScheduleId = Boolean(id) && !isNaN(parsedScheduleId) && parsedScheduleId > 0
     const parsedOrderId = Number(orderId)
     const hasValidOrderId = orderId !== undefined && orderId !== null && !isNaN(parsedOrderId) && parsedOrderId > 0
 
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     console.log('Has valid orderId?:', hasValidOrderId)
 
     if (!hasValidScheduleId && !hasValidOrderId) {
-      console.error('Invalid schedule ID and no valid orderId fallback:', params.id, orderId)
+      console.error('Invalid schedule ID and no valid orderId fallback:', id, orderId)
       return NextResponse.json({ error: 'Invalid schedule ID' }, { status: 400 })
     }
 

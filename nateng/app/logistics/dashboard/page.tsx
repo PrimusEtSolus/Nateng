@@ -53,7 +53,15 @@ export default function LogisticsDashboard() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/orders')
+      const currentUser = getCurrentUser()
+      const headers: Record<string, string> = {}
+      if (currentUser) {
+        headers.Authorization = `Bearer token_${currentUser.id}`
+      }
+
+      const response = await fetch('/api/orders', {
+        headers,
+      })
       if (response.ok) {
         const data = await response.json()
         // Filter orders with scheduled deliveries and validate dates

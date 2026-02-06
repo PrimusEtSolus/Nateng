@@ -7,11 +7,31 @@ export async function POST(req: NextRequest) {
     const { name, email, password, role, stallLocation, municipality, businessType } = await req.json();
 
     // Input validation
-    if (!name || !email || !password || !role) {
+    if (!name || !password || !role) {
       return NextResponse.json(
-        { error: 'Missing required fields: name, email, password, role' },
+        { error: 'Name, password, and role are required' },
         { status: 400 }
       );
+    }
+
+    // For farmers, email should be a mobile number
+    if (role === 'farmer') {
+      const isMobile = /^09\d{9}$/.test(email);
+      if (!isMobile) {
+        return NextResponse.json(
+          { error: 'Invalid mobile number format. Use format: 09xxxxxxxx' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // For other roles, validate email format
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (!isEmail) {
+        return NextResponse.json(
+          { error: 'Invalid email format' },
+          { status: 400 }
+        );
+      }
     }
 
     // Name validation
@@ -20,27 +40,6 @@ export async function POST(req: NextRequest) {
         { error: 'Name must be between 2 and 50 characters long' },
         { status: 400 }
       );
-    }
-
-    // Email/Mobile format validation
-    if (role === 'farmer') {
-      // Farmers use mobile numbers as identifier
-      const mobileRegex = /^09\d{9}$/;
-      if (!mobileRegex.test(email)) {
-        return NextResponse.json(
-          { error: 'Invalid mobile number format. Use format: 09123456789' },
-          { status: 400 }
-        );
-      }
-    } else {
-      // Other roles use email addresses
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        return NextResponse.json(
-          { error: 'Invalid email format' },
-          { status: 400 }
-        );
-      }
     }
 
     const validRoles = ['farmer', 'buyer', 'business', 'reseller', 'admin'];
@@ -58,13 +57,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+    // Check if user already exists (email or phone for farmers)
+    let existingUser;
+    if (role === 'farmer') {
+      // For farmers, check both email and phone fields
+      existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: email.toLowerCase() },
+            { phone: email } // Farmers register with mobile number as email
+          ]
+        }
+      });
+    } else {
+      // For other roles, check email only
+      existingUser = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+    }
 
     if (existingUser) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+      const conflictField = role === 'farmer' && existingUser.phone === email ? 'Mobile number' : 'Email';
+      return NextResponse.json({ error: `${conflictField} already registered` }, { status: 409 });
     }
 
     // Hash password
@@ -90,7 +104,7 @@ export async function POST(req: NextRequest) {
           address: stallLocation
         }),
         ...(role === 'business' && businessType && { 
-          businessType: businessType
+          address: businessType // Store business type in address field temporarily
         }),
         // Default location data
         ...(role === 'buyer' && {

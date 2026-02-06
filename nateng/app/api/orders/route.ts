@@ -67,12 +67,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Authenticate user
+    // Optional authentication - allow guest orders for business users
     const user = await getCurrentUser(req);
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    }
-
+    
     const body = await req.json();
     const { buyerId, sellerId, items }: { buyerId: number; sellerId: number; items: OrderItem[] } = body;
     
@@ -83,10 +80,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Users can only create orders as themselves unless they're admin
-    if (user.role !== 'admin' && buyerId !== user.id) {
+    // If authenticated user, they can only create orders as themselves unless they're admin
+    if (user && user.role !== 'admin' && buyerId !== user.id) {
       return NextResponse.json({ error: 'Cannot create orders for other users' }, { status: 403 });
     }
+    
+    // If no authentication, allow the order to proceed (for business users)
+    // This enables guest checkout functionality
 
     // Get seller information to validate marketplace rules
     const seller = await prisma.user.findUnique({
@@ -99,9 +99,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate marketplace transaction rules
-    const buyer = user.role === 'admin' 
-      ? await prisma.user.findUnique({ where: { id: Number(buyerId) }, select: { role: true } })
-      : user;
+    let buyer;
+    if (user) {
+      buyer = user.role === 'admin' 
+        ? await prisma.user.findUnique({ where: { id: Number(buyerId) }, select: { role: true } })
+        : user;
+    } else {
+      // For guest orders, fetch buyer from database
+      buyer = await prisma.user.findUnique({ where: { id: Number(buyerId) }, select: { role: true } });
+    }
 
     if (!buyer) {
       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });

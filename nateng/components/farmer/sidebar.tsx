@@ -14,7 +14,7 @@ const navItems = [
   { name: "My Crops", href: "/farmer/crops", icon: Leaf },
   { name: "Bulk Orders", href: "/farmer/orders", icon: Package },
   { name: "Analytics", href: "/farmer/analytics", icon: BarChart3 },
-  { name: "Logistics", href: "/logistics/dashboard", icon: Truck },
+  { name: "Logistics", href: "/farmer/logistics", icon: Truck },
 ]
 
 export function FarmerSidebar() {

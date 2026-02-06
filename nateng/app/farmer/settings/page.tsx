@@ -32,6 +32,9 @@ export default function FarmerSettingsPage() {
     municipality: "",
     barangay: "",
     farmSize: "",
+    minimumOrderKg: 0,
+    deliveryAreas: "",
+    paymentMethods: "",
   })
 
   useEffect(() => {
@@ -45,6 +48,9 @@ export default function FarmerSettingsPage() {
         municipality: currentUser.city || currentUser.address || "",
         barangay: currentUser.barangay || "",
         farmSize: currentUser.farmSize || "",
+        minimumOrderKg: currentUser.minimumOrderKg || 50,
+        deliveryAreas: currentUser.deliveryAreas || "",
+        paymentMethods: currentUser.paymentMethods || "",
       })
       // Set existing profile photo if available
       if (currentUser.profilePhotoUrl) {
@@ -177,10 +183,13 @@ export default function FarmerSettingsPage() {
 
     setIsSaving(true)
     try {
-      // Save name and phone number for farmers
+      // Save name and phone number for farmers, plus new settings fields
       const updatedUser = await usersAPI.update(user.id, {
         name: formData.name,
         phone: formData.phone,
+        minimumOrderKg: formData.minimumOrderKg,
+        deliveryAreas: formData.deliveryAreas,
+        paymentMethods: formData.paymentMethods,
         // Keep email field for backward compatibility
         email: user.email,
       })
@@ -370,35 +379,29 @@ export default function FarmerSettingsPage() {
             <div className="bg-card rounded-2xl border border-border p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold">Payment Methods</h2>
-                <Button className="bg-farmer hover:bg-farmer-light">Add Method</Button>
+                <Button className="bg-farmer hover:bg-farmer-light" disabled>
+                  Add Method
+                </Button>
               </div>
               <p className="text-muted-foreground mb-4">Where you'll receive payments from sales</p>
               <div className="space-y-4">
-                <div className="border border-farmer rounded-xl p-4 relative">
-                  <span className="absolute top-3 right-3 bg-farmer text-white text-xs px-2 py-1 rounded-full">
-                    Primary
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                      GC
+                {(!formData.paymentMethods || JSON.parse(formData.paymentMethods || "[]").length === 0) ? (
+                  <p className="text-muted-foreground text-sm">No payment methods configured yet.</p>
+                ) : (
+                  JSON.parse(formData.paymentMethods || "[]").map((method: any, idx: number) => (
+                    <div key={idx} className="border border-border rounded-xl p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-farmer rounded-lg flex items-center justify-center text-white text-sm font-bold">
+                          {method.type?.toUpperCase().slice(0, 2) || "PM"}
+                        </div>
+                        <div>
+                          <p className="font-medium">{method.type}</p>
+                          <p className="text-sm text-muted-foreground">{method.details}</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">GCash</p>
-                      <p className="text-sm text-muted-foreground">+63 917 •••• 567</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="border border-border rounded-xl p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                      BK
-                    </div>
-                    <div>
-                      <p className="font-medium">Bank Transfer</p>
-                      <p className="text-sm text-muted-foreground">BPI - ••••4521</p>
-                    </div>
-                  </div>
-                </div>
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -410,23 +413,33 @@ export default function FarmerSettingsPage() {
                 <div>
                   <h3 className="font-medium mb-4">Delivery Areas</h3>
                   <div className="space-y-3">
-                    {["Baguio City", "La Trinidad", "Tuba", "Itogon"].map((area) => (
-                      <label key={area} className="flex items-center justify-between cursor-pointer">
-                        <span>{area}</span>
-                        <input type="checkbox" defaultChecked className="w-5 h-5 rounded accent-farmer" />
-                      </label>
-                    ))}
+                    {(!formData.deliveryAreas || JSON.parse(formData.deliveryAreas || "[]").length === 0) ? (
+                      <p className="text-muted-foreground text-sm">No delivery areas set. Derived from your location.</p>
+                    ) : (
+                      JSON.parse(formData.deliveryAreas || "[]").map((area: string) => (
+                        <label key={area} className="flex items-center justify-between cursor-pointer">
+                          <span>{area}</span>
+                          <input type="checkbox" defaultChecked className="w-5 h-5 rounded accent-farmer" />
+                        </label>
+                      ))
+                    )}
                   </div>
-                  <Button variant="outline" className="mt-4 bg-transparent">
+                  <Button variant="outline" className="mt-4 bg-transparent" disabled>
                     Add Delivery Area
                   </Button>
                 </div>
                 <div className="border-t border-border pt-6">
                   <h3 className="font-medium mb-4">Minimum Order for Delivery</h3>
                   <div className="flex items-center gap-4">
-                    <span>₱</span>
-                    <Input type="number" defaultValue="1000" className="w-32 h-12" />
-                    <span className="text-muted-foreground">minimum order value</span>
+                    <span>kg</span>
+                    <Input
+                      type="number"
+                      value={formData.minimumOrderKg || ""}
+                      onChange={(e) => setFormData({ ...formData, minimumOrderKg: Number(e.target.value) })}
+                      className="w-32 h-12"
+                      placeholder="50"
+                    />
+                    <span className="text-muted-foreground">minimum order in kilograms</span>
                   </div>
                 </div>
               </div>

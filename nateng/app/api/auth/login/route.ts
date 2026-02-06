@@ -66,8 +66,11 @@ export async function POST(req: NextRequest) {
 
     // Return user without password for successful login
     const { password: _, ...userWithoutPassword } = user;
+    // Create a simple token for authentication (in production, use JWT)
+    const token = `token_${user.id}_${Date.now()}`;
     return NextResponse.json({ 
       user: userWithoutPassword,
+      token,
       message: 'Login successful'
     });
   } catch (error: unknown) {

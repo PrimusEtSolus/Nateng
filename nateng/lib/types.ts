@@ -11,6 +11,9 @@ export interface User {
   createdAt?: string
   businessName?: string
   isBanned?: boolean
+  minimumOrderKg?: number | null
+  deliveryAreas?: string | null
+  paymentMethods?: string | null
   // Additional fields for user data
   phone?: string
   address?: string

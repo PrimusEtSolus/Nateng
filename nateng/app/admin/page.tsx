@@ -40,7 +40,12 @@ export default function AdminPage() {
   const [appeals, setAppeals] = useState<any[]>([])
   const [contactMessages, setContactMessages] = useState<any[]>([])
   const [deliverySchedules, setDeliverySchedules] = useState<any[]>([])
-  const [analyticsData, setAnalyticsData] = useState({
+  const [analyticsData, setAnalyticsData] = useState<{
+    monthlyRevenue: any[]
+    userRoles: any[]
+    topProducts: any[]
+    orderStatuses: any[]
+  }>({
     monthlyRevenue: [],
     userRoles: [],
     topProducts: [],

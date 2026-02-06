@@ -19,6 +19,7 @@ export async function login(email: string, password: string): Promise<User | nul
 
     const data = await response.json()
     const user = data.user
+    const token = data.token
 
     if (!user) {
       throw new Error('No user data returned from server')
@@ -26,6 +27,10 @@ export async function login(email: string, password: string): Promise<User | nul
 
     if (user && typeof window !== "undefined") {
       localStorage.setItem(AUTH_KEY, JSON.stringify(user))
+      // Store token for authenticated API calls
+      if (token) {
+        localStorage.setItem('natenghub_token', token)
+      }
     }
 
     return user
@@ -38,6 +43,7 @@ export async function login(email: string, password: string): Promise<User | nul
 export function logout(): void {
   if (typeof window !== "undefined") {
     localStorage.removeItem(AUTH_KEY)
+    localStorage.removeItem('natenghub_token')
   }
 }
 
@@ -52,6 +58,11 @@ export function getCurrentUser(): User | null {
     }
   }
   return null
+}
+
+export function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null
+  return localStorage.getItem('natenghub_token')
 }
 
 export async function register(name: string, email: string, password: string, role: UserRole, stallLocation?: string, municipality?: string, businessType?: string): Promise<User | null> {
