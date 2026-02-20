@@ -204,6 +204,37 @@ async function main() {
     },
   });
 
+  // Create reseller listings (retail prices)
+  const resellerListing1 = await prisma.listing.create({
+    data: {
+      productId: tomatoes.id,
+      sellerId: reseller1.id,
+      priceCents: 8000, // ₱80/kg (retail price)
+      quantity: 100,
+      available: true,
+    },
+  });
+
+  const resellerListing2 = await prisma.listing.create({
+    data: {
+      productId: cabbage.id,
+      sellerId: reseller1.id,
+      priceCents: 6000, // ₱60/kg (retail price)
+      quantity: 80,
+      available: true,
+    },
+  });
+
+  const resellerListing3 = await prisma.listing.create({
+    data: {
+      productId: carrots.id,
+      sellerId: reseller2.id,
+      priceCents: 7500, // ₱75/kg (retail price)
+      quantity: 60,
+      available: true,
+    },
+  });
+
   // Create sample order
   const order1 = await prisma.order.create({
     data: {
@@ -241,7 +272,7 @@ async function main() {
 
   console.log("✅ Database seeded successfully!");
   console.log(`  - ${5} products created`);
-  console.log(`  - ${5} listings created`);
+  console.log(`  - ${8} listings created (5 farmer, 3 reseller)`);
   console.log(`  - ${1} sample order created`);
   console.log(`  - ${5} users created`);
 }

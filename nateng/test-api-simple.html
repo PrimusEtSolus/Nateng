@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Testing Marketplace API</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('results');
+            
+            try {
+                // Test Buyer API
+                console.log('Testing Buyer API...');
+                const buyerResponse = await fetch('http://localhost:3000/api/listings?available=true&userRole=buyer');
+                const buyerData = await buyerResponse.json();
+                
+                results.innerHTML += '<h2>Buyer Listings (' + buyerData.length + ')</h2>';
+                buyerData.forEach(listing => {
+                    results.innerHTML += `<p>${listing.product.name} from ${listing.seller.role} - ${listing.seller.name}</p>`;
+                });
+
+                // Test Reseller API
+                console.log('Testing Reseller API...');
+                const resellerResponse = await fetch('http://localhost:3000/api/listings?available=true&userRole=reseller');
+                const resellerData = await resellerResponse.json();
+                
+                results.innerHTML += '<h2>Reseller Listings (' + resellerData.length + ')</h2>';
+                resellerData.forEach(listing => {
+                    results.innerHTML += `<p>${listing.product.name} from ${listing.seller.role} - ${listing.seller.name}</p>`;
+                });
+
+                // Test Business API
+                console.log('Testing Business API...');
+                const businessResponse = await fetch('http://localhost:3000/api/listings?available=true&userRole=business');
+                const businessData = await businessResponse.json();
+                
+                results.innerHTML += '<h2>Business Listings (' + businessData.length + ')</h2>';
+                businessData.forEach(listing => {
+                    results.innerHTML += `<p>${listing.product.name} from ${listing.seller.role} - ${listing.seller.name}</p>`;
+                });
+
+            } catch (error) {
+                results.innerHTML += '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        }
+
+        testAPI();
+    </script>
+</body>
+</html>

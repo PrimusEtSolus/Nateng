@@ -27,19 +27,109 @@ import {
   Legend
 } from "recharts"
 
+interface User {
+  id: number
+  name: string
+  email: string
+  role: string
+  isBanned?: boolean
+  createdAt?: string
+}
+
+interface Product {
+  id: number
+  name: string
+  description: string | null
+  farmerId: number
+}
+
+interface Listing {
+  id: number
+  productId: number
+  sellerId: number
+  priceCents: number
+  quantity: number
+  available: boolean
+  createdAt: string
+  product?: {
+    name: string
+  }
+  seller?: {
+    name: string
+  }
+}
+
+interface Order {
+  id: number
+  buyerId: number
+  sellerId: number
+  totalCents: number
+  status: string
+  createdAt: string
+  items: Array<{
+    quantity: number
+    priceCents: number
+    listing: {
+      product: {
+        name: string
+      }
+    }
+  }>
+  buyer?: {
+    name: string
+  }
+  seller?: {
+    name: string
+  }
+}
+
+interface Appeal {
+  id: string
+  userEmail: string
+  userName: string
+  reason: string
+  status: string
+  createdAt: string
+}
+
+interface ContactMessage {
+  id: number
+  name: string
+  email: string
+  message: string
+  createdAt: string
+  isReviewed: boolean
+}
+
+interface DeliverySchedule {
+  id: string
+  proposerId: number
+  proposerName: string
+  scheduledDate: string
+  scheduledTime: string
+  status: string
+  orderId?: string
+  route?: string
+  isCBD: boolean
+  truckWeightKg?: number
+  deliveryAddress?: string
+  isExempt?: boolean
+  exemptionType?: string
+}
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [activeTab, setActiveTab] = useState('users')
   const [searchTerm, setSearchTerm] = useState('')
-  const [users, setUsers] = useState<any[]>([])
-  const [products, setProducts] = useState<any[]>([])
-  const [listings, setListings] = useState<any[]>([])
-  const [orders, setOrders] = useState<any[]>([])
-  const [appeals, setAppeals] = useState<any[]>([])
-  const [contactMessages, setContactMessages] = useState<any[]>([])
-  const [deliverySchedules, setDeliverySchedules] = useState<any[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [listings, setListings] = useState<Listing[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [appeals, setAppeals] = useState<Appeal[]>([])
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([])
+  const [deliverySchedules, setDeliverySchedules] = useState<DeliverySchedule[]>([])
   const [analyticsData, setAnalyticsData] = useState({
     monthlyRevenue: [],
     userRoles: [],
@@ -743,6 +833,16 @@ export default function AdminPage() {
                       </div>
                       <p className="text-sm text-gray-500">{user.email} • {user.role}</p>
                       <p className="text-xs text-gray-400">ID: {user.id} • Created: {new Date(user.createdAt).toLocaleDateString()}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {getOnlineStatus(user) && (
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs flex items-center gap-1">
+                            <Wifi className="w-3 h-3" /> ONLINE
+                          </span>
+                        )}
+                        {getBannedStatus(user) && (
+                          <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">BANNED</span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex space-x-2">
                       {user.isBanned ? (

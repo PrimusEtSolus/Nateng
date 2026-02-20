@@ -277,6 +277,99 @@ export default function ResellerInventoryPage() {
         </div>
       )}
 
+      {/* Add Product Modal */}
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add New Product</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="add-product-name">Product Name</Label>
+              <Input
+                id="add-product-name"
+                value={addForm.name}
+                onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                placeholder="Fresh Tomatoes"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="add-description">Description</Label>
+              <Input
+                id="add-description"
+                value={addForm.description}
+                onChange={(e) => setAddForm({ ...addForm, description: e.target.value })}
+                placeholder="Fresh organic tomatoes from local farms"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="add-quantity">Quantity (kg)</Label>
+                <Input
+                  id="add-quantity"
+                  type="number"
+                  value={addForm.quantity}
+                  onChange={(e) => setAddForm({ ...addForm, quantity: e.target.value })}
+                  placeholder="100"
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="add-price">Retail Price (₱/kg)</Label>
+                <Input
+                  id="add-price"
+                  type="number"
+                  step="0.01"
+                  value={addForm.priceCents}
+                  onChange={(e) => setAddForm({ ...addForm, priceCents: e.target.value })}
+                  placeholder="75.00"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="add-available" className="flex items-center gap-2">
+                <input
+                  id="add-available"
+                  type="checkbox"
+                  checked={addForm.available}
+                  onChange={(e) => setAddForm({ ...addForm, available: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                Available for sale
+              </Label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsAddModalOpen(false)
+                setAddForm({ name: "", description: "", priceCents: "", quantity: "", available: true })
+              }}
+              disabled={isAdding}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddProduct} 
+              className="bg-teal-600 hover:bg-teal-700" 
+              disabled={isAdding}
+            >
+              {isAdding ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Product"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Listing Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="sm:max-w-[500px]">

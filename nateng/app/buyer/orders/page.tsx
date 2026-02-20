@@ -15,6 +15,8 @@ interface Order {
   totalCents: number
   status: string
   createdAt: string
+  deliveryOption?: string
+  deliveryAddress?: string
   buyer: { id: number; name: string; email: string; role: string }
   seller: { id: number; name: string; email: string; role: string }
   items: Array<{
@@ -37,12 +39,24 @@ interface Order {
   }>
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
-  PENDING: { label: "Pending", color: "bg-yellow-100 text-yellow-700", icon: Clock },
-  CONFIRMED: { label: "Confirmed", color: "bg-blue-100 text-blue-700", icon: CheckCircle },
-  SHIPPED: { label: "Shipped", color: "bg-purple-100 text-purple-700", icon: Truck },
-  DELIVERED: { label: "Delivered", color: "bg-green-100 text-green-700", icon: Package },
-  CANCELLED: { label: "Cancelled", color: "bg-red-100 text-red-700", icon: Package },
+const getStatusConfig = (status: string, isPickupOrder: boolean) => {
+  const baseConfig = {
+    PENDING: { label: "Pending", color: "bg-yellow-100 text-yellow-700", icon: Clock },
+    CONFIRMED: { label: "Confirmed", color: "bg-blue-100 text-blue-700", icon: CheckCircle },
+    DELIVERED: { label: isPickupOrder ? "Picked Up" : "Delivered", color: "bg-green-100 text-green-700", icon: Package },
+    CANCELLED: { label: "Cancelled", color: "bg-red-100 text-red-700", icon: Package },
+  }
+  
+  // Special handling for SHIPPED status
+  if (status === "SHIPPED") {
+    return {
+      label: isPickupOrder ? "Ready for Pickup" : "Out for Delivery",
+      color: "bg-purple-100 text-purple-700", 
+      icon: Truck
+    }
+  }
+  
+  return baseConfig[status as keyof typeof baseConfig] || baseConfig.PENDING
 }
 
 export default function BuyerOrdersPage() {
@@ -118,7 +132,8 @@ export default function BuyerOrdersPage() {
               </div>
             ) : (
               filteredOrders.map((order) => {
-                const statusInfo = statusConfig[order.status] || statusConfig.PENDING
+                const isPickupOrder = order.deliveryOption === 'pickup' || !order.deliveryAddress
+                const statusInfo = getStatusConfig(order.status, isPickupOrder)
                 const StatusIcon = statusInfo.icon
                 return (
                   <div
@@ -187,9 +202,9 @@ export default function BuyerOrdersPage() {
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold">Order Details</h3>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${(statusConfig[selectedOrder.status] || statusConfig.PENDING).color}`}
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusConfig(selectedOrder.status, selectedOrder.deliveryOption === 'pickup' || !selectedOrder.deliveryAddress).color}`}
                   >
-                    {(statusConfig[selectedOrder.status] || statusConfig.PENDING).label}
+                    {getStatusConfig(selectedOrder.status, selectedOrder.deliveryOption === 'pickup' || !selectedOrder.deliveryAddress).label}
                   </span>
                 </div>
 
@@ -200,6 +215,19 @@ export default function BuyerOrdersPage() {
                       const stepOrder = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED"]
                       const currentIdx = stepOrder.indexOf(selectedOrder.status)
                       const isCompleted = idx <= currentIdx
+                      const isPickupOrder = selectedOrder.deliveryOption === 'pickup' || !selectedOrder.deliveryAddress
+                      
+                      // Get proper label for each step
+                      const getStepLabel = (step: string) => {
+                        if (step === "SHIPPED") {
+                          return isPickupOrder ? "Ready for Pickup" : "Out for Delivery"
+                        }
+                        if (step === "DELIVERED") {
+                          return isPickupOrder ? "Picked Up" : "Delivered"
+                        }
+                        return step.toLowerCase().replace("_", " ")
+                      }
+                      
                       return (
                         <div key={step} className="flex flex-col items-center">
                           <div
@@ -209,7 +237,7 @@ export default function BuyerOrdersPage() {
                           >
                             {idx + 1}
                           </div>
-                          <span className="text-xs mt-1 text-muted-foreground capitalize">{step.toLowerCase().replace("_", " ")}</span>
+                          <span className="text-xs mt-1 text-muted-foreground capitalize">{getStepLabel(step)}</span>
                         </div>
                       )
                     })}

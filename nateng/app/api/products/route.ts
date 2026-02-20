@@ -68,9 +68,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // Only farmers can create products
-    if (user.role !== 'farmer') {
-      return NextResponse.json({ error: 'Only farmers can create products' }, { status: 403 });
+    // Only farmers and resellers can create products
+    if (user.role !== 'farmer' && user.role !== 'reseller') {
+      return NextResponse.json({ error: 'Only farmers and resellers can create products' }, { status: 403 });
     }
     const body = await req.json();
     const { name, description, farmerId, imageUrl } = body;
@@ -79,9 +79,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'missing fields: name, farmerId' }, { status: 400 });
     }
 
-    // Farmers can only create products for themselves
+    // Farmers and resellers can only create products for themselves
     if (farmerId !== user.id) {
-      return NextResponse.json({ error: 'Cannot create products for other farmers' }, { status: 403 });
+      return NextResponse.json({ error: 'Cannot create products for other users' }, { status: 403 });
     }
 
     const product = await prisma.product.create({

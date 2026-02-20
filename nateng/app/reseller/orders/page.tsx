@@ -44,12 +44,24 @@ export default function ResellerOrdersPage() {
     }
   }
 
-  const statusConfig: Record<string, { icon: LucideIcon; color: string; label: string }> = {
-    PENDING: { icon: Clock, color: "bg-yellow-100 text-yellow-700", label: "Pending" },
-    CONFIRMED: { icon: CheckCircle, color: "bg-blue-100 text-blue-700", label: "Confirmed" },
-    SHIPPED: { icon: Truck, color: "bg-green-100 text-green-700", label: "Shipped" },
-    DELIVERED: { icon: CheckCircle, color: "bg-gray-100 text-gray-700", label: "Delivered" },
-    CANCELLED: { icon: XCircle, color: "bg-red-100 text-red-700", label: "Cancelled" },
+  const getStatusConfig = (status: string, isPickupOrder: boolean) => {
+    const baseConfig = {
+      PENDING: { icon: Clock, color: "bg-yellow-100 text-yellow-700", label: "Pending" },
+      CONFIRMED: { icon: CheckCircle, color: "bg-blue-100 text-blue-700", label: "Confirmed" },
+      DELIVERED: { icon: CheckCircle, color: "bg-gray-100 text-gray-700", label: isPickupOrder ? "Picked Up" : "Delivered" },
+      CANCELLED: { icon: XCircle, color: "bg-red-100 text-red-700", label: "Cancelled" },
+    }
+
+    // Special handling for SHIPPED status
+    if (status === "SHIPPED") {
+      return {
+        icon: Truck,
+        color: "bg-green-100 text-green-700",
+        label: isPickupOrder ? "Ready for Pickup" : "Shipped"
+      }
+    }
+
+    return baseConfig[status as keyof typeof baseConfig] || baseConfig.PENDING
   }
 
   return (
@@ -73,10 +85,10 @@ export default function ResellerOrdersPage() {
         <div className="space-y-4">
           {orders && orders.length > 0 ? (
             orders.map((order) => {
-              const status = statusConfig[order.status] || statusConfig.PENDING
+              const isPickupOrder = order.deliveryOption === 'pickup' || !order.deliveryAddress
+              const status = getStatusConfig(order.status, isPickupOrder)
               const StatusIcon = status.icon
               const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
-              const isPickupOrder = order.deliveryOption === 'pickup' || !order.deliveryAddress
 
               return (
                 <div

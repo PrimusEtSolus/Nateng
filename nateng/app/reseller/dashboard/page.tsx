@@ -293,6 +293,18 @@ export default function ResellerDashboardPage() {
                   <p className="text-xs text-muted-foreground">Track your earnings</p>
                 </div>
               </Link>
+              <Link
+                href="/two-factor"
+                className="flex items-center gap-3 p-3 rounded-xl bg-purple-50 hover:bg-purple-100 transition-colors group"
+              >
+                <div className="p-2 bg-purple-500 rounded-lg group-hover:scale-105 transition-transform">
+                  <Package className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">2FA Settings</p>
+                  <p className="text-xs text-muted-foreground">Manage security</p>
+                </div>
+              </Link>
             </div>
           </div>
 

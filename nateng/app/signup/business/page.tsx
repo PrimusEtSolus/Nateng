@@ -13,6 +13,7 @@ import { ArrowLeft, Eye, EyeOff, Building2 } from "lucide-react"
 import { businessTypes } from "@/lib/mock-data"
 import { register, getRedirectPath } from "@/lib/auth"
 import { toast } from "sonner"
+import { TermsAndConditions } from "@/components/terms-and-conditions"
 
 export default function BusinessSignupPage() {
   const router = useRouter()
@@ -20,6 +21,8 @@ export default function BusinessSignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showTerms, setShowTerms] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [formData, setFormData] = useState({
     businessName: "",
     email: "",
@@ -55,6 +58,11 @@ export default function BusinessSignupPage() {
     
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters")
+      return
+    }
+    
+    if (!termsAccepted) {
+      setError("You must accept the terms and conditions to continue")
       return
     }
     
@@ -201,12 +209,34 @@ export default function BusinessSignupPage() {
 
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !termsAccepted}
               className="w-full h-12 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-lg rounded-xl mt-2"
             >
               {isLoading ? "Creating Account..." : "Create Business Account"}
             </Button>
           </form>
+
+          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="terms-checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="rounded"
+              />
+              <label htmlFor="terms-checkbox" className="text-sm text-muted-foreground">
+                I agree to the{" "}
+                <button
+                  type="button"
+                  onClick={() => setShowTerms(true)}
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  Terms and Conditions
+                </button>
+              </label>
+            </div>
+          </div>
 
           <p className="text-center mt-6 text-muted-foreground text-sm">
             Already have an account?{" "}
@@ -216,6 +246,19 @@ export default function BusinessSignupPage() {
           </p>
         </div>
       </main>
+
+      <TermsAndConditions
+        isOpen={showTerms}
+        userRole="business"
+        onAccept={() => {
+          setTermsAccepted(true)
+          setShowTerms(false)
+        }}
+        onDecline={() => {
+          setTermsAccepted(false)
+          setShowTerms(false)
+        }}
+      />
     </div>
   )
 }

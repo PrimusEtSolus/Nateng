@@ -2,10 +2,10 @@
  * Marketplace transaction rules enforcement
  * 
  * Rules:
- * - Farmers may sell only to Business and Reseller users
+ * - Farmers may sell to Business, Reseller, and Buyer users
  * - Resellers may sell only to Buyer users  
  * - Buyers may purchase from Reseller or Farmer users
- * - Business and Reseller users may purchase only from Farmers
+ * - Business and Reseller users may purchase from Farmers
  */
 
 import type { UserRole } from '@/lib/types';
@@ -25,15 +25,15 @@ export function canSellTo(sellerRole: UserRole, buyerRole: UserRole): Marketplac
     return { allowed: true }
   }
 
-  // Farmers may sell only to Business and Reseller users
+  // Farmers may sell to Business, Reseller, and Buyer users
   if (sellerRole === 'farmer') {
-    const allowedBuyers = ['business', 'reseller']
+    const allowedBuyers = ['business', 'reseller', 'buyer']
     return {
       allowed: allowedBuyers.includes(buyerRole),
       allowedRoles: allowedBuyers,
       reason: allowedBuyers.includes(buyerRole) 
         ? undefined 
-        : `Farmers can only sell to Business and Reseller users, not ${buyerRole}`
+        : `Farmers can only sell to Business, Reseller, and Buyer users, not ${buyerRole}`
     }
   }
 
