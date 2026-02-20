@@ -48,63 +48,10 @@ export default function BusinessInventoryPage() {
 
   const wholesaleCrops = getWholesaleCrops()
 
-  const [inventory, setInventory] = useState<InventoryItem[]>([
-    {
-      id: "1",
-      name: "Tomatoes",
-      inStock: 200,
-      unit: "kg",
-      reorderLevel: 50,
-      supplier: "Juan Dela Cruz",
-      lastOrderDate: "2024-11-28",
-      image: "/fresh-red-tomatoes.jpg",
-      lastUpdated: "2024-11-28",
-    },
-    {
-      id: "2",
-      name: "Cabbage",
-      inStock: 100,
-      unit: "kg",
-      reorderLevel: 30,
-      supplier: "Juan Dela Cruz",
-      lastOrderDate: "2024-11-25",
-      image: "/green-cabbage.jpg",
-      lastUpdated: "2024-11-25",
-    },
-    {
-      id: "3",
-      name: "Carrots",
-      inStock: 15,
-      unit: "kg",
-      reorderLevel: 20,
-      supplier: "Juan Dela Cruz",
-      lastOrderDate: "2024-11-20",
-      image: "/orange-carrots.jpg",
-      lastUpdated: "2024-11-20",
-    },
-    {
-      id: "4",
-      name: "Lettuce",
-      inStock: 45,
-      unit: "kg",
-      reorderLevel: 25,
-      supplier: "Juan Dela Cruz",
-      lastOrderDate: "2024-11-27",
-      image: "/fresh-green-lettuce.png",
-      lastUpdated: "2024-11-27",
-    },
-    {
-      id: "5",
-      name: "Bell Peppers",
-      inStock: 8,
-      unit: "kg",
-      reorderLevel: 15,
-      supplier: "Juan Dela Cruz",
-      lastOrderDate: "2024-11-22",
-      image: "/colorful-bell-peppers.png",
-      lastUpdated: "2024-11-22",
-    },
-  ])
+  const [inventory, setInventory] = useState<InventoryItem[]>([])
+
+  // Initialize empty inventory for new business users
+  // They can add items through the "Add New Item" functionality
 
   const filteredInventory = inventory.filter((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
@@ -320,86 +267,6 @@ export default function BusinessInventoryPage() {
             className="pl-10"
           />
         </div>
-      </div>
-
-      {/* Inventory Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredInventory.map((item) => {
-          const status = getStockStatus(item)
-          return (
-            <div
-              key={item.id}
-              className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="aspect-video bg-muted relative">
-                <img src={item.image || "/placeholder.svg"} alt={item.name} className="w-full h-full object-cover" />
-                <span
-                  className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium border ${status.color}`}
-                >
-                  {status.label}
-                </span>
-              </div>
-              <div className="p-5">
-                <h3 className="font-semibold text-lg mb-3">{item.name}</h3>
-
-                <div className="space-y-2 text-sm mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">In Stock</span>
-                    <span className="font-medium">
-                      {item.inStock} {item.unit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Reorder Level</span>
-                    <span className="font-medium">
-                      {item.reorderLevel} {item.unit}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Supplier</span>
-                    <span className="font-medium text-business">{item.supplier}</span>
-                  </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Last updated</span>
-                <span>{item.lastUpdated || item.lastOrderDate}</span>
-              </div>
-                </div>
-
-                {/* Stock Bar */}
-                <div className="mb-4">
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        item.inStock <= item.reorderLevel ? "bg-red-500" : "bg-green-500"
-                      }`}
-                      style={{ width: `${Math.min((item.inStock / (item.reorderLevel * 3)) * 100, 100)}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    className="flex-1 bg-business hover:bg-business-light text-white gap-2"
-                    size="sm"
-                    onClick={() => handleReorderClick(item)}
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Reorder from Farmer
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 gap-2"
-                    size="sm"
-                    onClick={() => handleOpenAdjustment(item)}
-                  >
-                    <ClipboardEdit className="w-4 h-4" />
-                    Adjust Stock
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )
-        })}
       </div>
 
       <Dialog

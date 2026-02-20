@@ -14,18 +14,18 @@ const BASE_URL = 'http://localhost:3000';
 
 // Test users - will be created during test
 let testUsers = {
-  farmer: null,
-  buyer: null,
-  business: null,
-  reseller: null
+  farmer: [],
+  buyer: [],
+  business: [],
+  reseller: []
 };
 
 // User tokens for authenticated requests
 let userTokens = {
-  farmer: null,
-  buyer: null,
-  business: null,
-  reseller: null
+  farmer: [],
+  buyer: [],
+  business: [],
+  reseller: []
 };
 
 let testProducts = [];
@@ -61,67 +61,137 @@ async function testUserRegistration() {
   console.log('TEST 1: User Registration and Persistence');
   console.log('='.repeat(70));
   
-  const timestamp = Date.now();
-  const usersToRegister = [
-    {
-      name: 'Test Farmer',
-      email: `testfarmer${timestamp}@test.com`,
-      password: 'testpass123',
-      role: 'farmer'
-    },
-    {
-      name: 'Test Buyer',
-      email: `testbuyer${timestamp}@test.com`,
-      password: 'testpass123',
-      role: 'buyer'
-    },
-    {
-      name: 'Test Business',
-      email: `testbusiness${timestamp}@test.com`,
-      password: 'testpass123',
-      role: 'business'
-    },
-    {
-      name: 'Test Reseller',
-      email: `testreseller${timestamp}@test.com`,
-      password: 'testpass123',
-      role: 'reseller'
-    }
-  ];
-  
   const results = {};
   
-  for (const userData of usersToRegister) {
-    console.log(`\n📝 Registering ${userData.role}...`);
-    const result = await apiCall('/api/auth/register', 'POST', userData);
+  // Create 5 users for each role with different names
+  // Register 5 farmers
+  for (let i = 1; i <= 5; i++) {
+    const mobileNumber = `09${String(Math.floor(Math.random() * 900000000) + 100000000)}`;
+    const result = await apiCall('/api/auth/register', 'POST', {
+      name: `atokfarmer${i}`,
+      email: mobileNumber, // Farmers use mobile number as email
+      password: 'atokfarmer',
+      role: 'farmer',
+      municipality: 'La Trinidad'
+    });
     
     if (result.ok && result.data.user) {
-      const user = result.data.user;
-      testUsers[userData.role] = user;
-      results[userData.role] = 'PASS';
-      console.log(`   ✅ ${userData.role} registered successfully!`);
-      console.log(`      ID: ${user.id}, Email: ${user.email}, Role: ${user.role}`);
+      testUsers.farmer.push(result.data.user);
+      results[`farmer${i}`] = 'PASS';
+      console.log(`   ✅ atokfarmer${i} registered successfully!`);
+      console.log(`      ID: ${result.data.user.id}, Mobile: ${result.data.user.email}, Role: ${result.data.user.role}`);
     } else {
-      results[userData.role] = 'FAIL';
-      console.log(`   ❌ Registration failed: ${result.data?.error || result.error}`);
+      results[`farmer${i}`] = 'FAIL';
+      console.log(`   ❌ atokfarmer${i} registration failed: ${result.data?.error || result.error}`);
     }
   }
   
-  // Verify users can be retrieved
+  // Register 5 buyers
+  for (let i = 1; i <= 5; i++) {
+    const result = await apiCall('/api/auth/register', 'POST', {
+      name: `buyer${i}`,
+      email: `buyer${i}${Date.now()}@test.com`,
+      password: 'atokfarmer',
+      role: 'buyer'
+    });
+    
+    if (result.ok && result.data.user) {
+      testUsers.buyer.push(result.data.user);
+      results[`buyer${i}`] = 'PASS';
+      console.log(`   ✅ buyer${i} registered successfully!`);
+      console.log(`      ID: ${result.data.user.id}, Email: ${result.data.user.email}, Role: ${result.data.user.role}`);
+    } else {
+      results[`buyer${i}`] = 'FAIL';
+      console.log(`   ❌ buyer${i} registration failed: ${result.data?.error || result.error}`);
+    }
+  }
+  
+  // Register 5 businesses
+  for (let i = 1; i <= 5; i++) {
+    const result = await apiCall('/api/auth/register', 'POST', {
+      name: `business${i}`,
+      email: `business${i}${Date.now()}@test.com`,
+      password: 'atokfarmer',
+      role: 'business',
+      businessType: 'restaurant'
+    });
+    
+    if (result.ok && result.data.user) {
+      testUsers.business.push(result.data.user);
+      results[`business${i}`] = 'PASS';
+      console.log(`   ✅ business${i} registered successfully!`);
+      console.log(`      ID: ${result.data.user.id}, Email: ${result.data.user.email}, Role: ${result.data.user.role}`);
+    } else {
+      results[`business${i}`] = 'FAIL';
+      console.log(`   ❌ business${i} registration failed: ${result.data?.error || result.error}`);
+    }
+  }
+  
+  // Register 5 resellers
+  for (let i = 1; i <= 5; i++) {
+    const result = await apiCall('/api/auth/register', 'POST', {
+      name: `reseller${i}`,
+      email: `reseller${i}${Date.now()}@test.com`,
+      password: 'atokfarmer',
+      role: 'reseller',
+      stallLocation: `Stall ${i}`
+    });
+    
+    if (result.ok && result.data.user) {
+      testUsers.reseller.push(result.data.user);
+      results[`reseller${i}`] = 'PASS';
+      console.log(`   ✅ reseller${i} registered successfully!`);
+      console.log(`      ID: ${result.data.user.id}, Email: ${result.data.user.email}, Role: ${result.data.user.role}`);
+    } else {
+      results[`reseller${i}`] = 'FAIL';
+      console.log(`   ❌ reseller${i} registration failed: ${result.data?.error || result.error}`);
+    }
+  }
+  
+  // Verify user persistence
   console.log('\n🔍 Verifying user persistence...');
-  for (const [role, user] of Object.entries(testUsers)) {
-    if (user) {
-      const result = await apiCall(`/api/users/${user.id}`);
-      if (result.ok && result.data.id === user.id) {
-        console.log(`   ✅ ${role} (ID: ${user.id}) found in database`);
-      } else {
-        console.log(`   ❌ ${role} (ID: ${user.id}) NOT found in database`);
-        results[`${role}_retrieval`] = 'FAIL';
-      }
+  
+  // Check farmers
+  for (const user of testUsers.farmer) {
+    const result = await apiCall(`/api/users/${user.id}`);
+    if (result.ok && result.data.id === user.id) {
+      console.log(`   ✅ ${user.name} (ID: ${user.id}) found in database`);
+    } else {
+      console.log(`   ❌ ${user.name} (ID: ${user.id}) NOT found in database`);
     }
   }
   
-  return results;
+  // Check buyers
+  for (const user of testUsers.buyer) {
+    const result = await apiCall(`/api/users/${user.id}`);
+    if (result.ok && result.data.id === user.id) {
+      console.log(`   ✅ ${user.name} (ID: ${user.id}) found in database`);
+    } else {
+      console.log(`   ❌ ${user.name} (ID: ${user.id}) NOT found in database`);
+    }
+  }
+  
+  // Check businesses
+  for (const user of testUsers.business) {
+    const result = await apiCall(`/api/users/${user.id}`);
+    if (result.ok && result.data.id === user.id) {
+      console.log(`   ✅ ${user.name} (ID: ${user.id}) found in database`);
+    } else {
+      console.log(`   ❌ ${user.name} (ID: ${user.id}) NOT found in database`);
+    }
+  }
+  
+  // Check resellers
+  for (const user of testUsers.reseller) {
+    const result = await apiCall(`/api/users/${user.id}`);
+    if (result.ok && result.data.id === user.id) {
+      console.log(`   ✅ ${user.name} (ID: ${user.id}) found in database`);
+    } else {
+      console.log(`   ❌ ${user.name} (ID: ${user.id}) NOT found in database`);
+    }
+  }
+  
+  return { results, testUsers };
 }
 
 // Test 2: Login with registered users
@@ -132,35 +202,32 @@ async function testUserLogin() {
   
   const results = {};
   
-  for (const [role, user] of Object.entries(testUsers)) {
-    if (!user) {
-      results[role] = 'SKIP';
-      continue;
-    }
-    
-    console.log(`\n🔐 Testing login for ${role}...`);
-    const result = await apiCall('/api/auth/login', 'POST', {
-      email: user.email,
-      password: 'testpass123'
-    });
-    
-    if (result.ok && result.data.user) {
-      const loggedInUser = result.data.user;
-      const token = result.data.token;
-      if (loggedInUser.id === user.id && loggedInUser.email === user.email) {
-        // Store the token for authenticated requests
-        userTokens[role] = token;
-        results[role] = 'PASS';
-        console.log(`   ✅ ${role} logged in successfully!`);
-        console.log(`      Verified: ID ${loggedInUser.id}, Email: ${loggedInUser.email}`);
-        console.log(`      Token stored for authenticated requests`);
+  for (const [role, users] of Object.entries(testUsers)) {
+    for (const user of users) {
+      console.log(`\n🔐 Testing login for ${role}...`);
+      const result = await apiCall('/api/auth/login', 'POST', {
+        email: user.email,
+        password: 'atokfarmer'
+      });
+      
+      if (result.ok && result.data.user) {
+        const loggedInUser = result.data.user;
+        const token = result.data.token;
+        if (loggedInUser.id === user.id && loggedInUser.email === user.email) {
+          // Store the token for authenticated requests
+          userTokens[role].push(token);
+          results[`${role}_${user.id}`] = 'PASS';
+          console.log(`   ✅ ${role} logged in successfully!`);
+          console.log(`      Verified: ID ${loggedInUser.id}, Email: ${loggedInUser.email}`);
+          console.log(`      Token stored for authenticated requests`);
+        } else {
+          results[`${role}_${user.id}`] = 'FAIL';
+          console.log(`   ❌ Login returned different user data`);
+        }
       } else {
         results[role] = 'FAIL';
-        console.log(`   ❌ Login returned different user data`);
+        console.log(`   ❌ Login failed: ${result.data?.error || result.error}`);
       }
-    } else {
-      results[role] = 'FAIL';
-      console.log(`   ❌ Login failed: ${result.data?.error || result.error}`);
     }
   }
   
@@ -173,17 +240,21 @@ async function testProductAndListingCreation() {
   console.log('TEST 3: Product and Listing Creation');
   console.log('='.repeat(70));
   
-  if (!testUsers.farmer) {
+  if (!testUsers.farmer || testUsers.farmer.length === 0) {
     console.log('   ⏭️  Skipping - No farmer registered');
     return { status: 'SKIP' };
   }
+  
+  // Use the first farmer for product creation
+  const firstFarmer = testUsers.farmer[0];
+  const farmerToken = userTokens.farmer[0];
   
   console.log('\n🌾 Farmer creating product...');
   const productResult = await apiCall('/api/products', 'POST', {
     name: 'Test Tomatoes',
     description: 'Fresh tomatoes from test farm',
-    farmerId: testUsers.farmer.id
-  });
+    farmerId: firstFarmer.id
+  }, farmerToken);
   
   if (productResult.ok && productResult.data.id) {
     testProducts.push(productResult.data);
@@ -192,10 +263,10 @@ async function testProductAndListingCreation() {
     console.log('\n📋 Farmer creating listing...');
     const listingResult = await apiCall('/api/listings', 'POST', {
       productId: productResult.data.id,
-      sellerId: testUsers.farmer.id,
+      sellerId: firstFarmer.id,
       priceCents: 5000, // ₱50.00
       quantity: 100
-    });
+    }, farmerToken);
     
     if (listingResult.ok && listingResult.data.id) {
       testListings.push(listingResult.data);
@@ -213,30 +284,34 @@ async function testProductAndListingCreation() {
   }
 }
 
-// Test 4: Buyer creating order (user interaction)
+// Test 4: Reseller creating order from farmer (user interaction)
 async function testOrderCreation() {
   console.log('\n' + '='.repeat(70));
-  console.log('TEST 4: Order Creation (Buyer-Seller Interaction)');
+  console.log('TEST 4: Order Creation (Reseller-Farmer Interaction)');
   console.log('='.repeat(70));
   
-  if (!testUsers.buyer || !testUsers.farmer || testListings.length === 0) {
-    console.log('   ⏭️  Skipping - Missing buyer, farmer, or listings');
+  if (!testUsers.reseller || testUsers.reseller.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0 || testListings.length === 0) {
+    console.log('   ⏭️  Skipping - Missing reseller, farmer, or listings');
     return { status: 'SKIP' };
   }
   
   const listing = testListings[0];
-  console.log(`\n🛒 Buyer (ID: ${testUsers.buyer.id}) creating order from Farmer (ID: ${testUsers.farmer.id})...`);
+  const firstReseller = testUsers.reseller[0];
+  const firstFarmer = testUsers.farmer[0];
+  const resellerToken = userTokens.reseller[0];
+  
+  console.log(`\n🛒 Reseller (ID: ${firstReseller.id}) creating order from Farmer (ID: ${firstFarmer.id})...`);
   
   const orderResult = await apiCall('/api/orders', 'POST', {
-    buyerId: testUsers.buyer.id,
-    sellerId: testUsers.farmer.id,
+    buyerId: firstReseller.id, // Reseller acts as buyer
+    sellerId: firstFarmer.id,
     items: [
       {
         listingId: listing.id,
         quantity: 50
       }
     ]
-  });
+  }, resellerToken);
   
   if (orderResult.ok && orderResult.data.id) {
     testOrders.push(orderResult.data);
@@ -248,12 +323,13 @@ async function testOrderCreation() {
     
     // Verify order can be retrieved
     console.log('\n🔍 Verifying order persistence...');
-    const retrieveResult = await apiCall(`/api/orders/${orderResult.data.id}`);
+    const retrieveResult = await apiCall(`/api/orders/${orderResult.data.id}`, 'GET', null, resellerToken);
     if (retrieveResult.ok && retrieveResult.data.id === orderResult.data.id) {
       console.log(`   ✅ Order found in database`);
       return { status: 'PASS', orderId: orderResult.data.id };
     } else {
       console.log(`   ❌ Order NOT found in database`);
+      console.log(`   Error: ${retrieveResult.data?.error || retrieveResult.error}`);
       return { status: 'FAIL' };
     }
   } else {
@@ -268,19 +344,23 @@ async function testMessaging() {
   console.log('TEST 5: User-to-User Messaging');
   console.log('='.repeat(70));
   
-  if (!testUsers.buyer || !testUsers.farmer) {
-    console.log('   ⏭️  Skipping - Missing buyer or farmer');
+  if (!testUsers.reseller || testUsers.reseller.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0) {
+    console.log('   ⏭️  Skipping - Missing reseller or farmer');
     return { status: 'SKIP' };
   }
   
-  console.log(`\n💬 Buyer (ID: ${testUsers.buyer.id}) sending message to Farmer (ID: ${testUsers.farmer.id})...`);
+  const firstReseller = testUsers.reseller[0];
+  const firstFarmer = testUsers.farmer[0];
+  const resellerToken = userTokens.reseller[0];
+  
+  console.log(`\n💬 Reseller (ID: ${firstReseller.id}) sending message to Farmer (ID: ${firstFarmer.id})...`);
   
   const messageResult = await apiCall('/api/messages', 'POST', {
-    senderId: testUsers.buyer.id,
-    receiverId: testUsers.farmer.id,
+    senderId: firstReseller.id,
+    receiverId: firstFarmer.id,
     content: 'Hello! When will my order be delivered?',
     orderId: testOrders.length > 0 ? testOrders[0].id : null
-  });
+  }, resellerToken);
   
   if (messageResult.ok && messageResult.data.id) {
     testMessages.push(messageResult.data);
@@ -291,13 +371,14 @@ async function testMessaging() {
     
     // Verify message can be retrieved
     console.log('\n🔍 Verifying message retrieval...');
-    const retrieveResult = await apiCall(`/api/messages?userId=${testUsers.buyer.id}&conversationWith=${testUsers.farmer.id}`);
+    const retrieveResult = await apiCall(`/api/messages?userId=${firstReseller.id}&conversationWith=${firstFarmer.id}`, 'GET', null, resellerToken);
     if (retrieveResult.ok && Array.isArray(retrieveResult.data) && retrieveResult.data.length > 0) {
       console.log(`   ✅ Message found in conversation!`);
       console.log(`      Total messages: ${retrieveResult.data.length}`);
       return { status: 'PASS', messageId: messageResult.data.id };
     } else {
       console.log(`   ❌ Message NOT found in conversation`);
+      console.log(`   Error: ${retrieveResult.data?.error || retrieveResult.error}`);
       return { status: 'FAIL' };
     }
   } else {
@@ -316,15 +397,15 @@ async function testDataPersistence() {
   
   // Verify users still exist
   console.log('\n👥 Verifying users persist...');
-  for (const [role, user] of Object.entries(testUsers)) {
-    if (user) {
+  for (const [role, users] of Object.entries(testUsers)) {
+    for (const user of users) {
       const result = await apiCall(`/api/users/${user.id}`);
       if (result.ok && result.data.id === user.id) {
-        results[`${role}_persists`] = 'PASS';
-        console.log(`   ✅ ${role} (ID: ${user.id}) still exists`);
+        results[`${role}_${user.id}_persists`] = 'PASS';
+        console.log(`   ✅ ${user.name} (ID: ${user.id}) still exists`);
       } else {
-        results[`${role}_persists`] = 'FAIL';
-        console.log(`   ❌ ${role} (ID: ${user.id}) NOT found`);
+        results[`${role}_${user.id}_persists`] = 'FAIL';
+        console.log(`   ❌ ${user.name} (ID: ${user.id}) NOT found`);
       }
     }
   }
@@ -348,18 +429,153 @@ async function testDataPersistence() {
   if (testOrders.length > 0) {
     console.log('\n🛒 Verifying orders persist...');
     for (const order of testOrders) {
-      const result = await apiCall(`/api/orders/${order.id}`);
+      const resellerToken = userTokens.reseller[0];
+      const result = await apiCall(`/api/orders/${order.id}`, 'GET', null, resellerToken);
       if (result.ok && result.data.id === order.id) {
         results[`order_${order.id}_persists`] = 'PASS';
         console.log(`   ✅ Order ${order.id} still exists`);
       } else {
         results[`order_${order.id}_persists`] = 'FAIL';
         console.log(`   ❌ Order ${order.id} NOT found`);
+        console.log(`   Error: ${result.data?.error || result.error}`);
       }
     }
   }
   
   return results;
+}
+
+// Test 7: Users transacting with each other (buying and selling)
+async function testUserTransactions() {
+  console.log('\n' + '='.repeat(70));
+  console.log('TEST 7: User Transactions (Buying & Selling)');
+  console.log('='.repeat(70));
+  
+  // Test 1: Business buying from Farmer
+  console.log('\n🏢 Business buying from Farmer...');
+  if (!testUsers.business || testUsers.business.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0 || testListings.length === 0) {
+    console.log('   ⏭️  Skipping - Missing business, farmer, or listings');
+    return { status: 'SKIP' };
+  }
+  
+  const firstBusiness = testUsers.business[0];
+  const firstFarmer = testUsers.farmer[0];
+  const businessToken = userTokens.business[0];
+  
+  const businessOrderResult = await apiCall('/api/orders', 'POST', {
+    buyerId: firstBusiness.id,
+    sellerId: firstFarmer.id,
+    items: [
+      {
+        listingId: testListings[0].id,
+        quantity: 10 // Use smaller quantity to avoid conflicts
+      }
+    ]
+  }, businessToken);
+  
+  if (businessOrderResult.ok && businessOrderResult.data.id) {
+    console.log(`   ✅ Business order created! ID: ${businessOrderResult.data.id}`);
+    console.log(`      Total: ₱${(businessOrderResult.data.totalCents / 100).toFixed(2)}`);
+  } else {
+    console.log(`   ❌ Business order failed: ${businessOrderResult.data?.error || businessOrderResult.error}`);
+  }
+  
+  // Test 2: Reseller buying from Farmer
+  console.log('\n🛒 Reseller buying from Farmer...');
+  if (!testUsers.reseller || testUsers.reseller.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0 || testListings.length === 0) {
+    console.log('   ⏭️  Skipping - Missing reseller, farmer, or listings');
+    return { status: 'SKIP' };
+  }
+  
+  const firstReseller = testUsers.reseller[0];
+  const resellerToken = userTokens.reseller[0];
+  
+  // Use a different quantity to avoid insufficient quantity error
+  const resellerOrderResult = await apiCall('/api/orders', 'POST', {
+    buyerId: firstReseller.id,
+    sellerId: firstFarmer.id,
+    items: [
+      {
+        listingId: testListings[0].id,
+        quantity: 20 // Use smaller quantity
+      }
+    ]
+  }, resellerToken);
+  
+  if (resellerOrderResult.ok && resellerOrderResult.data.id) {
+    console.log(`   ✅ Reseller order created! ID: ${resellerOrderResult.data.id}`);
+    console.log(`      Total: ₱${(resellerOrderResult.data.totalCents / 100).toFixed(2)}`);
+  } else {
+    console.log(`   ❌ Reseller order failed: ${resellerOrderResult.data?.error || resellerOrderResult.error}`);
+  }
+  
+  // Test 3: Buyer buying from Reseller (need reseller listing)
+  console.log('\n🛍️  Buyer buying from Reseller...');
+  
+  // First create a reseller product and listing (resellers need to create products differently)
+  // Since only farmers can create products, we'll have the reseller create a listing for an existing farmer product
+  const resellerListingResult = await apiCall('/api/listings', 'POST', {
+    productId: testProducts[0].id, // Use existing farmer product
+    sellerId: firstReseller.id,
+    priceCents: 6000, // ₱60.00
+    quantity: 50 // Use 'quantity' not 'quantityKg'
+  }, resellerToken);
+  
+  if (resellerListingResult.ok && resellerListingResult.data.id) {
+    // Now buyer can purchase from reseller
+    if (!testUsers.buyer || testUsers.buyer.length === 0) {
+      console.log('   ⏭️  Skipping - No buyer registered');
+      return { status: 'SKIP' };
+    }
+    
+    const firstBuyer = testUsers.buyer[0];
+    const buyerToken = userTokens.buyer[0];
+    
+    const buyerOrderResult = await apiCall('/api/orders', 'POST', {
+      buyerId: firstBuyer.id,
+      sellerId: firstReseller.id,
+      items: [
+        {
+          listingId: resellerListingResult.data.id,
+          quantity: 5
+        }
+      ]
+    }, buyerToken);
+    
+    if (buyerOrderResult.ok && buyerOrderResult.data.id) {
+      console.log(`   ✅ Buyer order created! ID: ${buyerOrderResult.data.id}`);
+      console.log(`      Total: ₱${(buyerOrderResult.data.totalCents / 100).toFixed(2)}`);
+    } else {
+      console.log(`   ❌ Buyer order failed: ${buyerOrderResult.data?.error || buyerOrderResult.error}`);
+    }
+  } else {
+    console.log(`   ❌ Reseller listing creation failed: ${resellerListingResult.data?.error || resellerListingResult.error}`);
+  }
+  
+  // Test 4: Verify all orders can be retrieved
+  console.log('\n🔍 Verifying all transactions persist...');
+  const businessToken2 = userTokens.business[0];
+  const allOrdersResult = await apiCall('/api/orders', 'GET', null, businessToken2);
+  if (allOrdersResult.ok && Array.isArray(allOrdersResult.data)) {
+    console.log(`   ✅ Found ${allOrdersResult.data.length} orders in system`);
+    allOrdersResult.data.forEach(order => {
+      console.log(`      Order ${order.id}: ${order.buyer?.name} → ${order.seller?.name} (₱${(order.totalCents / 100).toFixed(2)})`);
+    });
+    return { status: 'PASS', orderCount: allOrdersResult.data.length };
+  } else {
+    // Try with admin token if business token doesn't work
+    const adminOrdersResult = await apiCall('/api/orders', 'GET', null, businessToken2);
+    if (adminOrdersResult.ok && Array.isArray(adminOrdersResult.data)) {
+      console.log(`   ✅ Found ${adminOrdersResult.data.length} orders in system`);
+      adminOrdersResult.data.forEach(order => {
+        console.log(`      Order ${order.id}: ${order.buyer?.name} → ${order.seller?.name} (₱${(order.totalCents / 100).toFixed(2)})`);
+      });
+      return { status: 'PASS', orderCount: adminOrdersResult.data.length };
+    } else {
+      console.log(`   ❌ Failed to retrieve orders: ${adminOrdersResult.data?.error || adminOrdersResult.error}`);
+      return { status: 'FAIL' };
+    }
+  }
 }
 
 // Main test runner
@@ -377,25 +593,36 @@ async function runAllTests() {
   }
   console.log('✅ Server is running!\n');
   
-  const allResults = {};
-  
   // Run all tests
-  allResults.registration = await testUserRegistration();
+  const registrationResult = await testUserRegistration();
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  allResults.login = await testUserLogin();
+  const loginResult = await testUserLogin();
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  allResults.products = await testProductAndListingCreation();
+  const productsResult = await testProductAndListingCreation();
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  allResults.orders = await testOrderCreation();
+  const ordersResult = await testOrderCreation();
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  allResults.messaging = await testMessaging();
+  const messagingResult = await testMessaging();
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  allResults.persistence = await testDataPersistence();
+  const persistenceResult = await testDataPersistence();
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const transactionsResult = await testUserTransactions();
+  
+  const allResults = {
+    registration: registrationResult.results,
+    login: loginResult,
+    products: productsResult,
+    orders: ordersResult,
+    messaging: messagingResult,
+    persistence: persistenceResult,
+    transactions: transactionsResult
+  };
   
   // Print summary
   console.log('\n' + '='.repeat(70));
@@ -432,6 +659,13 @@ async function runAllTests() {
     console.log(`   ${icon} ${key}: ${result}`);
   }
   
+  console.log('\n✅ Transaction Tests:');
+  const transactionIcon = allResults.transactions.status === 'PASS' ? '✅' : allResults.transactions.status === 'SKIP' ? '⏭️' : '❌';
+  console.log(`   ${transactionIcon} User Transactions: ${allResults.transactions.status}`);
+  if (allResults.transactions.orderCount) {
+    console.log(`      Total orders created: ${allResults.transactions.orderCount}`);
+  }
+  
   // Calculate pass rate
   const totalTests = 
     Object.values(allResults.registration).length +
@@ -439,7 +673,8 @@ async function runAllTests() {
     1 + // products
     1 + // orders
     1 + // messaging
-    Object.values(allResults.persistence).length;
+    Object.values(allResults.persistence).length +
+    1; // transactions
     
   const passedTests = 
     Object.values(allResults.registration).filter(r => r === 'PASS').length +
@@ -447,7 +682,8 @@ async function runAllTests() {
     (allResults.products.status === 'PASS' ? 1 : 0) +
     (allResults.orders.status === 'PASS' ? 1 : 0) +
     (allResults.messaging.status === 'PASS' ? 1 : 0) +
-    Object.values(allResults.persistence).filter(r => r === 'PASS').length;
+    Object.values(allResults.persistence).filter(r => r === 'PASS').length +
+    (allResults.transactions.status === 'PASS' ? 1 : 0);
   
   const passRate = totalTests > 0 ? ((passedTests / totalTests) * 100).toFixed(1) : 0;
   

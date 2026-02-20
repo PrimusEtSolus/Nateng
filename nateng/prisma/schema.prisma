@@ -18,6 +18,8 @@ model User {
   password  String   // Hashed password
   role      String
   minimumOrderKg Int? // Minimum order quantity in kg (for farmers: 50 or 100)
+  deliveryAreas String? // JSON string array of delivery areas (e.g., municipalities)
+  paymentMethods String? // JSON string array of payment methods
   profilePhotoUrl String? // URL to profile photo
   isBanned  Boolean  @default(false) // User ban status
   bannedAt  DateTime? // When user was banned

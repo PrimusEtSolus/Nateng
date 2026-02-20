@@ -10,6 +10,7 @@
 - [Features](#features)
 - [Documentation](#documentation)
 - [Development](#development)
+- [Testing](#testing)
 
 ## 🎯 Project Overview
 
@@ -106,6 +107,8 @@ For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md
 - **Complete Order Flow**: End-to-end order processing with automatic notifications
 - **Image Upload System**: Sellers can upload product images (JPEG, PNG, WebP up to 5MB)
 - **Enhanced Product Display**: Product images displayed across all buyer interfaces
+- **Farmer Settings**: Configurable payment methods, delivery areas, and minimum order in kg
+- **Farmer Logistics**: Benguet coverage map with ordinance compliance and penalties
 
 ### 🚧 In Development
 
@@ -125,6 +128,12 @@ All documentation files have been organized in the [`docs/`](./docs/) directory.
 - **[QUICK_START.md](./docs/QUICK_START.md)** - Quick start guide and common patterns
 - **[README_BACKEND.md](./docs/README_BACKEND.md)** - Backend API documentation
 - **[FULLSTACK_IMPLEMENTATION.md](./docs/FULLSTACK_IMPLEMENTATION.md)** - Complete full-stack implementation guide
+
+### Testing & Quality
+
+- **[TESTING_CHECKLIST.md](./docs/TESTING_CHECKLIST.md)** - Comprehensive testing checklist (updated 2026-02-06)
+- **[TESTING_CHECKLIST.md](./TESTING_CHECKLIST.md)** - Root testing checklist
+- **[DEPLOYMENT_CHECKLIST.md](./docs/DEPLOYMENT_CHECKLIST.md)** - Deployment preparation checklist
 
 ### Additional Resources
 
@@ -189,13 +198,14 @@ This creates a direct B2C channel where buyers purchase exclusively from reselle
 
 - `GET/POST /api/products` - Product management
 - `GET/POST /api/listings` - Listing management
-- `GET/POST /api/orders` - Order management
+- `GET/POST /api/orders` - Order management (requires Authorization header)
 - `GET/POST /api/users` - User management
 - `POST /api/auth/login` - User authentication
 - `POST /api/auth/register` - User registration
 - `POST /api/upload` - Image upload for products
 - `GET/POST /api/messages` - User-to-user messaging
 - `GET/PATCH /api/notifications` - Notification management
+- `PATCH /api/users/[id]` - Update user (supports farmer settings fields)
 
 For detailed API documentation, see [README_BACKEND.md](./README_BACKEND.md).
 
@@ -216,6 +226,48 @@ For detailed API documentation, see [README_BACKEND.md](./README_BACKEND.md).
 - Users can register new accounts through the signup pages
 
 For complete implementation details, see [FULLSTACK_IMPLEMENTATION.md](./FULLSTACK_IMPLEMENTATION.md).
+
+## 🧪 Testing
+
+### Testing Status: ✅ READY FOR TESTING
+
+**Last Updated**: 2026-02-06 (Farmer Settings & Logistics Update)
+
+#### Key Test Areas
+
+- **Farmer Settings**: Blank payment methods for new accounts; minimum order in kg; delivery areas derived from location
+- **Farmer Logistics**: New page at /farmer/logistics with Benguet coverage and ordinance compliance
+- **API Authorization**: Fixed Unauthorized error in /api/orders
+- **Database Persistence**: New farmer settings fields (minimumOrderKg, deliveryAreas, paymentMethods)
+
+#### Test Checklists
+
+- **[Comprehensive Testing Checklist](./docs/TESTING_CHECKLIST.md)** - Detailed test scenarios for all features
+- **[Root Testing Checklist](./TESTING_CHECKLIST.md)** - Quick reference testing guide
+
+#### Running Tests
+
+```bash
+# API endpoint testing
+node tests/test-api-comprehensive.js
+
+# Authentication testing
+node tests/test-auth-comprehensive.js
+
+# User persistence testing
+node tests/test-user-persistence-and-interactions.js
+
+# Generate test data
+node tests/generate-test-data.js
+```
+
+#### Recent Fixes (2026-02-06)
+
+- ✅ Fixed "Unauthorized" error when fetching orders in logistics dashboard
+- ✅ Added Authorization header to /api/orders requests
+- ✅ Implemented farmer settings persistence (minimumOrderKg, deliveryAreas, paymentMethods)
+- ✅ Created farmer logistics page with ordinance compliance information
+- ✅ Updated farmer sidebar to link to /farmer/logistics
 
 ## 🎓 Research Foundation
 
@@ -238,6 +290,7 @@ See [SOLUTION_OVERVIEW.md](./docs/SOLUTION_OVERVIEW.md) for complete research re
 - ✅ Virtual trading platform functional
 - ✅ Database architecture complete
 - ✅ API infrastructure ready
+- ✅ Farmer settings and logistics implemented
 - 🚧 Analytics integration in progress
 - 🚧 Smart logistics module in development
 

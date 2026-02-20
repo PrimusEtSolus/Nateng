@@ -123,14 +123,19 @@ export default function AdminPage() {
   const [password, setPassword] = useState("")
   const [activeTab, setActiveTab] = useState('users')
   const [searchTerm, setSearchTerm] = useState('')
-  const [users, setUsers] = useState<User[]>([])
+const [users, setUsers] = useState<User[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [listings, setListings] = useState<Listing[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [appeals, setAppeals] = useState<Appeal[]>([])
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([])
   const [deliverySchedules, setDeliverySchedules] = useState<DeliverySchedule[]>([])
-  const [analyticsData, setAnalyticsData] = useState({
+  const [analyticsData, setAnalyticsData] = useState<{
+    monthlyRevenue: any[]
+    userRoles: any[]
+    topProducts: any[]
+    orderStatuses: any[]
+  }>({
     monthlyRevenue: [],
     userRoles: [],
     topProducts: [],

@@ -9,7 +9,7 @@ const BASE_URL = 'http://localhost:3000';
 const testUsers = {
   farmer: {
     name: 'Test Farmer',
-    email: `testfarmer${Date.now()}@test.com`,
+    email: `09${Math.floor(Math.random() * 900000000) + 100000000}`, // Random 09xxxxxxxx format
     password: 'testpass123',
     role: 'farmer'
   },

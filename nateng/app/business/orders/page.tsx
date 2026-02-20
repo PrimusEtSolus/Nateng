@@ -31,6 +31,14 @@ export default function BusinessOrdersPage() {
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false)
   const [viewingSchedule, setViewingSchedule] = useState<any>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
+  
+  // Inventory state for Move to Inventory functionality
+  const [inventory, setInventory] = useState<any[]>([])
+  
+  // Helper function to generate inventory IDs
+  const generateInventoryId = () => {
+    return `inventory-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  }
 
   // Fetch orders for the logged-in business user
   const { data: orders = [], loading: ordersLoading, error: ordersError } = useFetch<Order[]>(
@@ -95,6 +103,76 @@ export default function BusinessOrdersPage() {
     console.log('Valid schedule with ID:', schedule.id)
     setConfirmingSchedule(schedule)
     setConfirmationDialogOpen(true)
+  }
+
+  const handleMoveToInventory = (order: Order) => {
+    // Extract product information from the order
+    const product = order.items?.[0]?.listing?.product
+    if (!product) {
+      toast.error("No product information found", {
+        description: "Cannot add this order to inventory"
+      })
+      return
+    }
+
+    // Get quantity from order items
+    const quantity = order.items?.[0]?.quantity || 0
+    
+    if (quantity <= 0) {
+      toast.error("Invalid quantity", {
+        description: "Cannot add zero quantity to inventory"
+      })
+      return
+    }
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `Add ${quantity}kg of ${product.name} to your inventory?`
+    )
+    
+    if (confirmed) {
+      // Add to inventory by calling the same logic as handleAddStock
+      const existingItem = inventory.find((item) => item.name.toLowerCase() === product.name.toLowerCase())
+      const today = new Date().toISOString().split("T")[0]
+      const supplier = order.seller?.name || "Unknown Supplier"
+      
+      if (existingItem) {
+        // Update existing item
+        setInventory((prev) =>
+          prev.map((item) =>
+            item.id === existingItem.id
+              ? {
+                  ...item,
+                  inStock: item.inStock + quantity,
+                  lastUpdated: today,
+                  lastOrderDate: today,
+                  supplier: supplier,
+                }
+              : item,
+          ),
+        )
+        toast.success("Stock updated", {
+          description: `${quantity}kg added to ${existingItem.name}. Total: ${existingItem.inStock + quantity}kg`
+        })
+      } else {
+        // Create new item
+        const newItem = {
+          id: generateInventoryId(),
+          name: product.name,
+          inStock: quantity,
+          unit: "kg",
+          reorderLevel: 20, // Default reorder level
+          supplier: supplier,
+          lastOrderDate: today,
+          image: (product as any).imageUrl || "/placeholder.svg",
+          lastUpdated: today,
+        }
+        setInventory((prev) => [...prev, newItem])
+        toast.success("New item added", {
+          description: `${quantity}kg of ${product.name} added to inventory.`
+        })
+      }
+    }
   }
 
   const handleViewSchedule = (schedule: any) => {
@@ -373,17 +451,31 @@ export default function BusinessOrdersPage() {
                       }
                     />
                   </div>
-                  {(order.status?.toUpperCase() === "CONFIRMED" && !latestSchedule) && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1"
-                      onClick={() => handleProposeSchedule(order.id)}
-                    >
-                      <Truck className="w-4 h-4" />
-                      Propose Pickup Schedule
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {/* Show Move to Inventory for delivered orders */}
+                    {order.status?.toUpperCase() === "DELIVERED" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
+                        onClick={() => handleMoveToInventory(order)}
+                      >
+                        <PackageCheck className="w-4 h-4" />
+                        Move to Inventory
+                      </Button>
+                    )}
+                    {(order.status?.toUpperCase() === "CONFIRMED" && !latestSchedule) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1"
+                        onClick={() => handleProposeSchedule(order.id)}
+                      >
+                        <Truck className="w-4 h-4" />
+                        Propose Pickup Schedule
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             )

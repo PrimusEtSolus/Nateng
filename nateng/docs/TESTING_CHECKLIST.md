@@ -3,7 +3,8 @@
 ## Status: ✅ READY FOR TESTING
 **Server**: Running on http://localhost:3000  
 **Database**: SQLite with 5 seeded products, 5 listings, 5 users, 1 order  
-**Build**: Production-ready (no TypeScript errors)
+**Build**: Production-ready (no TypeScript errors)  
+**Last Updated**: 2026-02-06 (Farmer Settings & Logistics Update)
 
 ---
 
@@ -26,18 +27,18 @@
 - [ ] DELETE /api/listings/1 - Delete listing
 
 ### Orders API
-- [ ] GET /api/orders - Returns all orders
+- [ ] GET /api/orders - Returns all orders (requires Authorization header)
 - [ ] GET /api/orders/1 - Get order with items
 - [ ] POST /api/orders - Create order (test with: `{ buyerId: 4, sellerId: 1, items: [{ listingId: 1, quantity: 50 }] }`)
 - [ ] PATCH /api/orders/1 - Update order status to "SHIPPED"
 - [ ] DELETE /api/orders/1 - Delete pending order
 
 ### Users API
-- [ ] GET /api/users - Returns all users
+- [ ] GET /api/users - Returns all users (admin only)
 - [ ] GET /api/users?role=farmer - Filter by role
 - [ ] GET /api/users/1 - Get user profile with relations
 - [ ] POST /api/users - Create new user
-- [ ] PATCH /api/users/1 - Update user role/email
+- [ ] PATCH /api/users/1 - Update user (supports: name, email, phone, minimumOrderKg, deliveryAreas, paymentMethods, profilePhotoUrl)
 - [ ] DELETE /api/users/1 - Delete user
 
 ---
@@ -73,6 +74,7 @@
 - [ ] /farmer/orders - Orders for farmer display
 - [ ] /farmer/analytics - Analytics page loads
 - [ ] /farmer/settings - Settings page renders
+- [ ] /farmer/logistics - **NEW** Logistics page loads with Benguet coverage and ordinance compliance
 
 ### Buyer Pages
 - [ ] /buyer/dashboard - Shows buyer stats
@@ -97,7 +99,57 @@
 
 ---
 
-## 3. Component Testing
+## 3. Farmer Settings Testing (NEW)
+
+### Profile Tab
+- [ ] Profile photo upload works (max 2MB, JPG/PNG)
+- [ ] Name and mobile number fields save correctly
+- [ ] Mobile number validation (09xxxxxxxxx format)
+- [ ] Profile updates persist to database
+
+### Farm Details Tab
+- [ ] Municipality dropdown shows Benguet municipalities
+- [ ] Barangay and farm size fields accept input
+- [ ] Verification status shows correctly
+
+### Payments Tab
+- [ ] **NEW**: Payment methods start blank for new farmers
+- [ ] **NEW**: Shows "No payment methods configured yet" message
+- [ ] **NEW**: Add Method button is disabled (pilot limitation)
+- [ ] Existing payment methods display if present
+
+### Delivery Tab
+- [ ] **NEW**: Delivery areas derived from farmer location (city/municipality)
+- [ ] **NEW**: Shows "No delivery areas set. Derived from your location" when empty
+- [ ] **NEW**: Minimum order input is in kilograms (not currency)
+- [ ] **NEW**: Minimum order value persists (default 50kg)
+- [ ] Add Delivery Area button disabled (pilot limitation)
+
+### Security & Notifications Tabs
+- [ ] Password change shows "not implemented yet" info
+- [ ] 2FA enable button present but not functional
+- [ ] Notification preferences render correctly
+
+---
+
+## 4. Farmer Logistics Testing (NEW)
+
+### Logistics Page (/farmer/logistics)
+- [ ] **NEW**: Page loads without errors
+- [ ] **NEW**: Shows "Benguet Province" coverage area
+- [ ] **NEW**: Displays farmer’s current location (city/province)
+- [ ] **NEW**: Ordinance Compliance section shows truck ban rules
+- [ ] **NEW**: Violation Penalties section displays fines
+- [ ] **NEW**: Best Practices section shows optimal delivery times
+- [ ] **NEW**: "View Interactive Map" button disabled (pilot limitation)
+
+### Sidebar Update
+- [ ] **NEW**: Logistics link points to /farmer/logistics (not /logistics/dashboard)
+- [ ] **NEW**: Navigation highlights correct active page
+
+---
+
+## 5. Component Testing
 
 ### UI Components
 - [ ] Buttons are clickable and styled correctly
@@ -117,13 +169,14 @@
 
 ---
 
-## 4. Data Flow Testing
+## 6. Data Flow Testing
 
 ### Database Queries
 - [ ] Products query returns farmer relation correctly
 - [ ] Listings include seller and product data
 - [ ] Orders fetch with items and buyer/seller info
 - [ ] User queries include products/listings/orders relations
+- [ ] **NEW**: User queries include minimumOrderKg, deliveryAreas, paymentMethods
 
 ### Mock Data Validation
 - [ ] 5 products exist and display correctly
@@ -134,7 +187,7 @@
 
 ---
 
-## 5. Cart Functionality Testing
+## 7. Cart Functionality Testing
 
 - [ ] Add product to cart (if connected to API)
 - [ ] Remove product from cart
@@ -146,7 +199,7 @@
 
 ---
 
-## 6. Error Handling Testing
+## 8. Error Handling Testing
 
 ### API Error Cases
 - [ ] GET /api/products/9999 - Returns 404 "product not found"
@@ -154,6 +207,7 @@
 - [ ] Invalid order status - Returns 400 "invalid status"
 - [ ] Non-existent user update - Returns 404
 - [ ] Missing required fields - Returns 400 error
+- [ ] **NEW**: /api/orders without Authorization header returns 401 (fixed)
 
 ### Frontend Error Cases
 - [ ] Page navigation handles 404s
@@ -163,7 +217,7 @@
 
 ---
 
-## 7. Responsive Design Testing
+## 9. Responsive Design Testing
 
 - [ ] Pages render on mobile (320px width)
 - [ ] Tablet view (768px) looks correct
@@ -175,7 +229,7 @@
 
 ---
 
-## 8. Performance Testing
+## 10. Performance Testing
 
 - [ ] API responses are fast (< 500ms)
 - [ ] Pages load quickly
@@ -186,7 +240,7 @@
 
 ---
 
-## 9. Role-Based Access Testing
+## 11. Role-Based Access Testing
 
 - [ ] Farmer role can see farmer-specific pages
 - [ ] Buyer can see buyer pages
@@ -197,7 +251,7 @@
 
 ---
 
-## 10. Data Persistence Testing
+## 12. Data Persistence Testing
 
 ### localStorage Testing (Cart)
 - [ ] Items added to cart persist on refresh
@@ -209,20 +263,22 @@
 - [ ] Orders persist in database
 - [ ] User data survives restarts
 - [ ] Relations maintain integrity
+- [ ] **NEW**: Farmer settings (minimumOrderKg, deliveryAreas, paymentMethods) persist
 
 ---
 
-## 11. Known Issues to Investigate
+## 13. Known Issues to Investigate
 
 - [ ] Frontend pages use mock data instead of API (by design, not yet integrated)
 - [ ] Order POST/PATCH/DELETE not yet tested (code ready)
-- [ ] No authentication system (accessible without login)
+- [ ] Add Method buttons disabled (pilot limitation)
+- [ ] Interactive Map not implemented (pilot limitation)
+- [ ] Password change endpoint not implemented
 - [ ] Cart not connected to backend inventory
-- [ ] No form submission implemented on signup pages
 
 ---
 
-## 12. Browser Compatibility
+## 14. Browser Compatibility
 
 - [ ] Works in Chrome/Chromium
 - [ ] Works in Firefox
@@ -240,6 +296,9 @@
 - ✅ All pages render without errors
 - ✅ Components display properly
 - ✅ Styling is correct
+- ✅ **NEW**: Farmer settings persistence working
+- ✅ **NEW**: Farmer logistics page loads
+- ✅ **NEW**: Unauthorized /api/orders error fixed
 
 ### Failed Tests
 - None identified yet - ready for comprehensive testing!
@@ -268,4 +327,11 @@ All critical systems are operational. Ready to execute full test suite and ident
 - Start: `npm start` (from project root)
 - Database: SQLite (./dev.db)
 - Logs: Console output shows all requests
+
+**Recent Updates (2026-02-06)**:
+- Farmer Settings: Blank payment methods for new accounts; minimum order in kg; delivery areas derived from location
+- Farmer Logistics: New page at /farmer/logistics with Benguet coverage and ordinance compliance
+- Database: Added deliveryAreas, paymentMethods, minimumOrderKg to User model
+- API: /api/users/[id] PATCH supports new farmer fields
+- Bug Fix: Added Authorization header to /api/orders fetch in logistics dashboard
 
