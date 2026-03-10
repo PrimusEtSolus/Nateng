@@ -2,27 +2,46 @@ import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { isUserBanned } from '@/lib/banned-users';
+import { logger } from '@/lib/logger';
+import { Validator, Sanitizer } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
+  let email: string = '';
   try {
-    const { email, password } = await req.json();
+    const { email: userEmail, password } = await req.json();
+    
+    // Sanitize inputs
+    email = Sanitizer.string(userEmail);
+    const sanitizedPassword = Sanitizer.string(password);
 
-    // Input validation
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email or mobile number and password are required' }, { status: 400 });
+    // Validate required fields
+    const requiredValidation = Validator.combine(
+      Validator.required(email, 'Email or mobile number'),
+      Validator.required(sanitizedPassword, 'Password')
+    );
+    
+    if (!requiredValidation.isValid) {
+      return NextResponse.json({ 
+        error: requiredValidation.errors[0] 
+      }, { status: 400 });
     }
 
-    // Determine if input is email or mobile number
+    // Determine if input is email or mobile number and validate accordingly
     const isMobile = /^09\d{9}$/.test(email);
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-    if (!isMobile && !isEmail) {
-      return NextResponse.json({ error: 'Invalid email or mobile number format' }, { status: 400 });
+    const validation = isMobile ? Validator.mobileNumber(email) : Validator.email(email);
+    
+    if (!validation.isValid) {
+      return NextResponse.json({ 
+        error: validation.errors[0] 
+      }, { status: 400 });
     }
 
-    // Password length validation
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 });
+    // Password validation
+    const passwordValidation = Validator.password(sanitizedPassword);
+    if (!passwordValidation.isValid) {
+      return NextResponse.json({ 
+        error: passwordValidation.errors[0] 
+      }, { status: 400 });
     }
 
     // Find user by email or mobile number
@@ -49,7 +68,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Always use bcrypt for password verification
-    const isValidPassword = await bcrypt.compare(password, user.password);
+    const isValidPassword = await bcrypt.compare(sanitizedPassword, user.password);
 
     if (!isValidPassword) {
       return NextResponse.json({ error: 'Invalid email or mobile number or password' }, { status: 401 });
@@ -68,13 +87,14 @@ export async function POST(req: NextRequest) {
     const { password: _, ...userWithoutPassword } = user;
     // Create a simple token for authentication (in production, use JWT)
     const token = `token_${user.id}_${Date.now()}`;
+    logger.authSuccess('login', userWithoutPassword.id.toString(), user.email);
     return NextResponse.json({ 
       user: userWithoutPassword,
       token,
       message: 'Login successful'
     });
   } catch (error: unknown) {
-    console.error('Login error:', error);
+    logger.authError('login', error, email);
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }

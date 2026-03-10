@@ -61,7 +61,8 @@ export default function BusinessSettingsPage() {
     setIsSaving(true)
     try {
       // Only save fields that exist in the User model (name, email)
-      // Note: businessName, phone, address, businessType are not in the User model yet
+      // Note: Additional business fields (businessName, phone, address, businessType) 
+      // will be saved in future database schema updates
       const updatedUser = await usersAPI.update(user.id, {
         name: formData.ownerName,
         email: formData.email,
@@ -74,7 +75,7 @@ export default function BusinessSettingsPage() {
 
       // Show info about fields that couldn't be saved
       if (formData.businessName || formData.phone || formData.address || formData.businessType) {
-        toast.info("Note: Business name, phone, address, and business type are not saved yet. These fields will be available in a future update.", {
+        toast.info("Additional business fields will be available in future updates.", {
           duration: 5000,
         })
       }

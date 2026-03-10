@@ -64,7 +64,7 @@ export default function ResellerSettingsPage() {
 
       // Show info about fields that couldn't be saved
       if (formData.phone || formData.address || formData.businessName) {
-        toast.info("Note: Phone, address, and business name are not saved yet. These fields will be available in a future update.", {
+        toast.info("Additional business fields will be available in future updates.", {
           duration: 5000,
         })
       }

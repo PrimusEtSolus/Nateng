@@ -1,10 +1,17 @@
 import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { logger } from '@/lib/logger';
 
 export async function POST(req: NextRequest) {
+  let email: string = '';
   try {
-    const { name, email, password, role, stallLocation, municipality, businessType } = await req.json();
+    const { name, email: userEmail, password, role, stallLocation, municipality, businessType } = await req.json();
+    
+    if (!userEmail) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+    email = userEmail;
 
     // Input validation
     if (!name || !password || !role) {
@@ -117,8 +124,10 @@ export async function POST(req: NextRequest) {
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
+    logger.authSuccess('register', userWithoutPassword.id.toString(), email);
     return NextResponse.json({ user: userWithoutPassword }, { status: 201 });
   } catch (error: unknown) {
+    logger.authError('register', error, email);
     const message = error instanceof Error ? error.message : 'Internal server error';
     if (message.includes('Unique constraint')) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });

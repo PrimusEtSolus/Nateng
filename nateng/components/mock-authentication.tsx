@@ -82,9 +82,7 @@ export function MockAuthentication({ isOpen, onClose, onSuccess, userName }: Moc
   }
 
   const handleDialogOpen = (open: boolean) => {
-    console.log('Mock authentication dialog opening:', open)
     if (open && !expectedCode) {
-      console.log('Generating new mock authentication code...')
       generateNewCode()
     }
   }
@@ -109,11 +107,7 @@ export function MockAuthentication({ isOpen, onClose, onSuccess, userName }: Moc
           </div>
         ) : expectedCode ? (
           <div className="space-y-6 p-6">
-            {/* Debug Info */}
-            <div className="text-xs text-gray-500">
-              Debug: expectedCode={expectedCode ? 'exists' : 'null'}, formatted={expectedCode?.formatted}
-            </div>
-            {/* Code Display */}
+                        {/* Code Display */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">

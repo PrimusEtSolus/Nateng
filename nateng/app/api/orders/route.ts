@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 import { validateMarketplaceTransaction } from '@/lib/marketplace-rules';
 import type { UserRole } from '@/lib/types';
+import { logger } from '@/lib/logger';
 
 interface OrderItem {
   listingId: number;
@@ -10,9 +11,10 @@ interface OrderItem {
 }
 
 export async function GET(req: NextRequest) {
+  let user: any = null;
   try {
     // Authenticate user
-    const user = await getCurrentUser(req);
+    user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -57,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(orders);
   } catch (error: unknown) {
-    console.error('Error fetching orders:', error);
+    logger.apiError('GET', '/api/orders', error, user?.id?.toString());
     return NextResponse.json(
       { error: 'Failed to fetch orders' },
       { status: 500 }
@@ -66,9 +68,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let user: any = null;
   try {
     // Optional authentication - allow guest orders for business users
-    const user = await getCurrentUser(req);
+    user = await getCurrentUser(req);
     
     const body = await req.json();
     const { buyerId, sellerId, items }: { buyerId: number; sellerId: number; items: OrderItem[] } = body;
@@ -222,6 +225,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(order);
   } catch (error: any) {
+    logger.apiError('POST', '/api/orders', error, user?.id?.toString());
     const message = typeof error?.message === 'string' ? error.message : 'Internal server error';
     const isBusinessError =
       typeof message === 'string' &&

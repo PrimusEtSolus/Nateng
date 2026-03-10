@@ -30,8 +30,8 @@ export default function BuyerSettingsPage() {
       setFormData({
         name: currentUser.name,
         email: currentUser.email,
-        phone: "", // Not stored in User model yet
-        address: "", // Not stored in User model yet
+        phone: "", // Additional field for future implementation
+        address: "", // Additional field for future implementation
         city: "Baguio City",
         postalCode: "2600",
       })
