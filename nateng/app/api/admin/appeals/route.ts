@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { logger } from '@/lib/logger'
 
 const prisma = new PrismaClient()
 
@@ -104,7 +105,7 @@ export async function POST(request: Request) {
       }
     })
 
-    console.log(`Appeal ${appealId} ${status} by admin ${adminEmail}`, { adminNotes })
+    logger.info(`Appeal ${appealId} ${status} by admin ${adminEmail}`, { adminNotes })
 
     return NextResponse.json({ 
       message: `Appeal ${status} successfully`,
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
       appeal: updatedAppeal
     })
   } catch (error) {
-    console.error('Update appeal error:', error)
+    logger.error('Update appeal error:', { error })
     return NextResponse.json(
       { error: 'Failed to update appeal' },
       { status: 500 }

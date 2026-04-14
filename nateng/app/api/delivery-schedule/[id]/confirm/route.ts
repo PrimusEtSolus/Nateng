@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { getCurrentUser } from '@/lib/auth-server'
 import prisma from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,8 +11,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    console.log('API called with params:', { id })
-    console.log('Raw params.id:', id)
+    logger.debug('API called with params:', { id })
+    logger.debug('Raw params.id:', { id })
 
     const body = await req.json()
     const { action, notes, orderId } = body // action: 'confirm' or 'reject'
@@ -21,13 +22,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const parsedOrderId = Number(orderId)
     const hasValidOrderId = orderId !== undefined && orderId !== null && !isNaN(parsedOrderId) && parsedOrderId > 0
 
-    console.log('Parsed scheduleId:', parsedScheduleId)
-    console.log('Has valid scheduleId?:', hasValidScheduleId)
-    console.log('Parsed orderId (body):', parsedOrderId)
-    console.log('Has valid orderId?:', hasValidOrderId)
+    logger.debug('Parsed scheduleId:', { parsedScheduleId })
+    logger.debug('Has valid scheduleId?:', { hasValidScheduleId })
+    logger.debug('Parsed orderId (body):', { parsedOrderId })
+    logger.debug('Has valid orderId?:', { hasValidOrderId })
 
     if (!hasValidScheduleId && !hasValidOrderId) {
-      console.error('Invalid schedule ID and no valid orderId fallback:', id, orderId)
+      logger.error('Invalid schedule ID and no valid orderId fallback:', { id, orderId })
       return NextResponse.json({ error: 'Invalid schedule ID' }, { status: 400 })
     }
 
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // Get the schedule with order details using Prisma
-    console.log('Looking for schedule with:', hasValidScheduleId ? { id: parsedScheduleId } : { orderId: parsedOrderId })
+    logger.debug('Looking for schedule with:', hasValidScheduleId ? { id: parsedScheduleId } : { orderId: parsedOrderId })
     const schedule = await prisma.deliverySchedule.findFirst({
       where: hasValidScheduleId ? { id: parsedScheduleId } : { orderId: parsedOrderId },
       include: {

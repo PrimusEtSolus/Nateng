@@ -35,8 +35,8 @@ export function useBanEnforcement() {
 
           // If user is banned, enforce restrictions
           if (data.isBanned) {
-            // Clear the user session
-            localStorage.removeItem('natenghub_user')
+            // Clear the user session (cookie-based auth)
+            // Session will be cleared by logout API
             
             // Allow access only to these pages for banned users
             const allowedPages = [
@@ -57,7 +57,7 @@ export function useBanEnforcement() {
           }
         }
       } catch (error) {
-        console.error('Error checking ban status:', error)
+        // Error checking ban status - will return isBanned: false
       } finally {
         setIsLoading(false)
       }

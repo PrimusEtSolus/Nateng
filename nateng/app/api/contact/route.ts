@@ -19,8 +19,6 @@ export async function POST(request: NextRequest) {
       RETURNING id
     `
 
-    console.log(`Contact message received: ${type} from ${email} (${name}) - ID: ${(result as any)[0]?.id}`)
-
     return NextResponse.json({ 
       success: true,
       message: type === 'appeal' 
@@ -47,7 +45,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ messages })
   } catch (error: unknown) {
-    console.error('Error fetching contact messages:', error)
     return NextResponse.json(
       { error: 'Failed to fetch messages' },
       { status: 500 }

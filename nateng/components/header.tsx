@@ -22,11 +22,15 @@ export function Header() {
 
   useEffect(() => {
     setMounted(true)
-    setUser(getCurrentUser())
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
   }, [])
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     setUser(null)
     router.push("/")
   }

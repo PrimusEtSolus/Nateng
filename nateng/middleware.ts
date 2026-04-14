@@ -22,8 +22,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Since this is a localStorage-based auth system, we can't check bans at middleware level
-  // Ban checking will be done at the API level (login, protected routes)
+  // Ban checking is done at API level using JWT validation from httpOnly cookies
+  // Middleware only enforces localhost-only admin access
   return NextResponse.next()
 }
 

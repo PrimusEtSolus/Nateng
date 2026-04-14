@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { usersAPI } from "@/lib/api-client"
 import { useBanEnforcement } from "@/hooks/useBanEnforcement"
-import { Building2, MapPin, Lock, Bell, Shield, Banknote, FileText, Check, Trash2, Users, Loader2 } from "lucide-react"
+import { Building2, MapPin, Lock, Check, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 export default function BusinessSettingsPage() {
@@ -89,11 +89,7 @@ export default function BusinessSettingsPage() {
   const tabs = [
     { id: "business", label: "Business Info", icon: Building2 },
     { id: "address", label: "Location", icon: MapPin },
-    { id: "billing", label: "Billing", icon: Banknote },
-    { id: "documents", label: "Documents", icon: FileText },
-    { id: "team", label: "Team", icon: Users },
     { id: "security", label: "Security", icon: Lock },
-    { id: "notifications", label: "Notifications", icon: Bell },
   ]
 
   return (
@@ -132,10 +128,7 @@ export default function BusinessSettingsPage() {
                   <Building2 className="w-10 h-10 text-business" />
                 </div>
                 <div>
-                  <Button variant="outline" size="sm">
-                    Upload Logo
-                  </Button>
-                  <p className="text-sm text-muted-foreground mt-1">PNG, JPG. Max 2MB</p>
+                  <p className="text-sm text-muted-foreground">Logo upload coming soon</p>
                 </div>
               </div>
               <div className="grid gap-6 md:grid-cols-2">
@@ -241,186 +234,14 @@ export default function BusinessSettingsPage() {
                     placeholder="XXX-XXX-XXX-XXX"
                   />
                 </div>
-                <div className="border-t border-border pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-medium">Payment Methods</h3>
-                    <Button className="bg-business hover:bg-business/90">Add Method</Button>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="border border-border rounded-xl p-4 flex items-center gap-4">
-                      <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                        GC
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">GCash Business</p>
-                        <p className="text-sm text-muted-foreground">+63 919 •••• 789</p>
-                      </div>
-                      <span className="text-xs bg-business text-white px-2 py-1 rounded-full">Default</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "documents" && (
-            <div className="bg-card rounded-2xl border border-border p-6">
-              <h2 className="text-xl font-semibold mb-6">Business Documents</h2>
-              <div className="space-y-4">
-                {[
-                  { name: "Business Permit", status: "verified", date: "Valid until Dec 2025" },
-                  { name: "DTI/SEC Registration", status: "verified", date: "Uploaded Nov 2024" },
-                  { name: "BIR Registration", status: "pending", date: "Under review" },
-                ].map((doc, idx) => (
-                  <div key={idx} className="border border-border rounded-xl p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-8 h-8 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium">{doc.name}</p>
-                        <p className="text-sm text-muted-foreground">{doc.date}</p>
-                      </div>
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        doc.status === "verified" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {doc.status}
-                    </span>
-                  </div>
-                ))}
-                <Button variant="outline" className="w-full mt-4 bg-transparent">
-                  Upload New Document
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "team" && (
-            <div className="bg-card rounded-2xl border border-border p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold">Team Members</h2>
-                <Button className="bg-business hover:bg-business/90">Invite Member</Button>
-              </div>
-              <div className="space-y-4">
-                <div className="border border-border rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-business/10 flex items-center justify-center">
-                      <span className="font-medium text-business">P</span>
-                    </div>
-                    <div>
-                      <p className="font-medium">Pedro Reyes</p>
-                      <p className="text-sm text-muted-foreground">Owner</p>
-                    </div>
-                  </div>
-                  <span className="text-xs bg-business text-white px-2 py-1 rounded-full">Admin</span>
-                </div>
-                <div className="border border-border rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      <span className="font-medium">M</span>
-                    </div>
-                    <div>
-                      <p className="font-medium">Maria Staff</p>
-                      <p className="text-sm text-muted-foreground">Staff</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Remove
-                  </Button>
-                </div>
               </div>
             </div>
           )}
 
           {activeTab === "security" && (
-            <div className="space-y-6">
-              <div className="bg-card rounded-2xl border border-border p-6">
-                <h2 className="text-xl font-semibold mb-6">Change Password</h2>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Current Password</Label>
-                    <Input type="password" placeholder="••••••••" className="h-12" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>New Password</Label>
-                    <Input type="password" placeholder="••••••••" className="h-12" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Confirm New Password</Label>
-                    <Input type="password" placeholder="••••••••" className="h-12" />
-                  </div>
-                  <Button className="bg-business hover:bg-business/90">Update Password</Button>
-                </div>
-              </div>
-              <div className="bg-card rounded-2xl border border-border p-6">
-                <div className="flex items-start gap-4">
-                  <Shield className="w-6 h-6 text-business mt-1" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold">Two-Factor Authentication</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Add extra security</p>
-                  </div>
-                  <Button variant="outline">Enable</Button>
-                </div>
-              </div>
-              <div className="bg-card rounded-2xl border border-red-200 p-6">
-                <div className="flex items-start gap-4">
-                  <Trash2 className="w-6 h-6 text-red-500 mt-1" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-red-600">Delete Business Account</h3>
-                    <p className="text-sm text-muted-foreground mt-1">This action cannot be undone</p>
-                  </div>
-                  <Button variant="outline" className="text-red-500 border-red-300 hover:bg-red-50 bg-transparent">
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "notifications" && (
             <div className="bg-card rounded-2xl border border-border p-6">
-              <h2 className="text-xl font-semibold mb-6">Notification Preferences</h2>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-medium mb-4">Order Updates</h3>
-                  <div className="space-y-3">
-                    {[
-                      { label: "Order confirmations", checked: true },
-                      { label: "Delivery updates", checked: true },
-                      { label: "Payment receipts", checked: true },
-                    ].map((item, idx) => (
-                      <label key={idx} className="flex items-center justify-between cursor-pointer">
-                        <span>{item.label}</span>
-                        <input
-                          type="checkbox"
-                          defaultChecked={item.checked}
-                          className="w-5 h-5 rounded accent-business"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="border-t border-border pt-6">
-                  <h3 className="font-medium mb-4">Inventory & Stock</h3>
-                  <div className="space-y-3">
-                    {[
-                      { label: "Low stock alerts", checked: true },
-                      { label: "New products from farmers", checked: true },
-                      { label: "Price change notifications", checked: false },
-                    ].map((item, idx) => (
-                      <label key={idx} className="flex items-center justify-between cursor-pointer">
-                        <span>{item.label}</span>
-                        <input
-                          type="checkbox"
-                          defaultChecked={item.checked}
-                          className="w-5 h-5 rounded accent-business"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <h2 className="text-xl font-semibold mb-4">Security</h2>
+              <p className="text-muted-foreground">Security settings coming soon.</p>
             </div>
           )}
 

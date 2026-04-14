@@ -7,7 +7,7 @@ import { usersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { UserIcon, Store, Bell, Shield, Save, Loader2, Check } from "lucide-react"
+import { UserIcon, Store, Shield, Save, Loader2, Check } from "lucide-react"
 import { toast } from "sonner"
 
 export default function ResellerSettingsPage() {
@@ -78,7 +78,6 @@ export default function ResellerSettingsPage() {
   const tabs = [
     { id: "profile", label: "Profile", icon: UserIcon },
     { id: "store", label: "Store Info", icon: Store },
-    { id: "notifications", label: "Notifications", icon: Bell },
     { id: "security", label: "Security", icon: Shield },
   ]
 
@@ -218,42 +217,10 @@ export default function ResellerSettingsPage() {
             </div>
           )}
 
-          {activeTab === "notifications" && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Notification Preferences</h2>
-              <p className="text-muted-foreground">Configure how you receive notifications.</p>
-              <div className="space-y-4">
-                {["Order updates", "New products from farmers", "Price alerts", "Promotional offers"].map((item) => (
-                  <label key={item} className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
-                    <span className="font-medium">{item}</span>
-                    <input type="checkbox" defaultChecked className="w-5 h-5 accent-teal-600" />
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
           {activeTab === "security" && (
-            <div className="space-y-6">
-              <h2 className="text-xl font-semibold">Security Settings</h2>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Current Password</Label>
-                  <Input type="password" className="h-12" />
-                </div>
-                <div className="space-y-2">
-                  <Label>New Password</Label>
-                  <Input type="password" className="h-12" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Confirm New Password</Label>
-                  <Input type="password" className="h-12" />
-                </div>
-              </div>
-              <Button className="bg-teal-600 hover:bg-teal-700">
-                <Save className="w-4 h-4 mr-2" />
-                Update Password
-              </Button>
+            <div className="bg-card rounded-2xl border border-border p-6">
+              <h2 className="text-xl font-semibold mb-4">Security</h2>
+              <p className="text-muted-foreground">Security settings coming soon.</p>
             </div>
           )}
         </div>

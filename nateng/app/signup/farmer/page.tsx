@@ -72,8 +72,19 @@ export default function FarmerSignupPage() {
       return
     }
     
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters")
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters")
+      return
+    }
+    
+    // Password complexity validation
+    const hasUpperCase = /[A-Z]/.test(formData.password)
+    const hasLowerCase = /[a-z]/.test(formData.password)
+    const hasNumbers = /\d/.test(formData.password)
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password)
+    
+    if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
+      setError("Password must contain uppercase, lowercase, numbers, and special characters")
       return
     }
     
@@ -88,6 +99,8 @@ export default function FarmerSignupPage() {
       const user = await register(formData.name, formData.mobileNumber, formData.password, "farmer", undefined, formData.municipality)
       if (user) {
         toast.success("Account created successfully!")
+        // Store user data in sessionStorage for immediate use after redirect
+        sessionStorage.setItem('user_data', JSON.stringify(user))
         router.push(getRedirectPath(user.role))
       }
     } catch (err: any) {
@@ -177,7 +190,7 @@ export default function FarmerSignupPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
+                  placeholder="Create a password (8+ chars, uppercase, lowercase, number, special char)"
                   className="h-12 bg-muted border-border text-lg pr-12"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}

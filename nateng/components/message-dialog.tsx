@@ -56,8 +56,16 @@ export function MessageDialog({
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [hasFetched, setHasFetched] = useState(false)
-  const user = getCurrentUser()
+  const [user, setUser] = useState<Awaited<ReturnType<typeof getCurrentUser>> | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
+  }, [])
 
   useEffect(() => {
     if (!isOpen || !user) return

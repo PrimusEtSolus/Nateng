@@ -4,10 +4,26 @@ import bcrypt from 'bcryptjs';
 import { isUserBanned } from '@/lib/banned-users';
 import { logger } from '@/lib/logger';
 import { Validator, Sanitizer } from '@/lib/validation';
+import { generateToken } from '@/lib/jwt';
+import { rateLimit, getRateLimitHeaders } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   let email: string = '';
   try {
+    // Rate limiting based on IP
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = rateLimit(ip, 5, 15 * 60 * 1000); // 5 requests per 15 minutes
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many login attempts. Please try again later.' },
+        { 
+          status: 429,
+          headers: getRateLimitHeaders(ip, 5, 15 * 60 * 1000)
+        }
+      );
+    }
+
     const { email: userEmail, password } = await req.json();
     
     // Sanitize inputs
@@ -37,10 +53,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Password validation
-    const passwordValidation = Validator.password(sanitizedPassword);
-    if (!passwordValidation.isValid) {
+    if (sanitizedPassword.length < 8) {
       return NextResponse.json({ 
-        error: passwordValidation.errors[0] 
+        error: 'Password must be at least 8 characters long' 
       }, { status: 400 });
     }
 
@@ -85,14 +100,30 @@ export async function POST(req: NextRequest) {
 
     // Return user without password for successful login
     const { password: _, ...userWithoutPassword } = user;
-    // Create a simple token for authentication (in production, use JWT)
-    const token = `token_${user.id}_${Date.now()}`;
-    logger.authSuccess('login', userWithoutPassword.id.toString(), user.email);
-    return NextResponse.json({ 
+    
+    // Generate JWT token
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    });
+    
+    // Set httpOnly cookie for security
+    const response = NextResponse.json({ 
       user: userWithoutPassword,
-      token,
       message: 'Login successful'
     });
+    
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/'
+    });
+    
+    logger.authSuccess('login', userWithoutPassword.id.toString(), user.email);
+    return response;
   } catch (error: unknown) {
     logger.authError('login', error, email);
     const message = error instanceof Error ? error.message : 'Internal server error';

@@ -61,8 +61,8 @@ export function ScheduleConfirmationDialog({
       console.log('Full schedule JSON:', JSON.stringify(schedule, null, 2))
       
       // Get current user for authentication
-      const currentUser = localStorage.getItem('natenghub_user')
-      const user = currentUser ? JSON.parse(currentUser) : null
+      const { getCurrentUser } = await import('@/lib/auth')
+      const user = await getCurrentUser()
       
       if (!user) {
         toast.error("Authentication required", {

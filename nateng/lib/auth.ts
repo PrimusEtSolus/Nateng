@@ -2,14 +2,13 @@
 
 import type { User, UserRole } from "./types"
 
-const AUTH_KEY = "natenghub_user"
-
 export async function login(email: string, password: string): Promise<User | null> {
   try {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
+      credentials: 'include', // Include cookies
     })
 
     if (!response.ok) {
@@ -19,18 +18,9 @@ export async function login(email: string, password: string): Promise<User | nul
 
     const data = await response.json()
     const user = data.user
-    const token = data.token
 
     if (!user) {
       throw new Error('No user data returned from server')
-    }
-
-    if (user && typeof window !== "undefined") {
-      localStorage.setItem(AUTH_KEY, JSON.stringify(user))
-      // Store token for authenticated API calls
-      if (token) {
-        localStorage.setItem('natenghub_token', token)
-      }
     }
 
     return user
@@ -40,29 +30,49 @@ export async function login(email: string, password: string): Promise<User | nul
   }
 }
 
-export function logout(): void {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem(AUTH_KEY)
-    localStorage.removeItem('natenghub_token')
+export async function logout(): Promise<void> {
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include', // Include cookies
+    })
+  } catch (error) {
+    console.error('Logout error:', error)
   }
 }
 
-export function getCurrentUser(): User | null {
-  if (typeof window === "undefined") return null
-  const stored = localStorage.getItem(AUTH_KEY)
-  if (stored) {
-    try {
-      return JSON.parse(stored) as User
-    } catch {
+export async function getCurrentUser(): Promise<User | null> {
+  try {
+    // First check sessionStorage for newly registered users
+    if (typeof window !== 'undefined') {
+      const sessionUser = sessionStorage.getItem('user_data')
+      if (sessionUser) {
+        const user = JSON.parse(sessionUser) as User
+        // Clear sessionStorage after reading to avoid stale data
+        sessionStorage.removeItem('user_data')
+        return user
+      }
+    }
+
+    const response = await fetch('/api/auth/session', {
+      credentials: 'include', // Include cookies
+    })
+
+    if (!response.ok) {
       return null
     }
+
+    const data = await response.json()
+    return data.user || null
+  } catch (error) {
+    console.error('Get current user error:', error)
+    return null
   }
-  return null
 }
 
 export function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null
-  return localStorage.getItem('natenghub_token')
+  // No longer needed - cookies are handled automatically by browser
+  return null
 }
 
 export async function register(name: string, email: string, password: string, role: UserRole, stallLocation?: string, municipality?: string, businessType?: string): Promise<User | null> {
@@ -80,10 +90,6 @@ export async function register(name: string, email: string, password: string, ro
 
     const data = await response.json()
     const user = data.user
-
-    if (user && typeof window !== "undefined") {
-      localStorage.setItem(AUTH_KEY, JSON.stringify(user))
-    }
 
     return user
   } catch (error: unknown) {

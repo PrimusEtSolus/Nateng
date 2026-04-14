@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
-import { analytics } from "@/lib/analytics"
 import { useFetch } from "@/hooks/use-fetch"
 import { formatDate } from "@/lib/date-utils"
 import { ordersAPI } from "@/lib/api-client"
@@ -65,12 +64,11 @@ export default function BusinessBrowsePage() {
   }, [])
 
   useEffect(() => {
-    const currentUser = getCurrentUser()
-    setUser(currentUser)
-    
-    if (currentUser) {
-      analytics.trackPageView('/business/browse', currentUser.id)
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
     }
+    loadUser()
   }, [])
 
   // Load cart from localStorage on mount
@@ -110,7 +108,7 @@ export default function BusinessBrowsePage() {
   useEffect(() => {
     if (searchTerm && user) {
       const timer = setTimeout(() => {
-        analytics.trackSearch(searchTerm, filteredListings.length, user.id)
+        // Analytics tracking removed
       }, 500)
       return () => clearTimeout(timer)
     }
@@ -189,7 +187,7 @@ export default function BusinessBrowsePage() {
       const orders = await Promise.all(orderPromises)
       
       orders.forEach((order: any) => {
-        analytics.trackOrderPlaced(order.id, order.totalCents / 100, user.id)
+        // Analytics tracking removed
       })
       
       toast.success("Order placed successfully!")

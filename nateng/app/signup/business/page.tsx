@@ -10,7 +10,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Eye, EyeOff, Building2 } from "lucide-react"
-import { businessTypes } from "@/lib/mock-data"
+// Business types moved inline after mock-data removal
+const businessTypes = [
+  { value: "restaurant", label: "Restaurant" },
+  { value: "hotel", label: "Hotel" },
+  { value: "institution", label: "Institution (School, Hospital, etc.)" },
+  { value: "catering", label: "Catering Service" },
+  { value: "cafeteria", label: "Cafeteria" },
+  { value: "other", label: "Other" },
+]
 import { register, getRedirectPath } from "@/lib/auth"
 import { toast } from "sonner"
 import { TermsAndConditions } from "@/components/terms-and-conditions"
@@ -56,8 +64,19 @@ export default function BusinessSignupPage() {
       return
     }
     
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters")
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters")
+      return
+    }
+    
+    // Password complexity validation
+    const hasUpperCase = /[A-Z]/.test(formData.password)
+    const hasLowerCase = /[a-z]/.test(formData.password)
+    const hasNumbers = /\d/.test(formData.password)
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password)
+    
+    if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
+      setError("Password must contain uppercase, lowercase, numbers, and special characters")
       return
     }
     
@@ -72,6 +91,8 @@ export default function BusinessSignupPage() {
       const user = await register(formData.businessName, formData.email, formData.password, "business", undefined, undefined, formData.businessType)
       if (user) {
         toast.success("Account created successfully!")
+        // Store user data in sessionStorage for immediate use after redirect
+        sessionStorage.setItem('user_data', JSON.stringify(user))
         router.push(getRedirectPath(user.role))
       }
     } catch (err: any) {
@@ -167,7 +188,7 @@ export default function BusinessSignupPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
+                  placeholder="Create a password (8+ chars, uppercase, lowercase, number, special char)"
                   className="h-12 bg-muted border-border pr-12"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}

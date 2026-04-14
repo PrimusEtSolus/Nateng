@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label"
 import { getCurrentUser, logout } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { usersAPI } from "@/lib/api-client"
-import { benguetMunicipalities } from "@/lib/mock-data"
-import { UserIcon, MapPin, Lock, Bell, Shield, Banknote, Truck, Check, Trash2, Loader2 } from "lucide-react"
+import { UserIcon, MapPin, Lock, Check, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 export default function FarmerSettingsPage() {
@@ -16,12 +15,6 @@ export default function FarmerSettingsPage() {
   const [activeTab, setActiveTab] = useState("profile")
   const [saved, setSaved] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [passwordData, setPasswordData] = useState({
-    current: "",
-    new: "",
-    confirm: "",
-  })
-  const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
@@ -62,34 +55,8 @@ export default function FarmerSettingsPage() {
     }
   }, [])
 
-  const handlePasswordChange = async () => {
-    if (!passwordData.current || !passwordData.new || !passwordData.confirm) {
-      toast.error("All password fields are required")
-      return
-    }
-    if (passwordData.new !== passwordData.confirm) {
-      toast.error("New passwords do not match")
-      return
-    }
-    if (passwordData.new.length < 6) {
-      toast.error("Password must be at least 6 characters")
-      return
-    }
-
-    setIsChangingPassword(true)
-    try {
-      // This would need a dedicated API endpoint for password changes
-      toast.info("Password change endpoint not implemented yet. Coming soon!")
-      setPasswordData({ current: "", new: "", confirm: "" })
-    } catch (error: any) {
-      toast.error(error.message || "Failed to change password")
-    } finally {
-      setIsChangingPassword(false)
-    }
-  }
-
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     window.location.href = "/login"
   }
 
@@ -144,11 +111,8 @@ export default function FarmerSettingsPage() {
         profilePhotoUrl: imageUrl,
       })
 
-      // Update state and localStorage
+      // Update state (user data persists via session API)
       setUser(updatedUser)
-      if (typeof window !== "undefined") {
-        localStorage.setItem("natenghub_user", JSON.stringify(updatedUser))
-      }
 
       // Update photo preview
       setPhotoPreview(imageUrl)
@@ -197,11 +161,6 @@ export default function FarmerSettingsPage() {
       // Update state
       setUser(updatedUser)
 
-      // Persist to localStorage so getCurrentUser reflects the change
-      if (typeof window !== "undefined") {
-        localStorage.setItem("natenghub_user", JSON.stringify(updatedUser))
-      }
-
       setSaved(true)
       toast.success("Profile updated successfully!")
       setTimeout(() => setSaved(false), 3000)
@@ -222,10 +181,7 @@ export default function FarmerSettingsPage() {
   const tabs = [
     { id: "profile", label: "Profile", icon: UserIcon },
     { id: "farm", label: "Farm Details", icon: MapPin },
-    { id: "payments", label: "Payments", icon: Banknote },
-    { id: "delivery", label: "Delivery", icon: Truck },
     { id: "security", label: "Security", icon: Lock },
-    { id: "notifications", label: "Notifications", icon: Bell },
   ]
 
   return (
@@ -331,19 +287,13 @@ export default function FarmerSettingsPage() {
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="municipality">Municipality</Label>
-                  <select
+                  <Input
                     id="municipality"
                     value={formData.municipality}
                     onChange={(e) => setFormData({ ...formData, municipality: e.target.value })}
-                    className="w-full h-12 px-3 rounded-lg border border-input bg-background"
-                  >
-                    <option value="">Select Municipality</option>
-                    {benguetMunicipalities.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
+                    className="h-12"
+                    placeholder="e.g., La Trinidad"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="barangay">Barangay</Label>
@@ -375,196 +325,10 @@ export default function FarmerSettingsPage() {
             </div>
           )}
 
-          {activeTab === "payments" && (
-            <div className="bg-card rounded-2xl border border-border p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold">Payment Methods</h2>
-                <Button className="bg-farmer hover:bg-farmer-light" disabled>
-                  Add Method
-                </Button>
-              </div>
-              <p className="text-muted-foreground mb-4">Where you'll receive payments from sales</p>
-              <div className="space-y-4">
-                {(!formData.paymentMethods || JSON.parse(formData.paymentMethods || "[]").length === 0) ? (
-                  <p className="text-muted-foreground text-sm">No payment methods configured yet.</p>
-                ) : (
-                  JSON.parse(formData.paymentMethods || "[]").map((method: any, idx: number) => (
-                    <div key={idx} className="border border-border rounded-xl p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-farmer rounded-lg flex items-center justify-center text-white text-sm font-bold">
-                          {method.type?.toUpperCase().slice(0, 2) || "PM"}
-                        </div>
-                        <div>
-                          <p className="font-medium">{method.type}</p>
-                          <p className="text-sm text-muted-foreground">{method.details}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === "delivery" && (
-            <div className="bg-card rounded-2xl border border-border p-6">
-              <h2 className="text-xl font-semibold mb-6">Delivery Settings</h2>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-medium mb-4">Delivery Areas</h3>
-                  <div className="space-y-3">
-                    {(!formData.deliveryAreas || JSON.parse(formData.deliveryAreas || "[]").length === 0) ? (
-                      <p className="text-muted-foreground text-sm">No delivery areas set. Derived from your location.</p>
-                    ) : (
-                      JSON.parse(formData.deliveryAreas || "[]").map((area: string) => (
-                        <label key={area} className="flex items-center justify-between cursor-pointer">
-                          <span>{area}</span>
-                          <input type="checkbox" defaultChecked className="w-5 h-5 rounded accent-farmer" />
-                        </label>
-                      ))
-                    )}
-                  </div>
-                  <Button variant="outline" className="mt-4 bg-transparent" disabled>
-                    Add Delivery Area
-                  </Button>
-                </div>
-                <div className="border-t border-border pt-6">
-                  <h3 className="font-medium mb-4">Minimum Order for Delivery</h3>
-                  <div className="flex items-center gap-4">
-                    <span>kg</span>
-                    <Input
-                      type="number"
-                      value={formData.minimumOrderKg || ""}
-                      onChange={(e) => setFormData({ ...formData, minimumOrderKg: Number(e.target.value) })}
-                      className="w-32 h-12"
-                      placeholder="50"
-                    />
-                    <span className="text-muted-foreground">minimum order in kilograms</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {activeTab === "security" && (
-            <div className="space-y-6">
-              <div className="bg-card rounded-2xl border border-border p-6">
-                <h2 className="text-xl font-semibold mb-6">Change Password</h2>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Current Password</Label>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      className="h-12"
-                      value={passwordData.current}
-                      onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>New Password</Label>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      className="h-12"
-                      value={passwordData.new}
-                      onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Confirm New Password</Label>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      className="h-12"
-                      value={passwordData.confirm}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
-                    />
-                  </div>
-                  <Button
-                    className="bg-farmer hover:bg-farmer-light"
-                    onClick={handlePasswordChange}
-                    disabled={isChangingPassword}
-                  >
-                    {isChangingPassword ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Updating...
-                      </>
-                    ) : (
-                      "Update Password"
-                    )}
-                  </Button>
-                </div>
-              </div>
-              <div className="bg-card rounded-2xl border border-border p-6">
-                <div className="flex items-start gap-4">
-                  <Shield className="w-6 h-6 text-farmer mt-1" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold">Two-Factor Authentication</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Secure your account with 2FA</p>
-                  </div>
-                  <Button variant="outline">Enable</Button>
-                </div>
-              </div>
-              <div className="bg-card rounded-2xl border border-red-200 p-6">
-                <div className="flex items-start gap-4">
-                  <Trash2 className="w-6 h-6 text-red-500 mt-1" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-red-600">Delete Account</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Permanently delete your account</p>
-                  </div>
-                  <Button variant="outline" className="text-red-500 border-red-300 hover:bg-red-50 bg-transparent">
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "notifications" && (
             <div className="bg-card rounded-2xl border border-border p-6">
-              <h2 className="text-xl font-semibold mb-6">Notification Preferences</h2>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-medium mb-4">Order Notifications</h3>
-                  <div className="space-y-3">
-                    {[
-                      { label: "New order received", checked: true },
-                      { label: "Order confirmed by buyer", checked: true },
-                      { label: "Order completed", checked: true },
-                    ].map((item, idx) => (
-                      <label key={idx} className="flex items-center justify-between cursor-pointer">
-                        <span>{item.label}</span>
-                        <input
-                          type="checkbox"
-                          defaultChecked={item.checked}
-                          className="w-5 h-5 rounded accent-farmer"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="border-t border-border pt-6">
-                  <h3 className="font-medium mb-4">Marketing</h3>
-                  <div className="space-y-3">
-                    {[
-                      { label: "Tips for farmers", checked: true },
-                      { label: "Market price updates", checked: true },
-                      { label: "Platform announcements", checked: false },
-                    ].map((item, idx) => (
-                      <label key={idx} className="flex items-center justify-between cursor-pointer">
-                        <span>{item.label}</span>
-                        <input
-                          type="checkbox"
-                          defaultChecked={item.checked}
-                          className="w-5 h-5 rounded accent-farmer"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <h2 className="text-xl font-semibold mb-4">Security</h2>
+              <p className="text-muted-foreground">Security settings coming soon.</p>
             </div>
           )}
 

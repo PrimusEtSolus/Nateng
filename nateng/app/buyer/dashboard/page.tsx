@@ -13,7 +13,7 @@ import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import BannedUserDashboard from "@/components/banned-user-dashboard"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Search, Heart, Star, MapPin, ShoppingCart, Plus, Minus, Loader2, Filter, Store } from "lucide-react"
+import { Search, Star, MapPin, ShoppingCart, Plus, Minus, Loader2, Filter, Store } from "lucide-react"
 import Link from "next/link"
 import { ProductGridSkeleton, ProductCardSkeleton } from "@/components/loading-skeletons"
 import { EmptyState } from "@/components/empty-state"
@@ -65,7 +65,6 @@ export default function BuyerDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
   const [selectedCategory, setSelectedCategory] = useState("All")
-  const [favorites, setFavorites] = useState<number[]>([])
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
   const [dialogQuantity, setDialogQuantity] = useState("0.2")
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name" | "quantity">("name")
@@ -74,29 +73,23 @@ export default function BuyerDashboardPage() {
   // Check if user is banned and enforce restrictions
   const { banStatus, isLoading: banLoading } = useBanEnforcement()
 
-  // Fetch user favorites
-  const { data: userFavorites, loading: favoritesLoading } = useFetch<any[]>('/api/favorites')
-
   useEffect(() => {
-    if (userFavorites) {
-      setFavorites(userFavorites.map(fav => fav.listingId))
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      if (!currentUser || currentUser.role !== 'buyer') {
+        router.push('/login')
+        return
+      }
+      
+      setUser(currentUser)
+      
+      // Check if user is banned
+      if (currentUser.isBanned) {
+        // Don't load normal dashboard data for banned users
+        return
+      }
     }
-  }, [userFavorites])
-
-  useEffect(() => {
-    const currentUser = getCurrentUser()
-    if (!currentUser || currentUser.role !== 'buyer') {
-      router.push('/login')
-      return
-    }
-    
-    setUser(currentUser)
-    
-    // Check if user is banned
-    if (currentUser.isBanned) {
-      // Don't load normal dashboard data for banned users
-      return
-    }
+    loadUser()
   }, [router])
 
   // Reset dialog quantity when listing changes
@@ -132,39 +125,6 @@ export default function BuyerDashboardPage() {
         return 0
     }
   }) : []
-
-  const toggleFavorite = async (id: number) => {
-    const isFavorited = favorites.includes(id)
-    
-    try {
-      if (isFavorited) {
-        // Remove from favorites
-        await fetch(`/api/favorites/listing/${id}`, {
-          method: 'DELETE'
-        })
-        setFavorites(prev => prev.filter(f => f !== id))
-        toast.success("Removed from favorites")
-      } else {
-        // Add to favorites
-        const response = await fetch('/api/favorites', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ listingId: id })
-        })
-        
-        if (response.ok) {
-          setFavorites(prev => [...prev, id])
-          toast.success("Added to favorites")
-        } else {
-          const error = await response.json()
-          toast.error(error.error || "Failed to add to favorites")
-        }
-      }
-    } catch (error) {
-      console.error('Toggle favorite error:', error)
-      toast.error("Failed to update favorites")
-    }
-  }
 
   const getCartQuantity = (listingId: number) => {
     const item = items.find((i) => i.listingId === listingId)
@@ -308,7 +268,6 @@ export default function BuyerDashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredListings.map((listing) => {
             const cartQty = getCartQuantity(listing.id)
-            const isFavorite = favorites.includes(listing.id)
             const pricePerKg = listing.priceCents / 100
 
           return (
@@ -332,19 +291,6 @@ export default function BuyerDashboardPage() {
                   className="w-full h-full"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleFavorite(listing.id)
-                  }}
-                  className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
-                >
-                  <Heart
-                    className={`w-5 h-5 transition-colors ${
-                      isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"
-                    }`}
-                  />
-                </button>
                 {listing.quantity > 100 && (
                   <span className="absolute top-3 left-3 px-2 py-1 bg-buyer text-white text-xs font-medium rounded-full shadow-md">
                     Popular

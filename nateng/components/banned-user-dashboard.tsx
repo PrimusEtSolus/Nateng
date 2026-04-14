@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import { Button } from '@/components/ui/button'
@@ -20,10 +20,19 @@ export default function BannedUserDashboard() {
     appealDetails: ''
   })
 
-  const user = getCurrentUser()
+  const [user, setUser] = useState<Awaited<ReturnType<typeof getCurrentUser>> | null>(null)
 
-  const handleLogout = () => {
-    localStorage.removeItem('natenghub_user')
+  useEffect(() => {
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
+  }, [])
+
+  const handleLogout = async () => {
+    const { logout } = await import('@/lib/auth')
+    await logout()
     toast.success('Logged out successfully')
     router.push('/login')
   }

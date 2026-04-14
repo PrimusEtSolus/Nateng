@@ -60,7 +60,11 @@ export default function ResellerWholesalePage() {
   const [quantities, setQuantities] = useState<Record<number, number>>({})
 
   useEffect(() => {
-    setUser(getCurrentUser())
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
   }, [])
 
   const productCategories = ["All", "Vegetables", "Leafy Greens", "Root Vegetables", "Fruits"]

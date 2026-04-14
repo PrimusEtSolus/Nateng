@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Plus, Search, AlertTriangle, Package, TrendingDown, RefreshCw, ClipboardEdit } from "lucide-react"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { getWholesaleCrops, type LegacyCrop as Crop } from "@/lib/mock-data"
 import { toast } from "@/hooks/use-toast"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -32,8 +31,6 @@ interface InventoryItem {
 
 export default function BusinessInventoryPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCrop, setSelectedCrop] = useState<(Crop & { farmerName: string }) | null>(null)
-  const [orderQuantity, setOrderQuantity] = useState("")
   const [selectedAdjustmentItem, setSelectedAdjustmentItem] = useState<InventoryItem | null>(null)
   const [adjustmentType, setAdjustmentType] = useState<"increase" | "decrease">("increase")
   const [adjustmentQuantity, setAdjustmentQuantity] = useState("")
@@ -45,8 +42,6 @@ export default function BusinessInventoryPage() {
   const [newItemReorderLevel, setNewItemReorderLevel] = useState("")
   const [newItemSupplier, setNewItemSupplier] = useState("Juan Dela Cruz")
   const [newItemImage, setNewItemImage] = useState("")
-
-  const wholesaleCrops = getWholesaleCrops()
 
   const [inventory, setInventory] = useState<InventoryItem[]>([])
 
@@ -67,34 +62,17 @@ export default function BusinessInventoryPage() {
   }
 
   const handleReorderClick = (item: InventoryItem) => {
-    const matchingCrop = wholesaleCrops.find((crop) => crop.name === item.name)
-
-    if (!matchingCrop) {
-      toast({
-        title: "Reorder not available",
-        description: "This item is not currently available for wholesale reorder from farmers.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setSelectedCrop(matchingCrop)
-    setOrderQuantity(String(matchingCrop.minOrderQty))
+    // Reorder functionality disabled after mock-data removal
+    // TODO: Implement real wholesale ordering from farmers
+    toast({
+      title: "Reorder not available",
+      description: "Wholesale ordering from farmers is currently disabled. Please contact farmers directly.",
+      variant: "destructive",
+    })
   }
 
   const handlePlaceReorder = () => {
-    if (!selectedCrop || !orderQuantity) return
-
-    const qty = Number(orderQuantity)
-    if (Number.isNaN(qty) || qty < selectedCrop.minOrderQty) return
-
-    toast({
-      title: "Reorder request sent",
-      description: `You requested ${qty}${selectedCrop.unit} of ${selectedCrop.name} from ${selectedCrop.farmerName}.`,
-    })
-
-    setSelectedCrop(null)
-    setOrderQuantity("")
+    // Disabled - see handleReorderClick
   }
 
   const handleOpenAdjustment = (item: InventoryItem) => {
@@ -268,98 +246,6 @@ export default function BusinessInventoryPage() {
           />
         </div>
       </div>
-
-      <Dialog
-        open={!!selectedCrop}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSelectedCrop(null)
-            setOrderQuantity("")
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-[450px]">
-          {selectedCrop && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Reorder from Farmer</DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-4 py-2">
-                <div className="flex items-start gap-4">
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted">
-                    <img
-                      src={selectedCrop.image || "/placeholder.svg"}
-                      alt={selectedCrop.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{selectedCrop.name}</h3>
-                    <p className="text-sm text-muted-foreground">from {selectedCrop.farmerName}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Minimum order {selectedCrop.minOrderQty}
-                      {selectedCrop.unit}
-                    </p>
-                    <p className="text-lg font-bold text-business mt-1">
-                      ₱{selectedCrop.wholesalePrice}/{selectedCrop.unit}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reorder-quantity">Order quantity ({selectedCrop.unit})</Label>
-                  <Input
-                    id="reorder-quantity"
-                    type="number"
-                    min={selectedCrop.minOrderQty}
-                    max={selectedCrop.harvestQuantity}
-                    value={orderQuantity}
-                    onChange={(e) => setOrderQuantity(e.target.value)}
-                    placeholder={`Min: ${selectedCrop.minOrderQty}`}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Minimum order: {selectedCrop.minOrderQty}
-                    {selectedCrop.unit} • Available: {selectedCrop.harvestQuantity}
-                    {selectedCrop.unit}
-                  </p>
-                </div>
-
-                {orderQuantity && Number(orderQuantity) >= selectedCrop.minOrderQty && (
-                  <div className="bg-muted p-4 rounded-lg text-sm">
-                    <div className="flex justify-between mb-1">
-                      <span>Estimated total</span>
-                      <span className="font-semibold text-business">
-                        ₱{(selectedCrop.wholesalePrice * Number(orderQuantity)).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  className="flex-1 bg-transparent"
-                  onClick={() => {
-                    setSelectedCrop(null)
-                    setOrderQuantity("")
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 bg-business hover:bg-business-light"
-                  onClick={handlePlaceReorder}
-                  disabled={!orderQuantity || Number(orderQuantity) < selectedCrop.minOrderQty}
-                >
-                  Confirm Reorder
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={!!selectedAdjustmentItem}

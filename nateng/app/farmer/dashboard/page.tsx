@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
-import { analytics } from "@/lib/analytics"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { useBanEnforcement } from "@/hooks/useBanEnforcement"
@@ -73,21 +72,23 @@ export default function FarmerDashboardPage() {
   const { banStatus, isLoading: banLoading } = useBanEnforcement()
 
   useEffect(() => {
-    const currentUser = getCurrentUser()
-    if (!currentUser || currentUser.role !== 'farmer') {
-      router.push('/login')
-      return
-    }
-    
-    // Check if user is banned
-    if (currentUser.isBanned) {
-      // Don't load normal dashboard data for banned users
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      if (!currentUser || currentUser.role !== 'farmer') {
+        router.push('/login')
+        return
+      }
+      
+      // Check if user is banned
+      if (currentUser.isBanned) {
+        // Don't load normal dashboard data for banned users
+        setUser(currentUser)
+        return
+      }
+      
       setUser(currentUser)
-      return
     }
-    
-    setUser(currentUser)
-    analytics.trackPageView('/farmer/dashboard', currentUser.id)
+    loadUser()
   }, [router])
 
   // Fetch farmer's products

@@ -37,12 +37,15 @@ export default function BusinessDashboardPage() {
   )
 
   useEffect(() => {
-    const currentUser = getCurrentUser()
-    if (!currentUser || currentUser.role !== 'business') {
-      router.push('/login')
-      return
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      if (!currentUser || currentUser.role !== 'business') {
+        router.push('/login')
+        return
+      }
+      setUser(currentUser)
     }
-    setUser(currentUser)
+    loadUser()
   }, [router])
 
   // Calculate stats from real data

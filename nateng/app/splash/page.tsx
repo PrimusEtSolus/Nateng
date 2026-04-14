@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
-import { ContactForm } from "@/components/contact-form"
 import { MapPin, Package, TrendingUp, Users, ArrowRight, Leaf, ShoppingCart, Truck, Award } from "lucide-react"
 
 export default function SplashPage() {
@@ -190,8 +189,14 @@ export default function SplashPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-12 border border-gray-200">
-            <ContactForm />
+          <div className="bg-white rounded-lg p-12 border border-gray-200 text-center">
+            <h3 className="text-2xl font-bold mb-4">Get Started Today</h3>
+            <p className="text-gray-600 mb-6">Join our marketplace and connect with highland farmers directly.</p>
+            <Link href="/signup">
+              <Button className="bg-[#31E672] hover:bg-[#28c85d] text-gray-900 font-semibold px-8 py-3">
+                Sign Up Now
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

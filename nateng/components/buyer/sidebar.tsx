@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Logo } from "@/components/logo"
-import { ShoppingBag, ShoppingCart, Heart, ClipboardList, Settings, LogOut, ChevronRight } from "lucide-react"
+import { ShoppingBag, ShoppingCart, ClipboardList, Settings, LogOut, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { logout, getCurrentUser } from "@/lib/auth"
 import { useCart } from "@/lib/cart-context"
@@ -14,7 +14,6 @@ const navItems = [
   { name: "Shop", href: "/buyer/dashboard", icon: ShoppingBag },
   { name: "My Cart", href: "/buyer/cart", icon: ShoppingCart, showBadge: true },
   { name: "My Orders", href: "/buyer/orders", icon: ClipboardList },
-  { name: "Favorites", href: "/buyer/favorites", icon: Heart },
 ]
 
 export function BuyerSidebar() {

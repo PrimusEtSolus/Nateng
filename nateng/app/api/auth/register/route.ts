@@ -2,10 +2,26 @@ import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { logger } from '@/lib/logger';
+import { generateToken } from '@/lib/jwt';
+import { rateLimit, getRateLimitHeaders } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   let email: string = '';
   try {
+    // Rate limiting based on IP
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const rateLimitResult = rateLimit(ip, 3, 60 * 60 * 1000); // 3 registrations per hour
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Too many registration attempts. Please try again later.' },
+        { 
+          status: 429,
+          headers: getRateLimitHeaders(ip, 3, 60 * 60 * 1000)
+        }
+      );
+    }
+
     const { name, email: userEmail, password, role, stallLocation, municipality, businessType } = await req.json();
     
     if (!userEmail) {
@@ -57,9 +73,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return NextResponse.json(
-        { error: 'Password must be at least 6 characters long' },
+        { error: 'Password must be at least 8 characters long' },
+        { status: 400 }
+      );
+    }
+    
+    // Password complexity validation
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
+      return NextResponse.json(
+        { error: 'Password must contain uppercase, lowercase, numbers, and special characters' },
         { status: 400 }
       );
     }
@@ -124,8 +153,27 @@ export async function POST(req: NextRequest) {
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
+    
+    // Generate JWT token
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    });
+    
+    // Set httpOnly cookie for security
+    const response = NextResponse.json({ user: userWithoutPassword }, { status: 201 });
+    
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/'
+    });
+    
     logger.authSuccess('register', userWithoutPassword.id.toString(), email);
-    return NextResponse.json({ user: userWithoutPassword }, { status: 201 });
+    return response;
   } catch (error: unknown) {
     logger.authError('register', error, email);
     const message = error instanceof Error ? error.message : 'Internal server error';

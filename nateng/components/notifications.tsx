@@ -34,7 +34,11 @@ export function NotificationBell() {
 
   useEffect(() => {
     setMounted(true)
-    setUser(getCurrentUser())
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
   }, [])
 
   useEffect(() => {

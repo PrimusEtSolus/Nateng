@@ -50,21 +50,11 @@ export async function POST(request: Request) {
       }
     })
 
-    console.log(`New appeal submitted (${appeal.id}):`, {
-      userEmail,
-      userName,
-      appealReason,
-      appealDetails,
-      submittedAt: new Date().toISOString(),
-      status: 'pending'
-    })
-
     return NextResponse.json({ 
       message: 'Appeal submitted successfully. Your case is under review.',
       appealId: appeal.id
     })
   } catch (error) {
-    console.error('Submit appeal error:', error)
     return NextResponse.json(
       { error: 'Failed to submit appeal' },
       { status: 500 }

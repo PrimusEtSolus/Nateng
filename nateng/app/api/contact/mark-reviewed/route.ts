@@ -21,14 +21,11 @@ export async function POST(request: Request) {
       WHERE id = ${messageId}
     `
 
-    console.log(`Message ${messageId} marked as reviewed`)
-
     return NextResponse.json({ 
       success: true,
       message: 'Message marked as reviewed successfully'
     })
   } catch (error) {
-    console.error('Error marking message as reviewed:', error)
     return NextResponse.json(
       { error: 'Failed to mark message as reviewed' },
       { status: 500 }

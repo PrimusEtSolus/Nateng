@@ -1,78 +1,67 @@
-import { NextRequest } from 'next/server'
-import type { User } from './types'
+import { cookies } from 'next/headers'
+import { verifyToken } from './jwt'
+import prisma from './prisma'
 
-// Server-side authentication utilities
-export async function getCurrentUser(request: NextRequest): Promise<User | null> {
+export interface AuthUser {
+  id: number
+  email: string
+  role: string
+  name: string
+}
+
+/**
+ * Server-side authentication utility for API routes
+ * Extracts and verifies JWT from httpOnly cookies
+ */
+export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
-    // Get auth token from headers
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const cookieStore = await cookies()
+    const token = cookieStore.get('auth_token')?.value
+
+    if (!token) {
       return null
     }
 
-    const token = authHeader.substring(7)
-    
-    // Handle different token formats:
-    // - "token_USERID" from useFetch
-    // - "token_USERID_TIMESTAMP" from api-client
-    let userToken: string
-    
-    if (token.startsWith('token_')) {
-      // Extract user ID from token format
-      const parts = token.split('_')
-      userToken = parts[1]
-    } else {
-      userToken = token
-    }
-    
-    if (!userToken || isNaN(Number(userToken))) {
+    const payload = verifyToken(token)
+    if (!payload) {
       return null
     }
 
-    // Fetch user from database
-    const { prisma } = await import('./prisma')
+    // Fetch full user from database
     const user = await prisma.user.findUnique({
-      where: { id: Number(userToken) },
-      select: { id: true, name: true, email: true, role: true }
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        name: true,
+      }
     })
 
-    return user as User | null
+    return user
   } catch (error) {
-    console.error('Authentication error:', error)
     return null
   }
 }
 
-export function createAuthToken(user: User): string {
-  // Simple token creation - in production, use JWT
-  return `token_${user.id}_${Date.now()}`
-}
-
-export function requireAuth(handler: (request: NextRequest, user: User) => Promise<Response>) {
-  return async (request: NextRequest) => {
-    const user = await getCurrentUser(request)
-    
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'Authentication required' }), 
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
-
-    return handler(request, user)
+/**
+ * Require authentication - throws error if user not found
+ */
+export async function requireAuth(): Promise<AuthUser> {
+  const user = await getCurrentUser()
+  if (!user) {
+    throw new Error('Unauthorized')
   }
+  return user
 }
 
-export function requireRole(roles: string[]) {
-  return (handler: (request: NextRequest, user: User) => Promise<Response>) =>
-    requireAuth(async (request: NextRequest, user: User) => {
-      if (!roles.includes(user.role)) {
-        return new Response(
-          JSON.stringify({ error: 'Insufficient permissions' }), 
-          { status: 403, headers: { 'Content-Type': 'application/json' } }
-        )
-      }
-
-      return handler(request, user)
-    })
+/**
+ * Check if user has specific role
+ */
+export async function requireRole(role: string): Promise<AuthUser> {
+  const user = await requireAuth()
+  if (user.role !== role) {
+    throw new Error('Forbidden')
+  }
+  return user
 }

@@ -3,7 +3,6 @@ import type { Metadata } from "next"
 import { Nunito_Sans, Source_Serif_4 } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
-import BanChecker from "@/components/BanChecker"
 import "./globals.css"
 
 const nunitoSans = Nunito_Sans({
@@ -41,7 +40,6 @@ export default function RootLayout({
         className={`${nunitoSans.className} ${sourceSerif.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
-        <BanChecker />
         {children}
         <Toaster />
         <Analytics />

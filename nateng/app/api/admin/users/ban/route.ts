@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { logger } from '@/lib/logger'
 
 const prisma = new PrismaClient()
 
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
       }
     })
     
-    console.log(`User ${user.email} (ID: ${userId}) banned in database. Reason: ${reason}`)
+    logger.info(`User ${user.email} (ID: ${userId}) banned in database. Reason: ${reason}`)
 
     return NextResponse.json({ 
       message: 'User banned successfully. Access restrictions applied immediately.',

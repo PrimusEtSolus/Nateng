@@ -60,7 +60,11 @@ export default function ResellerInventoryPage() {
   })
 
   useEffect(() => {
-    setUser(getCurrentUser())
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
   }, [])
 
   // Fetch reseller's listings (inventory)

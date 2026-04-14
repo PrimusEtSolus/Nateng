@@ -9,8 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Shield, Users, Package, BarChart3, Search, Edit2, Trash2, Plus, Database, Table, Eye, Settings, Ban, ShieldCheck, MessageSquare, AlertTriangle, Wifi, WifiOff, Circle, Calendar, Truck, TrendingUp, PieChart } from "lucide-react"
 import { toast } from "sonner"
-import { getBannedUsers, banUser as addToBanList, unbanUser as removeFromBanList } from "@/utils/auth"
-import { addBannedUser, removeBannedUser, isUserBanned as isBackendBanned } from "@/lib/banned-users"
+import { addBannedUser, removeBannedUser, isUserBanned } from "@/lib/banned-users"
 import { 
   BarChart, 
   Bar, 
@@ -141,7 +140,6 @@ const [users, setUsers] = useState<User[]>([])
     topProducts: [],
     orderStatuses: []
   })
-  const [bannedUsers, setBannedUsers] = useState<Set<string>>(new Set())
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalProducts: 0,
@@ -163,12 +161,18 @@ const [users, setUsers] = useState<User[]>([])
         return
       }
 
-      // Check if already authenticated
-      const auth = localStorage.getItem('admin_auth')
-      if (auth === 'true') {
-        setIsAuthenticated(true)
-        fetchData()
-      }
+      // Check if already authenticated via session
+      fetch('/api/auth/session', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.user && data.user.role === 'admin') {
+            setIsAuthenticated(true)
+            fetchData()
+          }
+        })
+        .catch(() => {
+          // Not authenticated
+        })
     }
   }, [router])
 
@@ -252,11 +256,7 @@ const [users, setUsers] = useState<User[]>([])
 
       // Process analytics data
       processAnalyticsData(users, products, orders)
-
-      // Sync banned users with localStorage
-      setBannedUsers(getBannedUsers())
     } catch (error) {
-      console.error('Error fetching data:', error)
       toast.error("Failed to fetch data")
       // Reset to empty arrays on error
       setUsers([])
@@ -352,24 +352,48 @@ const [users, setUsers] = useState<User[]>([])
     e.preventDefault()
     setIsLoading(true)
 
-    // Hardcoded admin credentials
-    if (username === "admin" && password === "admin123") {
-      localStorage.setItem('admin_auth', 'true')
-      setIsAuthenticated(true)
-      toast.success("Admin access granted")
-      fetchData()
-    } else {
-      toast.error("Invalid username or password")
+    try {
+      // Hardcoded admin credentials - use login API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: username, password }),
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.user && data.user.role === 'admin') {
+          setIsAuthenticated(true)
+          toast.success("Admin access granted")
+          fetchData()
+        } else {
+          toast.error("You don't have admin access")
+        }
+      } else {
+        const error = await response.json()
+        toast.error(error.error || "Invalid username or password")
+      }
+    } catch (error) {
+      toast.error("Login failed")
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_auth')
-    setIsAuthenticated(false)
-    setUsername("")
-    setPassword("")
-    toast.success("Logged out successfully")
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+      setIsAuthenticated(false)
+      setUsername("")
+      setPassword("")
+      toast.success("Logged out successfully")
+    } catch (error) {
+      toast.error("Logout failed")
+    }
   }
 
   const handleBanUser = async (userId: number, userName: string, userEmail: string) => {
@@ -387,27 +411,12 @@ const [users, setUsers] = useState<User[]>([])
         body: JSON.stringify({ userId, userEmail, reason })
       })
 
-      // Add to both frontend and backend ban systems
-      addToBanList(userEmail, userName)
-      addBannedUser(userEmail.toLowerCase())
-      setBannedUsers(getBannedUsers())
+      await addBannedUser(userEmail.toLowerCase(), reason, 'admin@nateng.com')
       
       toast.success(`User ${userName} has been banned and access restricted`)
       fetchData()
-      
-      // Force check banned status (will redirect user if they're currently logged in)
-      if (typeof window !== 'undefined') {
-        setTimeout(() => {
-          window.dispatchEvent(new Event('storage'))
-        }, 100)
-      }
     } catch (error) {
-      // Even if API fails, still enforce the ban in both systems
-      addToBanList(userEmail, userName)
-      addBannedUser(userEmail.toLowerCase())
-      setBannedUsers(getBannedUsers())
-      toast.success(`User ${userName} has been banned and access restricted`)
-      fetchData()
+      toast.error('Failed to ban user')
     }
   }
 
@@ -423,20 +432,12 @@ const [users, setUsers] = useState<User[]>([])
         body: JSON.stringify({ userId, userEmail })
       })
 
-      // Remove from both frontend and backend ban systems
-      removeFromBanList(userEmail, userName)
-      removeBannedUser(userEmail.toLowerCase())
-      setBannedUsers(getBannedUsers())
+      await removeBannedUser(userEmail.toLowerCase(), 'admin@nateng.com')
       
       toast.success(`User ${userName} has been unbanned and access restored`)
       fetchData()
     } catch (error) {
-      // Even if API fails, still enforce the unban in both systems
-      removeFromBanList(userEmail, userName)
-      removeBannedUser(userEmail.toLowerCase())
-      setBannedUsers(getBannedUsers())
-      toast.success(`User ${userName} has been unbanned and access restored`)
-      fetchData()
+      toast.error('Failed to unban user')
     }
   }
 
@@ -534,27 +535,14 @@ const [users, setUsers] = useState<User[]>([])
     }
   }
 
-  // Simulate online status
+  // Simulate online status (in production, use real-time system)
   const getOnlineStatus = (user: any) => {
-    if (typeof window !== 'undefined') {
-      const currentUser = localStorage.getItem('user_name') || sessionStorage.getItem('user_name')
-      if (currentUser === user.name) {
-        return true
-      }
-    }
-    
-    const now = new Date()
-    const userHash = user.id + now.getMinutes()
-    const shouldBeOnline = (userHash % 10) < 3
-    
-    return shouldBeOnline
+    return false
   }
 
-  // Check banned status
+  // Check banned status from database
   const getBannedStatus = (user: any) => {
-    const frontendBanned = bannedUsers.has(user.email) || bannedUsers.has(user.name)
-    const backendBanned = isBackendBanned(user.email.toLowerCase())
-    return frontendBanned || backendBanned
+    return user.isBanned || false
   }
 
   if (!isAuthenticated) {
