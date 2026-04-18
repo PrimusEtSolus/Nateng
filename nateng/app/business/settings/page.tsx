@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { usersAPI } from "@/lib/api-client"
 import { useBanEnforcement } from "@/hooks/useBanEnforcement"
-import { Building2, MapPin, Lock, Check, Loader2 } from "lucide-react"
+import { Building2, MapPin, Lock, Check, Loader2, Eye, EyeOff } from "lucide-react"
 import { toast } from "sonner"
 
 export default function BusinessSettingsPage() {
@@ -29,22 +29,76 @@ export default function BusinessSettingsPage() {
   })
 
   useEffect(() => {
-    const currentUser = getCurrentUser()
-    if (currentUser) {
-      setUser(currentUser)
-      setFormData({
-        businessName: currentUser.businessName || currentUser.name,
-        ownerName: currentUser.name,
-        email: currentUser.email,
-        phone: currentUser.phone || "",
-        address: currentUser.address || "",
-        businessType: currentUser.businessType || "",
-        taxId: currentUser.taxId || "",
-      })
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      if (currentUser) {
+        setUser(currentUser)
+        setFormData({
+          businessName: currentUser.businessName || currentUser.name,
+          ownerName: currentUser.name,
+          email: currentUser.email,
+          phone: currentUser.phone || "",
+          address: currentUser.address || "",
+          businessType: currentUser.businessType || "",
+          taxId: currentUser.taxId || "",
+        })
+      }
     }
+    loadUser()
   }, [])
 
   const [isSaving, setIsSaving] = useState(false)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  })
+
+  const handleChangePassword = async () => {
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.error("All password fields are required")
+      return
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("New passwords do not match")
+      return
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters")
+      return
+    }
+
+    setIsChangingPassword(true)
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        }),
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to change password')
+      }
+
+      toast.success("Password changed successfully!")
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+    } catch (error: any) {
+      toast.error(error.message || "Failed to change password")
+    } finally {
+      setIsChangingPassword(false)
+    }
+  }
 
   const handleSave = async () => {
     if (!user) {
@@ -240,8 +294,80 @@ export default function BusinessSettingsPage() {
 
           {activeTab === "security" && (
             <div className="bg-card rounded-2xl border border-border p-6">
-              <h2 className="text-xl font-semibold mb-4">Security</h2>
-              <p className="text-muted-foreground">Security settings coming soon.</p>
+              <h2 className="text-xl font-semibold mb-6">Change Password</h2>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="currentPassword"
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                      className="h-12 pr-12"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    >
+                      {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? "text" : "password"}
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      className="h-12 pr-12"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                    >
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      className="h-12 pr-12"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleChangePassword}
+                  className="bg-business hover:bg-business/90 w-full h-12"
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Changing Password...
+                    </>
+                  ) : (
+                    "Change Password"
+                  )}
+                </Button>
+              </div>
             </div>
           )}
 

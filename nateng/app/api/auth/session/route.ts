@@ -6,16 +6,16 @@ export async function GET(request: NextRequest) {
   try {
     // Get token from httpOnly cookie
     const token = request.cookies.get('auth_token')?.value;
-    
+
     if (!token) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json({ user: null });
     }
 
     // Verify JWT token
     const payload = verifyToken(token);
-    
+
     if (!payload) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json({ user: null });
     }
 
     const user = await prisma.user.findUnique({
@@ -23,13 +23,13 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json({ user: null });
     }
 
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
     return NextResponse.json({ user: userWithoutPassword });
   } catch (error) {
-    return NextResponse.json({ user: null }, { status: 500 });
+    return NextResponse.json({ user: null });
   }
 }

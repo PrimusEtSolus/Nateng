@@ -272,7 +272,7 @@ export default function BuyerOrdersPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
                         <span className="text-emerald-700 font-medium">
-                          {selectedOrder.seller.name.charAt(0)}
+                          {selectedOrder.seller.name?.charAt(0) || "S"}
                         </span>
                       </div>
                       <div>

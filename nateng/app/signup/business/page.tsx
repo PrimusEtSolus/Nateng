@@ -69,17 +69,6 @@ export default function BusinessSignupPage() {
       return
     }
     
-    // Password complexity validation
-    const hasUpperCase = /[A-Z]/.test(formData.password)
-    const hasLowerCase = /[a-z]/.test(formData.password)
-    const hasNumbers = /\d/.test(formData.password)
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(formData.password)
-    
-    if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
-      setError("Password must contain uppercase, lowercase, numbers, and special characters")
-      return
-    }
-    
     if (!termsAccepted) {
       setError("You must accept the terms and conditions to continue")
       return
@@ -90,6 +79,7 @@ export default function BusinessSignupPage() {
     try {
       const user = await register(formData.businessName, formData.email, formData.password, "business", undefined, undefined, formData.businessType)
       if (user) {
+        setIsLoading(false)
         toast.success("Account created successfully!")
         // Store user data in sessionStorage for immediate use after redirect
         sessionStorage.setItem('user_data', JSON.stringify(user))
@@ -188,7 +178,7 @@ export default function BusinessSignupPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password (8+ chars, uppercase, lowercase, number, special char)"
+                  placeholder="Create a password (8+ characters)"
                   className="h-12 bg-muted border-border pr-12"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}

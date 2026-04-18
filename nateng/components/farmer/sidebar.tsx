@@ -23,7 +23,11 @@ export function FarmerSidebar() {
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    setUser(getCurrentUser())
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
   }, [])
 
   const handleLogout = () => {

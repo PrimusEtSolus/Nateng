@@ -15,6 +15,7 @@ import { ScheduleConfirmationDialog } from "@/components/schedule-confirmation-d
 import { ViewScheduleDialog } from "@/components/view-schedule-dialog"
 import { MessageDialog } from "@/components/message-dialog"
 import { ConfirmationDialog } from "@/components/confirmation-dialog"
+import { ProposalsListDialog } from "@/components/proposals-list-dialog"
 
 interface Order {
   id: number
@@ -76,9 +77,15 @@ export default function FarmerOrdersPage() {
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false)
   const [viewingSchedule, setViewingSchedule] = useState<any>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
+  const [proposalsListOrderId, setProposalsListOrderId] = useState<number | null>(null)
+  const [proposalsDialogOpen, setProposalsDialogOpen] = useState(false)
 
   useEffect(() => {
-    setUser(getCurrentUser())
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
   }, [])
 
   // Fetch farmer's orders (as seller)
@@ -168,6 +175,18 @@ export default function FarmerOrdersPage() {
   const handleViewSchedule = (schedule: any) => {
     setViewingSchedule(schedule)
     setViewDialogOpen(true)
+  }
+
+  const handleViewProposals = (orderId: number) => {
+    setProposalsListOrderId(orderId)
+    setProposalsDialogOpen(true)
+  }
+
+  const handleProposalAgreed = (schedule: any) => {
+    toast.success("Schedule confirmed", {
+      description: "Both parties have agreed on the schedule",
+    })
+    refetchOrders()
   }
 
   const handleScheduleActionComplete = (updatedSchedule: any) => {
@@ -422,6 +441,17 @@ export default function FarmerOrdersPage() {
               <Calendar className="w-4 h-4" />
               {latestSchedule?.status === 'rejected' ? 'Propose New Schedule' : 'Propose Delivery Schedule'}
             </Button>
+            {latestSchedule && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full gap-1"
+                onClick={() => handleViewProposals(order.id)}
+              >
+                <MessageSquare className="w-4 h-4" />
+                View Proposals
+              </Button>
+            )}
             <Button
               size="sm"
               className="w-full bg-green-600 hover:bg-green-700 text-white gap-1"
@@ -563,6 +593,16 @@ export default function FarmerOrdersPage() {
           onOpenChange={setViewDialogOpen}
           schedule={viewingSchedule}
           user={user}
+        />
+      )}
+
+      {proposalsListOrderId && (
+        <ProposalsListDialog
+          open={proposalsDialogOpen}
+          onOpenChange={setProposalsDialogOpen}
+          orderId={proposalsListOrderId}
+          user={user}
+          onProposalAgreed={handleProposalAgreed}
         />
       )}
     </div>

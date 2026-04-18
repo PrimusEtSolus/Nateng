@@ -23,7 +23,11 @@ export function BuyerSidebar() {
   const { totalItems } = useCart()
 
   useEffect(() => {
-    setUser(getCurrentUser())
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
   }, [])
 
   const handleLogout = () => {

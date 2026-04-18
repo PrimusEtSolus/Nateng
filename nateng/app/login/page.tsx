@@ -54,6 +54,7 @@ export default function LoginPage() {
     try {
       const user = await login(formData.email, formData.password)
       if (user) {
+        setIsLoading(false)
         router.push(getRedirectPath(user.role))
       }
     } catch (err: any) {

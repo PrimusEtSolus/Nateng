@@ -79,19 +79,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    
-    // Password complexity validation
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-    
-    if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
-      return NextResponse.json(
-        { error: 'Password must contain uppercase, lowercase, numbers, and special characters' },
-        { status: 400 }
-      );
-    }
 
     // Check if user already exists (email or phone for farmers)
     let existingUser;

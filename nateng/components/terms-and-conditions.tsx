@@ -242,7 +242,7 @@ IP disputes go through our dispute resolution process. Serious infringement migh
         <DialogHeader className="border-b pb-4 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <FileText className="w-6 h-6" />
-            Terms and Conditions for {userRole.charAt(0).toUpperCase() + userRole.slice(1)}s
+            Terms and Conditions for {userRole?.charAt(0)?.toUpperCase() + userRole?.slice(1)}s
           </DialogTitle>
           <DialogDescription>
             Please read and accept the following terms to create your {userRole} account

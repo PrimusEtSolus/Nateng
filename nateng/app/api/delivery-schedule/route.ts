@@ -107,19 +107,7 @@ export async function POST(req: NextRequest) {
       }, { status: 403 })
     }
 
-    // Check if there's already a proposed schedule for this order
-    const existingSchedule = await prisma.deliverySchedule.findFirst({
-      where: {
-        orderId: Number(orderId),
-        status: 'proposed'
-      }
-    })
-
-    if (existingSchedule) {
-      return NextResponse.json({ 
-        error: 'There is already a proposed schedule for this order' 
-      }, { status: 400 })
-    }
+    // Allow multiple proposals - users can see all proposals and agree on a final one
 
     const schedule = await prisma.deliverySchedule.create({
       data: {

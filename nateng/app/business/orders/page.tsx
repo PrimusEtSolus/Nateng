@@ -14,8 +14,9 @@ import { ScheduleConfirmationDialog } from "@/components/schedule-confirmation-d
 import { ViewScheduleDialog } from "@/components/view-schedule-dialog"
 import { ConfirmationDialog } from "@/components/confirmation-dialog"
 import { MessageDialog } from "@/components/message-dialog"
+import { ProposalsListDialog } from "@/components/proposals-list-dialog"
 import { toast } from "sonner"
-import { Package, Clock, Truck, CheckCircle, XCircle, MapPin, Loader2, PackageCheck, Calendar } from "lucide-react"
+import { Package, Clock, Truck, CheckCircle, XCircle, MapPin, Loader2, PackageCheck, Calendar, MessageSquare } from "lucide-react"
 
 export default function BusinessOrdersPage() {
   const router = useRouter()
@@ -31,6 +32,8 @@ export default function BusinessOrdersPage() {
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false)
   const [viewingSchedule, setViewingSchedule] = useState<any>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
+  const [proposalsListOrderId, setProposalsListOrderId] = useState<number | null>(null)
+  const [proposalsDialogOpen, setProposalsDialogOpen] = useState(false)
   
   // Inventory state for Move to Inventory functionality
   const [inventory, setInventory] = useState<any[]>([])
@@ -47,12 +50,15 @@ export default function BusinessOrdersPage() {
   )
 
   useEffect(() => {
-    const currentUser = getCurrentUser()
-    if (!currentUser || currentUser.role !== 'business') {
-      router.push('/login')
-      return
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      if (!currentUser || currentUser.role !== 'business') {
+        router.push('/login')
+        return
+      }
+      setUser(currentUser)
     }
-    setUser(currentUser)
+    loadUser()
   }, [router])
 
   // Collaborative scheduling functions
@@ -178,6 +184,18 @@ export default function BusinessOrdersPage() {
   const handleViewSchedule = (schedule: any) => {
     setViewingSchedule(schedule)
     setViewDialogOpen(true)
+  }
+
+  const handleViewProposals = (orderId: number) => {
+    setProposalsListOrderId(orderId)
+    setProposalsDialogOpen(true)
+  }
+
+  const handleProposalAgreed = (schedule: any) => {
+    toast.success("Schedule confirmed", {
+      description: "Both parties have agreed on the schedule",
+    })
+    window.location.reload()
   }
 
   const handleScheduleActionComplete = (updatedSchedule: any) => {
@@ -510,6 +528,16 @@ export default function BusinessOrdersPage() {
           onOpenChange={setViewDialogOpen}
           schedule={viewingSchedule}
           user={user}
+        />
+      )}
+
+      {proposalsListOrderId && (
+        <ProposalsListDialog
+          open={proposalsDialogOpen}
+          onOpenChange={setProposalsDialogOpen}
+          orderId={proposalsListOrderId}
+          user={user}
+          onProposalAgreed={handleProposalAgreed}
         />
       )}
     </div>

@@ -41,7 +41,10 @@ export default function FarmerCropsPage() {
     description: "",
     priceCents: "",
     quantity: "",
+    imageUrl: "",
   })
+  const [newProductPhoto, setNewProductPhoto] = useState<File | null>(null)
+  const [newPhotoPreview, setNewPhotoPreview] = useState<string | null>(null)
   const [editCrop, setEditCrop] = useState({
     name: "",
     description: "",
@@ -54,7 +57,11 @@ export default function FarmerCropsPage() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
 
   useEffect(() => {
-    setUser(getCurrentUser())
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
   }, [])
 
   // Fetch farmer's products
@@ -83,6 +90,7 @@ export default function FarmerCropsPage() {
         name: newCrop.name,
         description: newCrop.description || null,
         farmerId: user.id,
+        imageUrl: newCrop.imageUrl || null,
       })
 
       // Step 2: Create listing (Product → Listing) - following architecture flow
@@ -119,7 +127,7 @@ export default function FarmerCropsPage() {
     setIsEditModalOpen(true)
   }
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       // Validate file size (5MB max)
@@ -139,6 +147,116 @@ export default function FarmerCropsPage() {
         setPhotoPreview(reader.result as string)
       }
       reader.readAsDataURL(file)
+      
+      // Auto-upload
+      setIsUploadingPhoto(true)
+      try {
+        const formData = new FormData()
+        formData.append('image', file)
+        formData.append('type', 'products')
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Upload failed')
+        }
+
+        const { imageUrl } = await response.json()
+        setEditCrop({ ...editCrop, imageUrl })
+        setProductPhoto(null)
+        toast.success("Photo uploaded successfully!")
+      } catch (error: any) {
+        toast.error(error.message || "Failed to upload photo")
+      } finally {
+        setIsUploadingPhoto(false)
+      }
+    }
+  }
+
+  const handleNewPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Photo must be less than 5MB")
+        return
+      }
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select an image file")
+        return
+      }
+      setNewProductPhoto(file)
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setNewPhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+      
+      // Auto-upload
+      setIsUploadingPhoto(true)
+      try {
+        const formData = new FormData()
+        formData.append('image', file)
+        formData.append('type', 'products')
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Upload failed')
+        }
+
+        const { imageUrl } = await response.json()
+        setNewCrop({ ...newCrop, imageUrl })
+        setNewProductPhoto(null)
+        toast.success("Photo uploaded successfully!")
+      } catch (error: any) {
+        toast.error(error.message || "Failed to upload photo")
+      } finally {
+        setIsUploadingPhoto(false)
+      }
+    }
+  }
+
+  const handleNewPhotoUpload = async () => {
+    if (!newProductPhoto) return
+    
+    setIsUploadingPhoto(true)
+    try {
+      // Create FormData for upload
+      const formData = new FormData()
+      formData.append('image', newProductPhoto)
+      formData.append('type', 'products')
+
+      // Upload to server
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Upload failed')
+      }
+
+      const { imageUrl } = await response.json()
+      setNewCrop({ ...newCrop, imageUrl })
+      setNewProductPhoto(null)
+      
+      toast.success("Photo uploaded successfully!")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload photo")
+    } finally {
+      setIsUploadingPhoto(false)
     }
   }
 
@@ -236,7 +354,9 @@ export default function FarmerCropsPage() {
 
   const handleCloseModal = () => {
     setIsAddModalOpen(false)
-    setNewCrop({ name: "", description: "", priceCents: "", quantity: "" })
+    setNewProductPhoto(null)
+    setNewPhotoPreview(null)
+    setNewCrop({ name: "", description: "", priceCents: "", quantity: "", imageUrl: "" })
   }
 
   const handleCloseEditModal = () => {
@@ -310,6 +430,21 @@ export default function FarmerCropsPage() {
                   placeholder="Fresh from Benguet highlands..."
                 />
               </div>
+              <div className="grid gap-2">
+                <Label>Product Photo</Label>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden">
+                    {newPhotoPreview ? <img src={newPhotoPreview} alt="Product" className="w-full h-full object-cover" /> : <Package className="w-full h-full p-4 text-muted-foreground" />}
+                  </div>
+                  <div className="flex-1">
+                    <input type="file" id="new-photo" accept="image/*" onChange={handleNewPhotoChange} className="hidden" />
+                    <Button asChild variant="outline" size="sm" disabled={isUploadingPhoto}>
+                      <label htmlFor="new-photo" className="cursor-pointer">{isUploadingPhoto ? "Uploading..." : "Choose Photo"}</label>
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-1">JPG, PNG. Max 5MB</p>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={handleCloseModal} disabled={isCreating}>
@@ -367,12 +502,9 @@ export default function FarmerCropsPage() {
                 </div>
                 <div className="flex-1">
                   <input type="file" id="edit-photo" accept="image/*" onChange={handlePhotoChange} className="hidden" />
-                  <Button asChild variant="outline" size="sm">
-                    <label htmlFor="edit-photo" className="cursor-pointer">Choose Photo</label>
+                  <Button asChild variant="outline" size="sm" disabled={isUploadingPhoto}>
+                    <label htmlFor="edit-photo" className="cursor-pointer">{isUploadingPhoto ? "Uploading..." : "Choose Photo"}</label>
                   </Button>
-                  {productPhoto && <Button onClick={handlePhotoUpload} className="ml-2 bg-farmer hover:bg-farmer-light" size="sm" disabled={isUploadingPhoto}>
-                    {isUploadingPhoto ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading...</> : "Upload"}
-                  </Button>}
                   <p className="text-xs text-muted-foreground mt-1">JPG, PNG. Max 5MB</p>
                 </div>
               </div>
