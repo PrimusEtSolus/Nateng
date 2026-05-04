@@ -1,0 +1,53 @@
+import { NextResponse, NextRequest } from 'next/server'
+import prisma from '@/lib/prisma'
+
+export async function POST(request: NextRequest) {
+  try {
+    const { name, email, message, subject, type } = await request.json()
+
+    if (!name || !email || !message || !subject || !type) {
+      return NextResponse.json(
+        { error: 'All fields are required' },
+        { status: 400 }
+      )
+    }
+
+    // Create contact message using raw SQL since Prisma client hasn't been regenerated
+    const result = await prisma.$queryRaw`
+      INSERT INTO ContactMessage (name, email, subject, message, type, status, createdAt, updatedAt)
+      VALUES (${name}, ${email}, ${subject}, ${message}, ${type}, 'pending', datetime('now'), datetime('now'))
+      RETURNING id
+    `
+
+    return NextResponse.json({ 
+      success: true,
+      message: type === 'appeal' 
+        ? 'Appeal submitted successfully. We will review your case and contact you soon.'
+        : 'Message sent successfully. We will get back to you soon.',
+      id: (result as any)[0]?.id
+    })
+  } catch (error: unknown) {
+    console.error('Contact form error:', error)
+    return NextResponse.json(
+      { error: 'Failed to send message. Please try again later.' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // Fetch messages using raw SQL (no auth required - admin page handles frontend auth)
+    const messages = await prisma.$queryRaw`
+      SELECT * FROM ContactMessage 
+      ORDER BY createdAt DESC
+    `
+
+    return NextResponse.json({ messages })
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { error: 'Failed to fetch messages' },
+      { status: 500 }
+    )
+  }
+}

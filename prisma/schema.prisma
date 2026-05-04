@@ -1,0 +1,218 @@
+// SQLite schema for local development. Run `npx prisma migrate dev --name init` to create the DB
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Use a plain string for role to avoid enum compatibility issues with this connector
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String?  @unique // Mobile number for farmers (unique constraint)
+  password  String   // Hashed password
+  role      String
+  minimumOrderKg Int? // Minimum order quantity in kg (for farmers: 50 or 100)
+  deliveryAreas String? // JSON string array of delivery areas (e.g., municipalities)
+  paymentMethods String? // JSON string array of payment methods
+  profilePhotoUrl String? // URL to profile photo
+  isBanned  Boolean  @default(false) // User ban status
+  bannedAt  DateTime? // When user was banned
+  banReason String?  // Reason for banning
+  createdAt DateTime @default(now())
+  // Location fields for resellers and businesses
+  address   String?  // Street address
+  city      String?  // City
+  province  String?  // Province
+  postalCode String? // Postal code
+  country   String?  @default("Philippines") // Country
+  // relations
+  products  Product[] @relation("FarmerProducts")
+  listings  Listing[] @relation("SellerListings")
+  ordersAsBuyer Order[] @relation("BuyerOrders")
+  ordersAsSeller Order[] @relation("SellerOrders")
+  messagesSent Message[] @relation("SenderMessages")
+  messagesReceived Message[] @relation("ReceiverMessages")
+  appeals   Appeal[]
+  contactMessages ContactMessage[]
+  notifications Notification[]
+  favorites      Favorite[]
+  auditLogs      AuditLog[]
+  proposedSchedules DeliverySchedule[] @relation("ScheduleProposer")
+  confirmedSchedules DeliverySchedule[] @relation("ScheduleConfirmer")
+  inventory      Inventory[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  imageUrl    String?
+  farmerId    Int
+  farmer      User     @relation(fields: [farmerId], references: [id], name: "FarmerProducts")
+  createdAt   DateTime @default(now())
+  listings    Listing[]
+}
+
+model Listing {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id])
+  sellerId   Int
+  seller     User     @relation(fields: [sellerId], references: [id], name: "SellerListings")
+  priceCents Int
+  quantity   Int      @default(0)
+  available  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  orderItems OrderItem[]
+  favorites  Favorite[]
+}
+
+model Order {
+  id             Int       @id @default(autoincrement())
+  buyerId        Int
+  buyer          User      @relation(fields: [buyerId], references: [id], name: "BuyerOrders")
+  sellerId       Int
+  seller         User      @relation(fields: [sellerId], references: [id], name: "SellerOrders")
+  totalCents     Int
+  status         String    @default("PENDING")
+  deliveryOption String?   @default("delivery") // "pickup" or "delivery"
+  createdAt      DateTime  @default(now())
+  items          OrderItem[]
+  // Delivery scheduling fields for truck ban compliance
+  scheduledDate  DateTime? // Scheduled delivery date
+  scheduledTime  String?   // Scheduled delivery time (HH:mm format)
+  route          String?   // Delivery route (e.g., "Kennon Road", "Quirino Highway")
+  isCBD          Boolean?  @default(false) // Whether delivery is within Central Business District
+  truckWeightKg  Int?      // Gross weight capacity of truck in kg (4500+ triggers ban)
+  deliveryAddress String?  // Delivery address
+  isExempt       Boolean?  @default(false) // Whether vehicle is exempt from truck ban
+  exemptionType  String?  // Type of exemption (e.g., "water_delivery", "government", "emergency")
+  deliverySchedule DeliverySchedule?
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id])
+  listingId Int
+  listing   Listing @relation(fields: [listingId], references: [id])
+  quantity  Int
+  priceCents Int
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  senderId  Int
+  sender    User     @relation(fields: [senderId], references: [id], name: "SenderMessages")
+  receiverId Int
+  receiver  User     @relation(fields: [receiverId], references: [id], name: "ReceiverMessages")
+  orderId   Int?     // Optional: message related to an order
+  content   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // "order_placed", "order_confirmed", "order_shipped", "order_delivered", "message"
+  title     String
+  message   String
+  link      String?  // Optional link to related page
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  listingId Int
+  listing   Listing  @relation(fields: [listingId], references: [id])
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, listingId]) // Prevent duplicate favorites
+}
+
+model Appeal {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  appealReason  String
+  appealDetails String?
+  status        String   @default("pending") // "pending", "approved", "rejected"
+  submittedAt   DateTime @default(now())
+  reviewedAt    DateTime?
+  reviewedBy    String?  // Admin email who reviewed
+  adminNotes    String?
+  
+  @@unique([userId, status]) // One pending appeal per user
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     // User being acted upon (can be null for system actions)
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String   // "ban", "unban", "approve_appeal", "reject_appeal"
+  actor       String   // Admin email who performed action
+  reason      String?  // Reason for action
+  metadata    String?  // JSON string for additional context
+  createdAt   DateTime @default(now())
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String
+  message   String
+  type      String // 'general', 'appeal', 'support', 'business'
+  status    String @default("pending") // 'pending', 'reviewed', 'resolved'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // relations
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model DeliverySchedule {
+  id          Int      @id @default(autoincrement())
+  orderId     Int      @unique
+  order       Order    @relation(fields: [orderId], references: [id])
+  proposedBy  Int      // User who proposed the schedule
+  proposer    User     @relation("ScheduleProposer", fields: [proposedBy], references: [id])
+  confirmedBy Int?     // User who confirmed the schedule
+  confirmer   User?    @relation("ScheduleConfirmer", fields: [confirmedBy], references: [id])
+  scheduledDate DateTime
+  scheduledTime String
+  status      String   @default("proposed") // "proposed", "confirmed", "rejected", "completed"
+  route       String?
+  isCBD       Boolean  @default(false)
+  truckWeightKg Int?
+  deliveryAddress String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Inventory {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  name          String
+  inStock       Int      @default(0)
+  unit          String   @default("kg")
+  reorderLevel  Int      @default(20)
+  supplier      String?
+  lastOrderDate DateTime?
+  imageUrl      String?
+  lastUpdated   DateTime @updatedAt
+  createdAt     DateTime @default(now())
+}

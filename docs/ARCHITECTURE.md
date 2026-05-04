@@ -1,0 +1,417 @@
+# NatengHub Architecture Diagram
+
+## Architectural Framework
+
+NatengHub implements a **multi-actor ecosystem architecture** designed to facilitate collaboration between farmers, resellers, businesses, and consumers. This framework addresses the information requirements for crop supply forecasting and truck ban-compliant delivery scheduling, as outlined in the project objectives.
+
+### Multi-Actor Ecosystem
+
+The system architecture supports four primary actor types, each with distinct roles and capabilities:
+
+1. **Farmers**: Primary producers who create products and listings
+   - Access to crop programming dashboards
+   - Market intelligence and demand forecasting
+   - Product and inventory management
+
+2. **Resellers**: Wholesale traders acting as intermediate hubs
+   - Bulk purchasing capabilities
+   - Inventory management
+   - Wholesale trading operations
+
+3. **Businesses**: Restaurants, hotels, and institutions
+   - Bulk order management
+   - Inventory tracking
+   - Order consolidation support
+
+4. **Consumers/Buyers**: Individual end-users
+   - Product browsing and purchasing
+   - Shopping cart functionality
+   - Order tracking
+
+### Technology Integration
+
+- **Data Analytics Layer**: Descriptive and predictive analytics for demand forecasting and crop programming
+- **Hub-and-Spoke Logistics**: Dynamic order consolidation for efficient delivery
+- **Smart Scheduling**: Truck ban-compliant delivery scheduling system
+- **Web-Based Collaboration**: Digital platform enabling collective action and value chain integration
+
+## System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     CLIENT SIDE (Browser)                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                   Next.js Frontend                       │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐ │   │
+│  │  │   Splash    │  │   Portals   │  │  Components      │ │   │
+│  │  │   Page      │  │ - Farmer    │  │ - Products       │ │   │
+│  │  │             │  │ - Buyer     │  │ - Listings       │ │   │
+│  │  │             │  │ - Business  │  │ - Orders         │ │   │
+│  │  │             │  │ - Reseller  │  │ - Cart           │ │   │
+│  │  └─────────────┘  └─────────────┘  └──────────────────┘ │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                            ↓                                      │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │            Hooks & Utilities                            │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │   │
+│  │  │ useFetch     │  │ useCart      │  │ api-client   │  │   │
+│  │  │              │  │              │  │              │  │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                   │
+└───────────────────────────────────────┬──────────────────────────┘
+                                        │ HTTP Requests
+                                        ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                     SERVER SIDE (Next.js)                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                API Routes Layer                          │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐ │   │
+│  │  │ /products   │  │ /listings   │  │ /orders          │ │   │
+│  │  │             │  │             │  │                  │ │   │
+│  │  │ - GET       │  │ - GET       │  │ - GET            │ │   │
+│  │  │ - POST      │  │ - POST      │  │ - POST           │ │   │
+│  │  │ - PATCH     │  │ - PATCH     │  │ - PATCH          │ │   │
+│  │  │ - DELETE    │  │ - DELETE    │  │ - DELETE         │ │   │
+│  │  └─────────────┘  └─────────────┘  └──────────────────┘ │   │
+│  │                                                           │   │
+│  │  ┌─────────────────────────────────────────────────────┐ │   │
+│  │  │            /users (User Management)                │ │   │
+│  │  │ - Authentication                                   │ │   │
+│  │  │ - Profile Management                               │ │   │
+│  │  │ - Role Assignment                                  │ │   │
+│  │  └─────────────────────────────────────────────────────┘ │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                            ↓                                      │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              Prisma ORM Layer                           │   │
+│  │  - Query Builder                                         │   │
+│  │  - Type Safety                                           │   │
+│  │  - Transaction Support                                  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                            ↓                                      │
+└───────────────────────────────────────┬──────────────────────────┘
+                                        │
+                                        ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    DATABASE LAYER (SQLite)                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌─────────────┐  ┌──────────────┐  ┌────────────────────────┐  │
+│  │   Users     │  │   Products   │  │   Listings             │  │
+│  │ ├─ id       │  │ ├─ id        │  │ ├─ id                  │  │
+│  │ ├─ name     │  │ ├─ name      │  │ ├─ productId           │  │
+│  │ ├─ email    │  │ ├─ description│  │ ├─ sellerId            │  │
+│  │ ├─ role     │  │ ├─ farmerId  │  │ ├─ priceCents          │  │
+│  │ └─ ...      │  │ └─ ...       │  │ ├─ quantity            │  │
+│  │             │  │              │  │ └─ available           │  │
+│  └─────────────┘  └──────────────┘  └────────────────────────┘  │
+│                                                                   │
+│  ┌─────────────────────────────┐  ┌─────────────────────────┐   │
+│  │        Orders               │  │    OrderItems           │   │
+│  │ ├─ id                       │  │ ├─ id                   │   │
+│  │ ├─ buyerId                  │  │ ├─ orderId              │   │
+│  │ ├─ sellerId                 │  │ ├─ listingId            │   │
+│  │ ├─ totalCents               │  │ ├─ quantity             │   │
+│  │ ├─ status (PENDING, etc.)   │  │ ├─ priceCents           │   │
+│  │ └─ ...                      │  │ └─ ...                  │   │
+│  └─────────────────────────────┘  └─────────────────────────┘   │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Data Flow Diagram
+
+```
+┌──────────────┐
+│   Farmer     │
+│  Creates     │
+│  Product     │
+└──────┬───────┘
+       │ POST /api/products
+       ↓
+┌──────────────────────────────────┐
+│   Database: Product Created       │
+│   - name, description, farmerId   │
+└──────┬───────────────────────────┘
+       │
+       │ Farmer creates Listing
+       │ for that Product
+       ↓
+┌──────────────────────────────────────────┐
+│   Database: Listing Created              │
+│   - productId, sellerId                  │
+│   - priceCents: 6000 (₱60/kg)            │
+│   - quantity: 500 kg                     │
+│   - available: true                      │
+└──────┬───────────────────────────────────┘
+       │
+       │ Listing visible in marketplace
+       │ /business/browse
+       ↓
+┌──────────────────────────────┐
+│   Buyer/Business browses     │
+│   GET /api/listings          │
+│   (can filter by available)  │
+└──────┬───────────────────────┘
+       │
+       │ Adds to cart
+       │ (useCart hook)
+       ↓
+┌──────────────────────────────────┐
+│   Cart in localStorage           │
+│   ├─ listingId: 5               │
+│   ├─ quantity: 50 kg            │
+│   ├─ priceCents: 6000           │
+│   └─ totalCents: 300000         │
+└──────┬───────────────────────────┘
+       │
+       │ Places Order
+       │ POST /api/orders
+       ↓
+┌─────────────────────────────────────────────┐
+│   Transactional Order Creation (Prisma)    │
+│   1. Verify listing exists                  │
+│   2. Check inventory (qty >= order qty)    │
+│   3. Create Order record                    │
+│   4. Create OrderItem records               │
+│   5. Decrement Listing quantity             │
+│   6. Calculate & save totalCents            │
+│   (ALL OR NOTHING - transaction)            │
+└─────────────────┬──────────────────────────┘
+                  │
+        ┌─────────┴──────────┐
+        │                    │
+   Success               Error
+        │                    │
+        ↓                    ↓
+┌───────────────┐    ┌──────────────────┐
+│ Order Created │    │ Rollback all     │
+│ Status:       │    │ changes, return  │
+│ PENDING       │    │ error message    │
+└───────┬───────┘    └──────────────────┘
+        │
+        │ Seller updates status
+        │ PATCH /api/orders/:id
+        ↓
+┌─────────────────────────────────┐
+│   Order Status Update Workflow   │
+│   PENDING → CONFIRMED           │
+│   CONFIRMED → SHIPPED           │
+│   SHIPPED → DELIVERED           │
+│   (or CANCELLED at any stage)    │
+└─────────────────────────────────┘
+```
+
+## Component Hierarchy
+
+```
+App
+├── Layout
+│   ├── Navigation
+│   └── Footer
+└── Pages
+    ├── Splash (/splash)
+    │   ├── Hero Section
+    │   ├── About Section
+    │   ├── Contact Section
+    │   └── CTA Section
+    ├── Auth Pages
+    │   ├── Login (/login)
+    │   └── Signup (/signup)
+    ├── Farmer Portal (/farmer/*)
+    │   ├── Dashboard
+    │   ├── Crops
+    │   ├── Analytics
+    │   └── Orders
+    ├── Buyer Portal (/buyer/*)
+    │   ├── Dashboard
+    │   ├── Browse
+    │   ├── Cart
+    │   └── Orders
+    ├── Business Portal (/business/*)
+    │   ├── Dashboard
+    │   ├── Browse
+    │   ├── Inventory
+    │   └── Orders
+    └── Reseller Portal (/reseller/*)
+        ├── Dashboard
+        ├── Inventory
+        ├── Sales
+        └── Wholesale
+```
+
+## State Management Flow
+
+```
+┌─────────────────────────────────────┐
+│   Global State (localStorage)       │
+│   ├─ Auth Token (AUTH_KEY)         │
+│   └─ Shopping Cart (natenghub_cart)│
+└─────────────────────────────────────┘
+         ↑                    ↑
+         │                    │
+    useAuth()          useCart()
+    Hook               Hook
+         │                    │
+         ↓                    ↓
+    ┌─────────────────────────────────┐
+    │   Component State               │
+    │   ├─ Form inputs               │
+    │   ├─ UI toggles                │
+    │   └─ Temporary data            │
+    └─────────────────────────────────┘
+         ↑
+         │
+    API Calls
+    useFetch()
+         │
+         ↓
+    ┌─────────────────────────────────┐
+    │   Server State (Database)       │
+    │   ├─ Products                   │
+    │   ├─ Listings                   │
+    │   ├─ Orders                     │
+    │   └─ Users                      │
+    └─────────────────────────────────┘
+```
+
+## Deployment Architecture
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                   Production Environment                   │
+├────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │    Client (Browser)                                 │   │
+│  │    Deployed on Vercel / Netlify / Your Server       │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                        ↓                                     │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │    API Server (Next.js API Routes)                  │   │
+│  │    Deployed on Vercel / Node Server                 │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                        ↓                                     │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │    Database (PostgreSQL / MySQL)                    │   │
+│  │    Hosted on AWS RDS / Cloud SQL / Your Server      │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  Additional Services:                                      │
+│  ├─ Payment Gateway (Stripe / PayMongo)                   │
+│  ├─ Email Service (SendGrid / AWS SES)                    │
+│  ├─ File Storage (AWS S3 / Firebase)                      │
+│  └─ CDN (Cloudflare / AWS CloudFront)                     │
+│                                                             │
+└────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Analytics and Logistics Architecture (Planned)
+
+### Data Analytics Layer
+
+```
+┌────────────────────────────────────────────────────────────┐
+│              Analytics & Intelligence Module                 │
+├────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │         Descriptive Analytics                        │   │
+│  │  - Historical sales data                            │   │
+│  │  - Market trends visualization                      │   │
+│  │  - Supply/demand patterns                           │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                        ↓                                     │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │         Predictive Analytics                        │   │
+│  │  - Demand forecasting                               │   │
+│  │  - Crop programming recommendations                 │   │
+│  │  - Price prediction                                 │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                        ↓                                     │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │         Crop Programming Dashboard                   │   │
+│  │  - Market intelligence for farmers                   │   │
+│  │  - Department of Agriculture insights               │   │
+│  │  - Production planning recommendations               │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+└────────────────────────────────────────────────────────────┘
+```
+
+### Hub-and-Spoke Logistics Model
+
+```
+┌────────────────────────────────────────────────────────────┐
+│              Smart Logistics Module                         │
+├────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │   Buyer 1    │  │   Buyer 2    │  │   Buyer 3    │    │
+│  │  (Small      │  │  (Business)  │  │  (Consumer)  │    │
+│  │   Order)     │  │              │  │              │    │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘    │
+│         │                  │                  │             │
+│         └──────────────────┴──────────────────┘             │
+│                            │                                │
+│                            ↓                                │
+│         ┌─────────────────────────────────────┐            │
+│         │    Order Consolidation Hub           │            │
+│         │  - Dynamic order grouping           │            │
+│         │  - Route optimization                │            │
+│         │  - Bulk delivery preparation        │            │
+│         └─────────────────┬───────────────────┘            │
+│                           │                                 │
+│                           ↓                                 │
+│         ┌─────────────────────────────────────┐            │
+│         │   Smart Scheduling System            │            │
+│         │  - Truck ban compliance              │            │
+│         │  - Transport window optimization    │            │
+│         │  - Delivery route planning          │            │
+│         └─────────────────┬───────────────────┘            │
+│                           │                                 │
+│                           ↓                                 │
+│         ┌─────────────────────────────────────┐            │
+│         │      Delivery Execution              │            │
+│         │  - Consolidated deliveries          │            │
+│         │  - Real-time tracking               │            │
+│         │  - Status updates                   │            │
+│         └─────────────────────────────────────┘            │
+│                                                             │
+└────────────────────────────────────────────────────────────┘
+```
+
+### Information Requirements Architecture
+
+The system addresses two key information requirements:
+
+1. **Crop Supply Forecasting**
+   - Aggregates planting data across municipalities
+   - Generates demand forecasting visualizations
+   - Provides market intelligence to farmers and DA
+   - Reduces post-harvest losses through better planning
+
+2. **Truck Ban-Compliant Delivery Scheduling**
+   - Aligns delivery bookings with permissible transport hours
+   - Digitizes scheduling process
+   - Mitigates fines and delays
+   - Optimizes delivery routes within constraints
+
+**This architecture ensures**:
+- ✅ Scalability
+- ✅ Data consistency
+- ✅ Transaction safety
+- ✅ Type safety (TypeScript)
+- ✅ Responsive UI
+- ✅ Offline cart support
+- ✅ Fast API response
+- 🚧 Analytics integration (planned)
+- 🚧 Smart logistics (planned)
+- 🚧 Predictive modeling (planned)
