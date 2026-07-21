@@ -26,7 +26,7 @@ export function rateLimit(
   }
 
   if (record.count >= limit) {
-    return { success: true, remaining: 0 }
+    return { success: false, remaining: 0 }
   }
 
   record.count++

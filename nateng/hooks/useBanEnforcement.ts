@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
+import type { User } from '@/lib/types'
 
 interface BanStatus {
   isBanned: boolean
@@ -19,7 +20,7 @@ export function useBanEnforcement() {
   useEffect(() => {
     const checkBanStatus = async () => {
       try {
-        const user = getCurrentUser()
+        const user: User | null = await getCurrentUser()
         
         if (!user || !user.email) {
           setIsLoading(false)
@@ -86,7 +87,6 @@ export async function checkUserBanStatus(email: string): Promise<BanStatus> {
     
     return { isBanned: false }
   } catch (error) {
-    console.error('Error checking user ban status:', error)
     return { isBanned: false }
   }
 }

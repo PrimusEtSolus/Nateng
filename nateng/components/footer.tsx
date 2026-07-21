@@ -74,17 +74,6 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        
-        <div className="border-t border-white/20 pt-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-white/70 text-sm">
-              © 2024 NatengHub. All rights reserved.
-            </p>
-            <p className="text-white/70 text-sm">
-              Connecting Benguet Farmers to the World.
-            </p>
-          </div>
-        </div>
       </div>
     </footer>
   )

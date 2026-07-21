@@ -28,17 +28,13 @@ export default function OrderDetailPage() {
           case "buyer":
             router.push(`/buyer/orders#${orderId}`)
             break
-          case "business":
-            router.push(`/business/orders#${orderId}`)
-            break
-          case "reseller":
-            router.push(`/reseller/orders#${orderId}`)
+          case "bulkBuyer":
+            router.push(`/bulkBuyer/orders#${orderId}`)
             break
           default:
             router.push("/")
         }
       } catch (error) {
-        console.error("Error redirecting:", error)
         router.push("/login")
       } finally {
         setLoading(false)

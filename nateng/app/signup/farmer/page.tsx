@@ -1,109 +1,79 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Eye, EyeOff } from "lucide-react"
+import { ArrowLeft, Eye, EyeOff, Leaf } from "lucide-react"
 import { register, getRedirectPath } from "@/lib/auth"
 import { toast } from "sonner"
-import { TermsAndConditions } from "@/components/terms-and-conditions"
-
-const BENGUET_MUNICIPALITIES = [
-  "Atok",
-  "Bakun",
-  "Bokod",
-  "Buguias",
-  "Itogon",
-  "Kabayan",
-  "Kapangan",
-  "Kibungan",
-  "La Trinidad",
-  "Mankayan",
-  "Sablan",
-  "Tuba",
-  "Tublay",
-]
 
 export default function FarmerSignupPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const [showTerms, setShowTerms] = useState(false)
-  const [termsAccepted, setTermsAccepted] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
-    mobileNumber: "",
-    municipality: "",
+    phone: "",
     password: "",
     confirmPassword: "",
+    municipality: "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    
-    if (!formData.name) {
-      setError("Name is required")
-      return
-    }
-    
-    // Mobile number validation
+
+    // Mobile number validation (for farmers)
     const mobileRegex = /^09\d{9}$/
-    if (!formData.mobileNumber) {
-      setError("Mobile number is required")
+    if (!mobileRegex.test(formData.phone)) {
+      setError("Please enter a valid mobile number (format: 09xxxxxxxxx)")
       return
     }
-    if (!mobileRegex.test(formData.mobileNumber)) {
-      setError("Please enter a valid mobile number (e.g., 09123456789)")
+
+    // Password validation
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters long")
       return
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match")
       return
     }
-    
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters")
-      return
-    }
-    
-    if (!termsAccepted) {
-      setError("You must accept the terms and conditions to continue")
-      return
-    }
-    
+
     setIsLoading(true)
 
     try {
-      const user = await register(formData.name, formData.mobileNumber, formData.password, "farmer", undefined, formData.municipality)
+      const user = await register(
+        formData.name,
+        formData.phone,
+        formData.password,
+        "farmer",
+        undefined,
+        formData.municipality
+      )
+      
       if (user) {
-        setIsLoading(false)
         toast.success("Account created successfully!")
-        // Store user data in sessionStorage for immediate use after redirect
-        sessionStorage.setItem('user_data', JSON.stringify(user))
         router.push(getRedirectPath(user.role))
       }
     } catch (err: any) {
-      setError(err.message || "Failed to create account. Please try again.")
+      setError(err.message || "Registration failed. Please try again.")
+    } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#50EAB2] flex flex-col">
+    <div className="min-h-screen bg-[#34D399] flex flex-col">
       {/* Header */}
       <header className="p-6">
-        <Link href="/signup" className="inline-flex items-center gap-2 text-white hover:opacity-80">
+        <Link href="/" className="inline-flex items-center gap-2 text-white hover:opacity-80">
           <ArrowLeft className="w-5 h-5" />
           <Logo size="md" variant="light" />
         </Link>
@@ -112,9 +82,14 @@ export default function FarmerSignupPage() {
       {/* Signup Form */}
       <main className="flex-1 flex items-center justify-center px-4 pb-12">
         <div className="w-full max-w-lg bg-white rounded-[50px] p-8 md:p-12 shadow-xl">
-          <h1 className="text-2xl md:text-3xl font-semibold text-center text-foreground mb-8">Farmer Form</h1>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center">
+              <Leaf className="w-6 h-6 text-amber-700" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-semibold text-foreground">Farmer Sign Up</h1>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-center">
                 {error}
@@ -129,7 +104,7 @@ export default function FarmerSignupPage() {
                 id="name"
                 type="text"
                 placeholder="Enter your full name"
-                className="h-12 bg-muted border-border text-lg"
+                className="h-14 bg-muted border-border text-lg"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
@@ -137,16 +112,16 @@ export default function FarmerSignupPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mobileNumber" className="text-lg text-foreground">
+              <Label htmlFor="phone" className="text-lg text-foreground">
                 Mobile Number
               </Label>
               <Input
-                id="mobileNumber"
+                id="phone"
                 type="tel"
-                placeholder="Enter your mobile number (e.g., 09123456789)"
-                className="h-12 bg-muted border-border text-lg"
-                value={formData.mobileNumber}
-                onChange={(e) => setFormData({ ...formData, mobileNumber: e.target.value })}
+                placeholder="Enter your mobile number (09xxxxxxxxx)"
+                className="h-14 bg-muted border-border text-lg"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
               />
             </div>
@@ -155,21 +130,14 @@ export default function FarmerSignupPage() {
               <Label htmlFor="municipality" className="text-lg text-foreground">
                 Municipality
               </Label>
-              <Select
+              <Input
+                id="municipality"
+                type="text"
+                placeholder="Enter your municipality (e.g., La Trinidad)"
+                className="h-14 bg-muted border-border text-lg"
                 value={formData.municipality}
-                onValueChange={(value) => setFormData({ ...formData, municipality: value })}
-              >
-                <SelectTrigger className="h-12 bg-muted border-border text-lg">
-                  <SelectValue placeholder="Select your municipality" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BENGUET_MUNICIPALITIES.map((municipality) => (
-                    <SelectItem key={municipality} value={municipality}>
-                      {municipality}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(e) => setFormData({ ...formData, municipality: e.target.value })}
+              />
             </div>
 
             <div className="space-y-2">
@@ -180,8 +148,8 @@ export default function FarmerSignupPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password (8+ characters)"
-                  className="h-12 bg-muted border-border text-lg pr-12"
+                  placeholder="Create a password (min 8 characters)"
+                  className="h-14 bg-muted border-border text-lg pr-12"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
@@ -200,78 +168,34 @@ export default function FarmerSignupPage() {
               <Label htmlFor="confirmPassword" className="text-lg text-foreground">
                 Confirm Password
               </Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
-                  className="h-12 bg-muted border-border text-lg pr-12"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Confirm your password"
+                className="h-14 bg-muted border-border text-lg"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                required
+              />
             </div>
 
             <Button
               type="submit"
-              disabled={isLoading || !termsAccepted}
-              className="w-full h-14 bg-[#854D0E] hover:bg-[#A16207] text-white font-semibold text-xl rounded-full mt-4"
+              disabled={isLoading}
+              className="w-full h-14 bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xl rounded-full mt-8"
             >
-              {isLoading ? "Creating Account..." : "Create Farmer Account"}
+              {isLoading ? "Creating account..." : "Sign Up as Farmer"}
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="terms-checkbox"
-                checked={termsAccepted}
-                onChange={(e) => setTermsAccepted(e.target.checked)}
-                className="rounded"
-              />
-              <label htmlFor="terms-checkbox" className="text-sm text-muted-foreground">
-                I agree to the{" "}
-                <button
-                  type="button"
-                  onClick={() => setShowTerms(true)}
-                  className="text-blue-600 hover:text-blue-800 underline"
-                >
-                  Terms and Conditions
-                </button>
-              </label>
-            </div>
-          </div>
-
           <p className="text-center mt-6 text-foreground">
             Already have an account?{" "}
-            <Link href="/login" className="underline font-medium hover:text-[#854D0E]">
+            <Link href="/login" className="underline font-medium hover:text-amber-700">
               Log In
             </Link>
           </p>
         </div>
       </main>
-
-      <TermsAndConditions
-        isOpen={showTerms}
-        userRole="farmer"
-        onAccept={() => {
-          setTermsAccepted(true)
-          setShowTerms(false)
-        }}
-        onDecline={() => {
-          setTermsAccepted(false)
-          setShowTerms(false)
-        }}
-      />
     </div>
   )
 }

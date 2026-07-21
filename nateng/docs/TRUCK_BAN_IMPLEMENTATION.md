@@ -86,37 +86,7 @@ Interactive React component for scheduling deliveries:
 - ❌ Error alerts for violations
 - 🕐 Clock icon for window time suggestions
 
-### 5. Logistics Dashboard
-
-**File**: `app/logistics/dashboard/page.tsx`
-
-Comprehensive dashboard showing:
-
-**Current Status**:
-- Real-time truck ban status for CBD and Outside CBD
-- Current time display
-- Visual indicators (green for window time, red for banned)
-
-**Truck Ban Windows**:
-- Complete list of banned and allowed hours for both zones
-- Formatted time display with AM/PM
-
-**Violation Penalties**:
-- First offense: ₱2,000
-- Second offense: ₱3,000
-- Third offense: ₱5,000
-- Fourth offense: ₱5,000 + 1 month impound
-
-**Upcoming Deliveries**:
-- List of next 10 scheduled deliveries
-- Compliance status for each delivery
-- Violation warnings for non-compliant schedules
-- Delivery details (zone, truck weight, route)
-
-**Exemptions Information**:
-- List of all exemption types
-
-### 6. Integration with Order Management
+### 5. Integration with Order Management
 
 **File**: `app/farmer/orders/page.tsx`
 

@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
       id: (result as any)[0]?.id
     })
   } catch (error: unknown) {
-    console.error('Contact form error:', error)
     return NextResponse.json(
       { error: 'Failed to send message. Please try again later.' },
       { status: 500 }

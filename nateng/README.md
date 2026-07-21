@@ -18,7 +18,7 @@ NatengHub is designed to address the challenges facing Benguet's agricultural se
 
 1. **Reducing Information Asymmetry**: Providing market intelligence and demand forecasting to farmers
 2. **Optimizing Logistics**: Implementing a hub-and-spoke model with smart scheduling for truck ban compliance
-3. **Enabling Multi-Actor Collaboration**: Facilitating a digital ecosystem connecting farmers, resellers, businesses, and consumers
+3. **Enabling Multi-Actor Collaboration**: Facilitating a digital ecosystem connecting farmers, bulk buyers, and consumers
 4. **Improving Farmer Income**: Reducing middleman layers and providing direct market access
 
 ### Key Objectives
@@ -69,8 +69,7 @@ NatengHub implements a **multi-actor ecosystem architecture** with the following
 ### Multi-Actor System
 
 - **Farmers**: Create products and listings, access crop programming dashboards
-- **Resellers**: Act as intermediate hubs for wholesale trading
-- **Businesses**: Restaurants, hotels, and institutions requiring bulk orders
+- **Bulk Buyers**: Restaurants, hotels, and institutions requiring bulk orders; can also sell to retail buyers
 - **Consumers/Buyers**: Individual end-users purchasing products
 
 ### Technology Stack
@@ -93,7 +92,7 @@ For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md
 
 ### ✅ Implemented
 
-- **Multi-Actor Portals**: Role-based dashboards for farmers, buyers, businesses, and resellers
+- **Multi-Actor Portals**: Role-based dashboards for farmers, buyers, and bulk buyers
 - **Product Management**: Create, update, and manage products with image upload support
 - **Listing System**: Sellers can create listings with pricing, inventory, and product images
 - **Order Management**: Complete order lifecycle with status tracking
@@ -154,8 +153,7 @@ nateng/
 │   ├── api/               # Backend API routes
 │   ├── farmer/           # Farmer portal
 │   ├── buyer/            # Buyer portal
-│   ├── business/         # Business portal
-│   ├── reseller/         # Reseller portal
+│   ├── bulkBuyer/        # Bulk Buyer portal
 │   └── splash/           # Landing page
 ├── components/           # React components
 ├── lib/                  # Utilities and helpers
@@ -181,18 +179,18 @@ npm run seed         # Seed database with sample data
 
 ✅ **Build Status**: `npm run build` passes successfully  
 ✅ **API Tests**: `node test-api-comprehensive.js` covers 12 endpoints with full CRUD verification  
-✅ **Reseller→Buyer Flow**: Complete - resellers can add products via modal, buyers see listings immediately
+✅ **BulkBuyer→Buyer Flow**: Complete - bulk buyers can add products via modal, buyers see listings immediately
 
-### Reseller→Buyer Path
+### BulkBuyer→Buyer Path
 
-The marketplace now supports the complete reseller-to-buyer flow:
+The marketplace now supports the complete bulk buyer-to-buyer flow:
 
-1. **Resellers** can add products via the "Add Product" modal in `/reseller/inventory`
-2. **Products** appear immediately in the reseller's inventory table
-3. **Buyers** see reseller listings on `/buyer/dashboard` (filtered to reseller inventory only)
-4. **Orders** flow from buyer cart → checkout → order confirmation → reseller fulfillment
+1. **Bulk Buyers** can add products via the "Add Product" modal in `/bulkBuyer/inventory`
+2. **Products** appear immediately in the bulk buyer's inventory table
+3. **Buyers** see bulk buyer listings on `/buyer/dashboard` (filtered to bulk buyer inventory only)
+4. **Orders** flow from buyer cart → checkout → order confirmation → bulk buyer fulfillment
 
-This creates a direct B2C channel where buyers purchase exclusively from reseller listings.
+This creates a direct B2C channel where buyers purchase exclusively from bulk buyer listings.
 
 ### API Endpoints
 
@@ -212,7 +210,7 @@ For detailed API documentation, see [README_BACKEND.md](./README_BACKEND.md).
 ### Authentication & User Management
 
 **Registration:**
-- Users can register as: Farmer, Buyer, Business, or Reseller
+- Users can register as: Farmer, Buyer, or Bulk Buyer
 - Passwords are hashed with bcrypt (10 rounds)
 - Email uniqueness enforced
 

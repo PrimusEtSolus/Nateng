@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
-import { canCreateListings, filterListingsByUserRole } from '@/lib/marketplace-rules';
+import { canCreateListings, getAllowedSellersForBuyer } from '@/lib/marketplace-rules';
 import type { UserRole } from '@/lib/types';
 
 interface ListingBody {
@@ -45,8 +45,11 @@ export async function GET(req: NextRequest) {
 
     // Filter listings based on user role if provided
     let filteredListings = listings;
-    if (userRole) {
-      filteredListings = filterListingsByUserRole(listings, userRole as UserRole);
+    if (userRole && userRole !== 'admin') {
+      const allowedSellers = getAllowedSellersForBuyer(userRole as UserRole);
+      filteredListings = listings.filter(listing => 
+        allowedSellers.includes(listing.seller.role as UserRole)
+      );
     }
 
     return NextResponse.json(filteredListings);
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     // Authenticate user
-    const user = await getCurrentUser(req);
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }

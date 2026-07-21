@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, email: userEmail, password, role, stallLocation, municipality, businessType } = await req.json();
+    const { name, email: userEmail, password, role, location, municipality, businessType } = await req.json();
     
     if (!userEmail) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const validRoles = ['farmer', 'buyer', 'business', 'reseller', 'admin'];
+    const validRoles = ['farmer', 'buyer', 'bulkBuyer', 'admin'];
     if (!validRoles.includes(role)) {
       return NextResponse.json(
         { error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },
@@ -123,13 +123,19 @@ export async function POST(req: NextRequest) {
           province: 'Benguet',
           country: 'Philippines'
         }),
-        ...(role === 'reseller' && stallLocation && { 
-          address: stallLocation
+        // Save location for bulkBuyer
+        ...(role === 'bulkBuyer' && location && {
+          address: location,
+          city: location,
+          province: 'Benguet',
+          country: 'Philippines'
         }),
-        ...(role === 'business' && businessType && { 
-          address: businessType // Store business type in address field temporarily
+        // Default location data for buyer
+        ...(role === 'buyer' && {
+          city: 'Baguio',
+          province: 'Benguet', 
+          country: 'Philippines'
         }),
-        // Default location data
         ...(role === 'buyer' && {
           city: 'Baguio',
           province: 'Benguet', 

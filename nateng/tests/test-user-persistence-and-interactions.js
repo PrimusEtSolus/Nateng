@@ -16,16 +16,14 @@ const BASE_URL = 'http://localhost:3000';
 let testUsers = {
   farmer: [],
   buyer: [],
-  business: [],
-  reseller: []
+  bulkBuyer: []
 };
 
 // User tokens for authenticated requests
 let userTokens = {
   farmer: [],
   buyer: [],
-  business: [],
-  reseller: []
+  bulkBuyer: []
 };
 
 let testProducts = [];
@@ -106,45 +104,24 @@ async function testUserRegistration() {
     }
   }
   
-  // Register 5 businesses
+  // Register 5 bulkBuyers
   for (let i = 1; i <= 5; i++) {
     const result = await apiCall('/api/auth/register', 'POST', {
-      name: `business${i}`,
-      email: `business${i}${Date.now()}@test.com`,
+      name: `bulkBuyer${i}`,
+      email: `bulkBuyer${i}${Date.now()}@test.com`,
       password: 'atokfarmer',
-      role: 'business',
-      businessType: 'restaurant'
+      role: 'bulkBuyer',
+      businessName: 'Test Restaurant'
     });
     
     if (result.ok && result.data.user) {
-      testUsers.business.push(result.data.user);
-      results[`business${i}`] = 'PASS';
-      console.log(`   ✅ business${i} registered successfully!`);
+      testUsers.bulkBuyer.push(result.data.user);
+      results[`bulkBuyer${i}`] = 'PASS';
+      console.log(`   ✅ bulkBuyer${i} registered successfully!`);
       console.log(`      ID: ${result.data.user.id}, Email: ${result.data.user.email}, Role: ${result.data.user.role}`);
     } else {
-      results[`business${i}`] = 'FAIL';
-      console.log(`   ❌ business${i} registration failed: ${result.data?.error || result.error}`);
-    }
-  }
-  
-  // Register 5 resellers
-  for (let i = 1; i <= 5; i++) {
-    const result = await apiCall('/api/auth/register', 'POST', {
-      name: `reseller${i}`,
-      email: `reseller${i}${Date.now()}@test.com`,
-      password: 'atokfarmer',
-      role: 'reseller',
-      stallLocation: `Stall ${i}`
-    });
-    
-    if (result.ok && result.data.user) {
-      testUsers.reseller.push(result.data.user);
-      results[`reseller${i}`] = 'PASS';
-      console.log(`   ✅ reseller${i} registered successfully!`);
-      console.log(`      ID: ${result.data.user.id}, Email: ${result.data.user.email}, Role: ${result.data.user.role}`);
-    } else {
-      results[`reseller${i}`] = 'FAIL';
-      console.log(`   ❌ reseller${i} registration failed: ${result.data?.error || result.error}`);
+      results[`bulkBuyer${i}`] = 'FAIL';
+      console.log(`   ❌ bulkBuyer${i} registration failed: ${result.data?.error || result.error}`);
     }
   }
   
@@ -171,18 +148,8 @@ async function testUserRegistration() {
     }
   }
   
-  // Check businesses
-  for (const user of testUsers.business) {
-    const result = await apiCall(`/api/users/${user.id}`);
-    if (result.ok && result.data.id === user.id) {
-      console.log(`   ✅ ${user.name} (ID: ${user.id}) found in database`);
-    } else {
-      console.log(`   ❌ ${user.name} (ID: ${user.id}) NOT found in database`);
-    }
-  }
-  
-  // Check resellers
-  for (const user of testUsers.reseller) {
+  // Check bulkBuyers
+  for (const user of testUsers.bulkBuyer) {
     const result = await apiCall(`/api/users/${user.id}`);
     if (result.ok && result.data.id === user.id) {
       console.log(`   ✅ ${user.name} (ID: ${user.id}) found in database`);
@@ -284,26 +251,26 @@ async function testProductAndListingCreation() {
   }
 }
 
-// Test 4: Reseller creating order from farmer (user interaction)
+// Test 4: BulkBuyer creating order from farmer (user interaction)
 async function testOrderCreation() {
   console.log('\n' + '='.repeat(70));
-  console.log('TEST 4: Order Creation (Reseller-Farmer Interaction)');
+  console.log('TEST 4: Order Creation (BulkBuyer-Farmer Interaction)');
   console.log('='.repeat(70));
   
-  if (!testUsers.reseller || testUsers.reseller.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0 || testListings.length === 0) {
-    console.log('   ⏭️  Skipping - Missing reseller, farmer, or listings');
+  if (!testUsers.bulkBuyer || testUsers.bulkBuyer.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0 || testListings.length === 0) {
+    console.log('   ⏭️  Skipping - Missing bulkBuyer, farmer, or listings');
     return { status: 'SKIP' };
   }
   
   const listing = testListings[0];
-  const firstReseller = testUsers.reseller[0];
+  const firstBulkBuyer = testUsers.bulkBuyer[0];
   const firstFarmer = testUsers.farmer[0];
-  const resellerToken = userTokens.reseller[0];
+  const bulkBuyerToken = userTokens.bulkBuyer[0];
   
-  console.log(`\n🛒 Reseller (ID: ${firstReseller.id}) creating order from Farmer (ID: ${firstFarmer.id})...`);
+  console.log(`\n🛒 BulkBuyer (ID: ${firstBulkBuyer.id}) creating order from Farmer (ID: ${firstFarmer.id})...`);
   
   const orderResult = await apiCall('/api/orders', 'POST', {
-    buyerId: firstReseller.id, // Reseller acts as buyer
+    buyerId: firstBulkBuyer.id, // BulkBuyer acts as buyer
     sellerId: firstFarmer.id,
     items: [
       {
@@ -311,7 +278,7 @@ async function testOrderCreation() {
         quantity: 50
       }
     ]
-  }, resellerToken);
+  }, bulkBuyerToken);
   
   if (orderResult.ok && orderResult.data.id) {
     testOrders.push(orderResult.data);
@@ -323,7 +290,7 @@ async function testOrderCreation() {
     
     // Verify order can be retrieved
     console.log('\n🔍 Verifying order persistence...');
-    const retrieveResult = await apiCall(`/api/orders/${orderResult.data.id}`, 'GET', null, resellerToken);
+    const retrieveResult = await apiCall(`/api/orders/${orderResult.data.id}`, 'GET', null, bulkBuyerToken);
     if (retrieveResult.ok && retrieveResult.data.id === orderResult.data.id) {
       console.log(`   ✅ Order found in database`);
       return { status: 'PASS', orderId: orderResult.data.id };
@@ -344,23 +311,23 @@ async function testMessaging() {
   console.log('TEST 5: User-to-User Messaging');
   console.log('='.repeat(70));
   
-  if (!testUsers.reseller || testUsers.reseller.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0) {
-    console.log('   ⏭️  Skipping - Missing reseller or farmer');
+  if (!testUsers.bulkBuyer || testUsers.bulkBuyer.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0) {
+    console.log('   ⏭️  Skipping - Missing bulkBuyer or farmer');
     return { status: 'SKIP' };
   }
   
-  const firstReseller = testUsers.reseller[0];
+  const firstBulkBuyer = testUsers.bulkBuyer[0];
   const firstFarmer = testUsers.farmer[0];
-  const resellerToken = userTokens.reseller[0];
+  const bulkBuyerToken = userTokens.bulkBuyer[0];
   
-  console.log(`\n💬 Reseller (ID: ${firstReseller.id}) sending message to Farmer (ID: ${firstFarmer.id})...`);
+  console.log(`\n💬 BulkBuyer (ID: ${firstBulkBuyer.id}) sending message to Farmer (ID: ${firstFarmer.id})...`);
   
   const messageResult = await apiCall('/api/messages', 'POST', {
-    senderId: firstReseller.id,
+    senderId: firstBulkBuyer.id,
     receiverId: firstFarmer.id,
     content: 'Hello! When will my order be delivered?',
     orderId: testOrders.length > 0 ? testOrders[0].id : null
-  }, resellerToken);
+  }, bulkBuyerToken);
   
   if (messageResult.ok && messageResult.data.id) {
     testMessages.push(messageResult.data);
@@ -371,7 +338,7 @@ async function testMessaging() {
     
     // Verify message can be retrieved
     console.log('\n🔍 Verifying message retrieval...');
-    const retrieveResult = await apiCall(`/api/messages?userId=${firstReseller.id}&conversationWith=${firstFarmer.id}`, 'GET', null, resellerToken);
+    const retrieveResult = await apiCall(`/api/messages?userId=${firstBulkBuyer.id}&conversationWith=${firstFarmer.id}`, 'GET', null, bulkBuyerToken);
     if (retrieveResult.ok && Array.isArray(retrieveResult.data) && retrieveResult.data.length > 0) {
       console.log(`   ✅ Message found in conversation!`);
       console.log(`      Total messages: ${retrieveResult.data.length}`);
@@ -429,8 +396,8 @@ async function testDataPersistence() {
   if (testOrders.length > 0) {
     console.log('\n🛒 Verifying orders persist...');
     for (const order of testOrders) {
-      const resellerToken = userTokens.reseller[0];
-      const result = await apiCall(`/api/orders/${order.id}`, 'GET', null, resellerToken);
+      const bulkBuyerToken = userTokens.bulkBuyer[0];
+      const result = await apiCall(`/api/orders/${order.id}`, 'GET', null, bulkBuyerToken);
       if (result.ok && result.data.id === order.id) {
         results[`order_${order.id}_persists`] = 'PASS';
         console.log(`   ✅ Order ${order.id} still exists`);
@@ -451,19 +418,19 @@ async function testUserTransactions() {
   console.log('TEST 7: User Transactions (Buying & Selling)');
   console.log('='.repeat(70));
   
-  // Test 1: Business buying from Farmer
-  console.log('\n🏢 Business buying from Farmer...');
-  if (!testUsers.business || testUsers.business.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0 || testListings.length === 0) {
-    console.log('   ⏭️  Skipping - Missing business, farmer, or listings');
+  // Test 1: BulkBuyer buying from Farmer
+  console.log('\n🏢 BulkBuyer buying from Farmer...');
+  if (!testUsers.bulkBuyer || testUsers.bulkBuyer.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0 || testListings.length === 0) {
+    console.log('   ⏭️  Skipping - Missing bulkBuyer, farmer, or listings');
     return { status: 'SKIP' };
   }
   
-  const firstBusiness = testUsers.business[0];
+  const firstBulkBuyer = testUsers.bulkBuyer[0];
   const firstFarmer = testUsers.farmer[0];
-  const businessToken = userTokens.business[0];
+  const bulkBuyerToken = userTokens.bulkBuyer[0];
   
-  const businessOrderResult = await apiCall('/api/orders', 'POST', {
-    buyerId: firstBusiness.id,
+  const bulkBuyerOrderResult = await apiCall('/api/orders', 'POST', {
+    buyerId: firstBulkBuyer.id,
     sellerId: firstFarmer.id,
     items: [
       {
@@ -471,58 +438,29 @@ async function testUserTransactions() {
         quantity: 10 // Use smaller quantity to avoid conflicts
       }
     ]
-  }, businessToken);
+  }, bulkBuyerToken);
   
-  if (businessOrderResult.ok && businessOrderResult.data.id) {
-    console.log(`   ✅ Business order created! ID: ${businessOrderResult.data.id}`);
-    console.log(`      Total: ₱${(businessOrderResult.data.totalCents / 100).toFixed(2)}`);
+  if (bulkBuyerOrderResult.ok && bulkBuyerOrderResult.data.id) {
+    console.log(`   ✅ BulkBuyer order created! ID: ${bulkBuyerOrderResult.data.id}`);
+    console.log(`      Total: ₱${(bulkBuyerOrderResult.data.totalCents / 100).toFixed(2)}`);
   } else {
-    console.log(`   ❌ Business order failed: ${businessOrderResult.data?.error || businessOrderResult.error}`);
+    console.log(`   ❌ BulkBuyer order failed: ${bulkBuyerOrderResult.data?.error || bulkBuyerOrderResult.error}`);
   }
   
-  // Test 2: Reseller buying from Farmer
-  console.log('\n🛒 Reseller buying from Farmer...');
-  if (!testUsers.reseller || testUsers.reseller.length === 0 || !testUsers.farmer || testUsers.farmer.length === 0 || testListings.length === 0) {
-    console.log('   ⏭️  Skipping - Missing reseller, farmer, or listings');
-    return { status: 'SKIP' };
-  }
+  // Test 2: Buyer buying from BulkBuyer (need bulkBuyer listing)
+  console.log('\n🛍️  Buyer buying from BulkBuyer...');
   
-  const firstReseller = testUsers.reseller[0];
-  const resellerToken = userTokens.reseller[0];
-  
-  // Use a different quantity to avoid insufficient quantity error
-  const resellerOrderResult = await apiCall('/api/orders', 'POST', {
-    buyerId: firstReseller.id,
-    sellerId: firstFarmer.id,
-    items: [
-      {
-        listingId: testListings[0].id,
-        quantity: 20 // Use smaller quantity
-      }
-    ]
-  }, resellerToken);
-  
-  if (resellerOrderResult.ok && resellerOrderResult.data.id) {
-    console.log(`   ✅ Reseller order created! ID: ${resellerOrderResult.data.id}`);
-    console.log(`      Total: ₱${(resellerOrderResult.data.totalCents / 100).toFixed(2)}`);
-  } else {
-    console.log(`   ❌ Reseller order failed: ${resellerOrderResult.data?.error || resellerOrderResult.error}`);
-  }
-  
-  // Test 3: Buyer buying from Reseller (need reseller listing)
-  console.log('\n🛍️  Buyer buying from Reseller...');
-  
-  // First create a reseller product and listing (resellers need to create products differently)
-  // Since only farmers can create products, we'll have the reseller create a listing for an existing farmer product
-  const resellerListingResult = await apiCall('/api/listings', 'POST', {
+  // First create a bulkBuyer product and listing (bulkBuyers need to create products differently)
+  // Since only farmers can create products, we'll have the bulkBuyer create a listing for an existing farmer product
+  const bulkBuyerListingResult = await apiCall('/api/listings', 'POST', {
     productId: testProducts[0].id, // Use existing farmer product
-    sellerId: firstReseller.id,
+    sellerId: firstBulkBuyer.id,
     priceCents: 6000, // ₱60.00
     quantity: 50 // Use 'quantity' not 'quantityKg'
-  }, resellerToken);
+  }, bulkBuyerToken);
   
-  if (resellerListingResult.ok && resellerListingResult.data.id) {
-    // Now buyer can purchase from reseller
+  if (bulkBuyerListingResult.ok && bulkBuyerListingResult.data.id) {
+    // Now buyer can purchase from bulkBuyer
     if (!testUsers.buyer || testUsers.buyer.length === 0) {
       console.log('   ⏭️  Skipping - No buyer registered');
       return { status: 'SKIP' };
@@ -533,10 +471,10 @@ async function testUserTransactions() {
     
     const buyerOrderResult = await apiCall('/api/orders', 'POST', {
       buyerId: firstBuyer.id,
-      sellerId: firstReseller.id,
+      sellerId: firstBulkBuyer.id,
       items: [
         {
-          listingId: resellerListingResult.data.id,
+          listingId: bulkBuyerListingResult.data.id,
           quantity: 5
         }
       ]

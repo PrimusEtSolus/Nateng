@@ -13,10 +13,10 @@ async function generateTestData() {
       { name: 'Jane Farmer', email: 'jane@farmer.com', role: 'farmer', minimumOrderKg: 100 },
       { name: 'Bob Buyer', email: 'bob@buyer.com', role: 'buyer' },
       { name: 'Alice Buyer', email: 'alice@buyer.com', role: 'buyer' },
-      { name: 'Charlie Business', email: 'charlie@business.com', role: 'business' },
-      { name: 'Diana Reseller', email: 'diana@reseller.com', role: 'reseller' },
+      { name: 'Charlie BulkBuyer', email: 'charlie@bulkBuyer.com', role: 'bulkBuyer', minimumOrderKg: 30 },
+      { name: 'Diana BulkBuyer', email: 'diana@bulkBuyer.com', role: 'bulkBuyer', minimumOrderKg: 50 },
       { name: 'Eve Buyer', email: 'eve@buyer.com', role: 'buyer' },
-      { name: 'Frank Business', email: 'frank@business.com', role: 'business' }
+      { name: 'Frank BulkBuyer', email: 'frank@bulkBuyer.com', role: 'bulkBuyer', minimumOrderKg: 100 }
     ]
 
     const createdUsers = []
@@ -89,8 +89,8 @@ async function generateTestData() {
     }
 
     // Generate orders over different times (last 6 months)
-    const buyerUsers = createdUsers.filter(u => u.role === 'buyer' || u.role === 'business' || u.role === 'reseller')
-    const sellerUsers = createdUsers.filter(u => u.role === 'farmer' || u.role === 'reseller')
+    const buyerUsers = createdUsers.filter(u => u.role === 'buyer' || u.role === 'bulkBuyer')
+    const sellerUsers = createdUsers.filter(u => u.role === 'farmer' || u.role === 'bulkBuyer')
 
     for (let i = 0; i < 50; i++) {
       const buyer = buyerUsers[Math.floor(Math.random() * buyerUsers.length)]

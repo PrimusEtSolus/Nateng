@@ -10,11 +10,9 @@ export async function GET() {
       message: 'Database connection successful'
     });
   } catch (error: unknown) {
-    console.error('[DB-CHECK] Error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ 
       status: 'error', 
-      error: message
+      error: 'Database connection failed'
     }, { status: 500 });
   }
 }

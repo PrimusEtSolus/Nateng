@@ -11,6 +11,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { notificationsAPI } from "@/lib/api-client"
 import { getCurrentUser } from "@/lib/auth"
+import type { User } from "@/lib/types"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 
@@ -29,7 +30,7 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<ReturnType<typeof getCurrentUser> | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -54,8 +55,8 @@ export function NotificationBell() {
           const all = await notificationsAPI.getAll(user.id, false)
           setNotifications(all)
         }
-      } catch (error) {
-        console.error("Failed to fetch notifications:", error)
+      } catch {
+        // Silent error handling
       } finally {
         setLoading(false)
       }
@@ -73,8 +74,8 @@ export function NotificationBell() {
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       )
       setUnreadCount(prev => Math.max(0, prev - 1))
-    } catch (error) {
-      console.error("Failed to mark notification as read:", error)
+    } catch {
+      // Silent error handling
     }
   }
 
@@ -84,8 +85,8 @@ export function NotificationBell() {
       await Promise.all(unread.map(n => notificationsAPI.markAsRead(n.id)))
       setNotifications(prev => prev.map(n => ({ ...n, read: true })))
       setUnreadCount(0)
-    } catch (error) {
-      console.error("Failed to mark all as read:", error)
+    } catch {
+      // Silent error handling
     }
   }
 
@@ -179,4 +180,3 @@ export function NotificationBell() {
     </Popover>
   )
 }
-

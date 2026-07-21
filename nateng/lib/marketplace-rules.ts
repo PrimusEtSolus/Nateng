@@ -2,10 +2,11 @@
  * Marketplace transaction rules enforcement
  * 
  * Rules:
- * - Farmers may sell to Business, Reseller, and Buyer users
- * - Resellers may sell only to Buyer users  
- * - Buyers may purchase from Reseller or Farmer users
- * - Business and Reseller users may purchase from Farmers
+ * - Farmers may sell to Buyers and BulkBuyers
+ * - BulkBuyers may sell only to Buyers
+ * - Buyers may purchase from Farmers or BulkBuyers
+ * - BulkBuyers may purchase only from Farmers
+ * - Admin can do anything
  */
 
 import type { UserRole } from '@/lib/types';
@@ -20,40 +21,32 @@ export interface MarketplaceRuleViolation {
  * Check if a seller can sell to a buyer based on marketplace rules
  */
 export function canSellTo(sellerRole: UserRole, buyerRole: UserRole): MarketplaceRuleViolation {
-  // Admin can do anything
+  // Admin can do anything (symmetric bypass for consistency)
   if (sellerRole === 'admin' || buyerRole === 'admin') {
     return { allowed: true }
   }
 
-  // Farmers may sell to Business, Reseller, and Buyer users
+  // Farmers may sell to Buyers and BulkBuyers
   if (sellerRole === 'farmer') {
-    const allowedBuyers = ['business', 'reseller', 'buyer']
+    const allowedBuyers = ['buyer', 'bulkBuyer']
     return {
       allowed: allowedBuyers.includes(buyerRole),
       allowedRoles: allowedBuyers,
       reason: allowedBuyers.includes(buyerRole) 
         ? undefined 
-        : `Farmers can only sell to Business, Reseller, and Buyer users, not ${buyerRole}`
+        : `Farmers can only sell to Buyers and BulkBuyers, not ${buyerRole}`
     }
   }
 
-  // Resellers may sell only to Buyer users
-  if (sellerRole === 'reseller') {
+  // BulkBuyers may sell only to Buyers
+  if (sellerRole === 'bulkBuyer') {
     const allowedBuyers = ['buyer']
     return {
       allowed: allowedBuyers.includes(buyerRole),
       allowedRoles: allowedBuyers,
       reason: allowedBuyers.includes(buyerRole)
         ? undefined
-        : `Resellers can only sell to Buyer users, not ${buyerRole}`
-    }
-  }
-
-  // Business users cannot sell (they are buyers only)
-  if (sellerRole === 'business') {
-    return {
-      allowed: false,
-      reason: 'This seller cannot offer products'
+        : `BulkBuyers can only sell to Buyers, not ${buyerRole}`
     }
   }
 
@@ -61,7 +54,7 @@ export function canSellTo(sellerRole: UserRole, buyerRole: UserRole): Marketplac
   if (sellerRole === 'buyer') {
     return {
       allowed: false,
-      reason: 'This seller cannot offer products'
+      reason: 'Buyers cannot sell products'
     }
   }
 
@@ -72,32 +65,32 @@ export function canSellTo(sellerRole: UserRole, buyerRole: UserRole): Marketplac
  * Check if a buyer can purchase from a seller based on marketplace rules
  */
 export function canBuyFrom(buyerRole: UserRole, sellerRole: UserRole): MarketplaceRuleViolation {
-  // Admin can do anything
+  // Admin can do anything (symmetric bypass for consistency)
   if (buyerRole === 'admin' || sellerRole === 'admin') {
     return { allowed: true }
   }
 
-  // Buyers may purchase from Reseller or Farmer users
+  // Buyers may purchase from Farmers or BulkBuyers
   if (buyerRole === 'buyer') {
-    const allowedSellers = ['reseller', 'farmer']
+    const allowedSellers = ['farmer', 'bulkBuyer']
     return {
       allowed: allowedSellers.includes(sellerRole),
       allowedRoles: allowedSellers,
       reason: allowedSellers.includes(sellerRole)
         ? undefined
-        : `Buyers can only purchase from Reseller or Farmer users, not ${sellerRole}`
+        : `Buyers can only purchase from Farmers or BulkBuyers, not ${sellerRole}`
     }
   }
 
-  // Business and Reseller users may purchase only from Farmers
-  if (buyerRole === 'business' || buyerRole === 'reseller') {
+  // BulkBuyers may purchase only from Farmers
+  if (buyerRole === 'bulkBuyer') {
     const allowedSellers = ['farmer']
     return {
       allowed: allowedSellers.includes(sellerRole),
       allowedRoles: allowedSellers,
       reason: allowedSellers.includes(sellerRole)
         ? undefined
-        : `${buyerRole} users can only purchase from Farmers, not ${sellerRole}`
+        : `BulkBuyers can only purchase from Farmers, not ${sellerRole}`
     }
   }
 
@@ -105,7 +98,7 @@ export function canBuyFrom(buyerRole: UserRole, sellerRole: UserRole): Marketpla
   if (buyerRole === 'farmer') {
     return {
       allowed: false,
-      reason: 'Farmer users cannot purchase products, they can only sell'
+      reason: 'Farmers cannot purchase products, they can only sell'
     }
   }
 
@@ -124,7 +117,6 @@ export function validateMarketplaceTransaction(
 
   // Both checks should agree
   if (sellerCheck.allowed !== buyerCheck.allowed) {
-    // This should never happen if rules are consistent
     return {
       allowed: false,
       reason: 'Inconsistent marketplace rules detected'
@@ -138,41 +130,41 @@ export function validateMarketplaceTransaction(
  * Get allowed buyer roles for a given seller role
  */
 export function getAllowedBuyersForSeller(sellerRole: UserRole): UserRole[] {
-  const allRoles: UserRole[] = ['farmer', 'buyer', 'reseller', 'business', 'admin']
+  const allRoles: UserRole[] = ['farmer', 'buyer', 'bulkBuyer', 'admin']
   
   return allRoles.filter(buyerRole => {
     const result = canSellTo(sellerRole, buyerRole)
     return result.allowed
-  })
+  }).filter(role => role !== 'admin') // Explicitly exclude admin from discovery lists
 }
 
 /**
  * Get allowed seller roles for a given buyer role
  */
 export function getAllowedSellersForBuyer(buyerRole: UserRole): UserRole[] {
-  const allRoles: UserRole[] = ['farmer', 'buyer', 'reseller', 'business', 'admin']
+  const allRoles: UserRole[] = ['farmer', 'buyer', 'bulkBuyer', 'admin']
   
   return allRoles.filter(sellerRole => {
     const result = canBuyFrom(buyerRole, sellerRole)
     return result.allowed
-  })
+  }).filter(role => role !== 'admin') // Explicitly exclude admin from discovery lists
 }
 
 /**
  * Filter listings based on user's role and marketplace rules
  */
-export function filterListingsByUserRole<T extends { seller: { role: string } }>(
+export function filterListingsByUserRole<T extends { seller: { role: UserRole } }>(
   listings: T[],
   userRole: UserRole
 ): T[] {
   if (userRole === 'admin') {
-    return listings // Admin can see all listings
+    return listings // Admin can see all listings (including admin-owned)
   }
 
   const allowedSellers = getAllowedSellersForBuyer(userRole)
   
   return listings.filter(listing => 
-    allowedSellers.includes(listing.seller.role as UserRole)
+    allowedSellers.includes(listing.seller.role)
   )
 }
 
@@ -185,14 +177,14 @@ export function canCreateListings(userRole: UserRole): MarketplaceRuleViolation 
     return { allowed: true }
   }
 
-  // Farmers and Resellers can create listings
-  if (userRole === 'farmer' || userRole === 'reseller') {
+  // Farmers and BulkBuyers can create listings
+  if (userRole === 'farmer' || userRole === 'bulkBuyer') {
     return { allowed: true }
   }
 
-  // Buyers and Business users cannot create listings
+  // Buyers cannot create listings
   return {
     allowed: false,
-    reason: 'Only Farmers and Resellers can create listings'
+    reason: 'Only Farmers and BulkBuyers can create listings'
   }
 }

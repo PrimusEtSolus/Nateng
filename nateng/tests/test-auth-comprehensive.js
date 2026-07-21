@@ -19,17 +19,11 @@ const testUsers = {
     password: 'testpass123',
     role: 'buyer'
   },
-  business: {
-    name: 'Test Business',
-    email: `testbusiness${Date.now()}@test.com`,
+  bulkBuyer: {
+    name: 'Test BulkBuyer',
+    email: `testbulkBuyer${Date.now()}@test.com`,
     password: 'testpass123',
-    role: 'business'
-  },
-  reseller: {
-    name: 'Test Reseller',
-    email: `testreseller${Date.now()}@test.com`,
-    password: 'testpass123',
-    role: 'reseller'
+    role: 'bulkBuyer'
   }
 };
 
@@ -37,8 +31,7 @@ const testUsers = {
 const expectedPaths = {
   farmer: '/farmer/dashboard',
   buyer: '/buyer/dashboard',
-  business: '/business/dashboard',
-  reseller: '/reseller/dashboard'
+  bulkBuyer: '/bulkBuyer/dashboard'
 };
 
 async function testRegistration(role, userData) {

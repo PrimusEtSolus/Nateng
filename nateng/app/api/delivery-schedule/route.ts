@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req)
+    const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req)
+    const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }

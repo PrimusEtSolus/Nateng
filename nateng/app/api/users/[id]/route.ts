@@ -31,7 +31,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const { name, email, role, profilePhotoUrl, phone, minimumOrderKg, deliveryAreas, paymentMethods } = body;
 
     if (role) {
-      const validRoles = ['farmer', 'buyer', 'business', 'reseller', 'admin'];
+      const validRoles = ['farmer', 'buyer', 'bulkBuyer', 'admin'];
       if (!validRoles.includes(role)) {
         return NextResponse.json(
           { error: `invalid role. must be one of: ${validRoles.join(', ')}` },

@@ -23,49 +23,6 @@
 
 ---
 
-### 2. ✅ Math.random() in ID Generation (Business Inventory)
-**File:** `app/business/inventory/page.tsx`  
-**Issue:** Using `Math.random()` and `Date.now()` generates different IDs on server vs client  
-**Fix:** Replaced with a simple counter
-
-**Before:**
-```tsx
-const generateInventoryId = () => `inventory-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-```
-
-**After:**
-```tsx
-let inventoryIdCounter = 0
-const generateInventoryId = () => {
-  inventoryIdCounter++
-  return `inventory-${inventoryIdCounter}`
-}
-```
-
----
-
-### 3. ✅ new Date() in useState Initial Value (Logistics Dashboard)
-**File:** `app/logistics/dashboard/page.tsx`  
-**Issue:** `useState(new Date())` creates different timestamps on server vs client  
-**Fix:** Initialize as `null` and set in `useEffect`, add `mounted` state
-
-**Before:**
-```tsx
-const [currentTime, setCurrentTime] = useState(new Date())
-```
-
-**After:**
-```tsx
-const [currentTime, setCurrentTime] = useState<Date | null>(null)
-const [mounted, setMounted] = useState(false)
-
-useEffect(() => {
-  setMounted(true)
-  setCurrentTime(new Date())
-  // ... rest of initialization
-}, [])
-```
-
 ---
 
 ### 4. ✅ Locale-Dependent Date Formatting
@@ -79,10 +36,8 @@ useEffect(() => {
 - `formatDateTime()` - Date and time format
 
 **Updated Files:**
-- `app/reseller/orders/page.tsx` - Uses `formatDate()`
 - `app/buyer/orders/page.tsx` - Uses `formatDateWithMonth()`
 - `app/farmer/dashboard/page.tsx` - Uses `formatDate()`
-- `app/logistics/dashboard/page.tsx` - Uses `formatDateTime()`
 
 ---
 
@@ -176,9 +131,6 @@ if (!mounted || !user) return null
 
 ### Files Modified
 - ✅ `app/buyer/checkout/page.tsx` - Removed Date.now()
-- ✅ `app/business/inventory/page.tsx` - Fixed ID generation
-- ✅ `app/logistics/dashboard/page.tsx` - Fixed Date initialization
-- ✅ `app/reseller/orders/page.tsx` - Uses formatDate()
 - ✅ `app/buyer/orders/page.tsx` - Uses formatDateWithMonth()
 - ✅ `app/farmer/dashboard/page.tsx` - Uses formatDate()
 - ✅ `components/header.tsx` - Fixed getCurrentUser() hydration

@@ -68,83 +68,55 @@ async function main() {
     },
   });
 
-  // Businesses
-  const business1 = await prisma.user.create({
+  // Bulk Buyers (combines business and reseller roles)
+  const bulkBuyer1 = await prisma.user.create({
     data: {
       name: "Green Valley Restaurant",
-      email: "business1@email.com",
+      email: "bulkBuyer1@email.com",
       password: defaultPassword,
-      role: "business",
+      role: "bulkBuyer",
+      businessName: "Green Valley Restaurant",
       address: "123 Session Road",
       city: "Baguio",
       province: "Benguet",
       country: "Philippines",
+      minimumOrderKg: 50,
+      deliveryAreas: JSON.stringify(["Baguio City", "La Trinidad"]),
+      paymentMethods: JSON.stringify(["cash_on_delivery", "bank_transfer"]),
     },
   });
 
-  const business2 = await prisma.user.create({
+  const bulkBuyer2 = await prisma.user.create({
     data: {
       name: "Mountain View Hotel",
-      email: "business2@email.com",
+      email: "bulkBuyer2@email.com",
       password: defaultPassword,
-      role: "business",
+      role: "bulkBuyer",
+      businessName: "Mountain View Hotel",
       address: "456 Magsaysay Avenue",
       city: "Baguio",
       province: "Benguet",
       country: "Philippines",
+      minimumOrderKg: 100,
+      deliveryAreas: JSON.stringify(["Baguio City"]),
+      paymentMethods: JSON.stringify(["cash_on_delivery"]),
     },
   });
 
-  const business3 = await prisma.user.create({
+  const bulkBuyer3 = await prisma.user.create({
     data: {
       name: "Benguet Fresh Market",
-      email: "business3@email.com",
+      email: "bulkBuyer3@email.com",
       password: defaultPassword,
-      role: "business",
+      role: "bulkBuyer",
+      businessName: "Benguet Fresh Market",
       address: "789 Harrison Road",
       city: "Baguio",
       province: "Benguet",
       country: "Philippines",
-    },
-  });
-
-  // Resellers
-  const reseller1 = await prisma.user.create({
-    data: {
-      name: "Highland Markets Reseller",
-      email: "reseller1@email.com",
-      password: defaultPassword,
-      role: "reseller",
-      address: "123 Session Road",
-      city: "Baguio",
-      province: "Benguet",
-      country: "Philippines",
-    },
-  });
-
-  const reseller2 = await prisma.user.create({
-    data: {
-      name: "Market Stall 2",
-      email: "reseller2@email.com",
-      password: defaultPassword,
-      role: "reseller",
-      address: "456 Magsaysay Avenue",
-      city: "Baguio",
-      province: "Benguet",
-      country: "Philippines",
-    },
-  });
-
-  const reseller3 = await prisma.user.create({
-    data: {
-      name: "Market Stall 3",
-      email: "reseller3@email.com",
-      password: defaultPassword,
-      role: "reseller",
-      address: "789 Harrison Road",
-      city: "Baguio",
-      province: "Benguet",
-      country: "Philippines",
+      minimumOrderKg: 30,
+      deliveryAreas: JSON.stringify(["Baguio City", "La Trinidad", "Mankayan"]),
+      paymentMethods: JSON.stringify(["gcash", "cash_on_delivery"]),
     },
   });
 
@@ -392,64 +364,64 @@ async function main() {
   });
 
   // ============================================
-  // CREATE LISTINGS (Reseller - Retail)
+  // CREATE LISTINGS (Bulk Buyer - Retail)
   // ============================================
-  console.log("  📋 Creating reseller listings...");
+  console.log("  📋 Creating bulk buyer listings...");
 
-  const resellerListing1 = await prisma.listing.create({
+  const bulkBuyerListing1 = await prisma.listing.create({
     data: {
       productId: tomatoes.id,
-      sellerId: reseller1.id,
+      sellerId: bulkBuyer1.id,
       priceCents: 8000, // ₱80/kg (retail price)
       quantity: 100,
       available: true,
     },
   });
 
-  const resellerListing2 = await prisma.listing.create({
+  const bulkBuyerListing2 = await prisma.listing.create({
     data: {
       productId: cabbage.id,
-      sellerId: reseller1.id,
+      sellerId: bulkBuyer1.id,
       priceCents: 6000, // ₱60/kg (retail price)
       quantity: 80,
       available: true,
     },
   });
 
-  const resellerListing3 = await prisma.listing.create({
+  const bulkBuyerListing3 = await prisma.listing.create({
     data: {
       productId: carrots.id,
-      sellerId: reseller2.id,
+      sellerId: bulkBuyer2.id,
       priceCents: 7500, // ₱75/kg (retail price)
       quantity: 60,
       available: true,
     },
   });
 
-  const resellerListing4 = await prisma.listing.create({
+  const bulkBuyerListing4 = await prisma.listing.create({
     data: {
       productId: strawberries.id,
-      sellerId: reseller2.id,
+      sellerId: bulkBuyer2.id,
       priceCents: 15000, // ₱150/kg (retail price)
       quantity: 50,
       available: true,
     },
   });
 
-  const resellerListing5 = await prisma.listing.create({
+  const bulkBuyerListing5 = await prisma.listing.create({
     data: {
       productId: lettuce.id,
-      sellerId: reseller3.id,
+      sellerId: bulkBuyer3.id,
       priceCents: 9500, // ₱95/kg (retail price)
       quantity: 40,
       available: true,
     },
   });
 
-  const resellerListing6 = await prisma.listing.create({
+  const bulkBuyerListing6 = await prisma.listing.create({
     data: {
       productId: potatoes.id,
-      sellerId: reseller3.id,
+      sellerId: bulkBuyer3.id,
       priceCents: 5000, // ₱50/kg (retail price)
       quantity: 120,
       available: true,
@@ -461,10 +433,10 @@ async function main() {
   // ============================================
   console.log("  📦 Creating orders...");
 
-  // Order 1: Business to Farmer (CONFIRMED)
+  // Order 1: Bulk Buyer to Farmer (CONFIRMED)
   const order1 = await prisma.order.create({
     data: {
-      buyerId: business1.id,
+      buyerId: bulkBuyer1.id,
       sellerId: farmer1.id,
       totalCents: 0,
       status: "CONFIRMED",
@@ -491,10 +463,10 @@ async function main() {
     },
   });
 
-  // Order 2: Business to Farmer (DELIVERED)
+  // Order 2: Bulk Buyer to Farmer (DELIVERED)
   const order2 = await prisma.order.create({
     data: {
-      buyerId: business2.id,
+      buyerId: bulkBuyer2.id,
       sellerId: farmer2.id,
       totalCents: 0,
       status: "DELIVERED",
@@ -521,22 +493,22 @@ async function main() {
     },
   });
 
-  // Order 3: Buyer to Reseller (PENDING)
+  // Order 3: Buyer to Bulk Buyer (PENDING)
   const order3 = await prisma.order.create({
     data: {
       buyerId: buyer1.id,
-      sellerId: reseller1.id,
+      sellerId: bulkBuyer1.id,
       totalCents: 0,
       status: "PENDING",
       items: {
         create: [
           {
-            listingId: resellerListing1.id,
+            listingId: bulkBuyerListing1.id,
             quantity: 5,
             priceCents: 8000,
           },
           {
-            listingId: resellerListing2.id,
+            listingId: bulkBuyerListing2.id,
             quantity: 3,
             priceCents: 6000,
           },
@@ -545,10 +517,10 @@ async function main() {
     },
   });
 
-  // Order 4: Business to Farmer (SHIPPED)
+  // Order 4: Bulk Buyer to Farmer (SHIPPED)
   const order4 = await prisma.order.create({
     data: {
-      buyerId: business3.id,
+      buyerId: bulkBuyer3.id,
       sellerId: farmer3.id,
       totalCents: 0,
       status: "SHIPPED",
@@ -575,22 +547,22 @@ async function main() {
     },
   });
 
-  // Order 5: Buyer to Reseller (DELIVERED)
+  // Order 5: Buyer to Bulk Buyer (DELIVERED)
   const order5 = await prisma.order.create({
     data: {
       buyerId: buyer2.id,
-      sellerId: reseller2.id,
+      sellerId: bulkBuyer2.id,
       totalCents: 0,
       status: "DELIVERED",
       items: {
         create: [
           {
-            listingId: resellerListing3.id,
+            listingId: bulkBuyerListing3.id,
             quantity: 8,
             priceCents: 7500,
           },
           {
-            listingId: resellerListing4.id,
+            listingId: bulkBuyerListing4.id,
             quantity: 5,
             priceCents: 15000,
           },
@@ -599,10 +571,10 @@ async function main() {
     },
   });
 
-  // Order 6: Business to Farmer (PENDING)
+  // Order 6: Bulk Buyer to Farmer (PENDING)
   const order6 = await prisma.order.create({
     data: {
-      buyerId: business1.id,
+      buyerId: bulkBuyer1.id,
       sellerId: farmer2.id,
       totalCents: 0,
       status: "PENDING",
@@ -652,7 +624,7 @@ async function main() {
       truckWeightKg: 3000,
       deliveryAddress: "123 Session Road, Baguio City",
       notes: "Delivery via Kennon Road, early morning to avoid traffic",
-      confirmedBy: business1.id,
+      confirmedBy: bulkBuyer1.id,
     },
   });
 
@@ -668,7 +640,7 @@ async function main() {
       truckWeightKg: 4000,
       deliveryAddress: "789 Harrison Road, Baguio City",
       notes: "Large truck, Marcos Highway route",
-      confirmedBy: business3.id,
+      confirmedBy: bulkBuyer3.id,
     },
   });
 
@@ -694,7 +666,7 @@ async function main() {
 
   await prisma.message.create({
     data: {
-      senderId: business1.id,
+      senderId: bulkBuyer1.id,
       receiverId: farmer1.id,
       orderId: order1.id,
       content: "Hello, I would like to confirm the delivery time for my order.",
@@ -705,7 +677,7 @@ async function main() {
   await prisma.message.create({
     data: {
       senderId: farmer1.id,
-      receiverId: business1.id,
+      receiverId: bulkBuyer1.id,
       orderId: order1.id,
       content: "Good morning! Yes, your order is scheduled for April 25 at 9:00 AM via Kennon Road.",
       read: true,
@@ -715,7 +687,7 @@ async function main() {
   await prisma.message.create({
     data: {
       senderId: buyer1.id,
-      receiverId: reseller1.id,
+      receiverId: bulkBuyer1.id,
       orderId: order3.id,
       content: "Hi, when can I pick up my order?",
       read: false,
@@ -724,7 +696,7 @@ async function main() {
 
   await prisma.message.create({
     data: {
-      senderId: business2.id,
+      senderId: bulkBuyer2.id,
       receiverId: farmer2.id,
       content: "Thank you for the previous delivery. The quality was excellent!",
       read: true,
@@ -734,7 +706,7 @@ async function main() {
   await prisma.message.create({
     data: {
       senderId: farmer3.id,
-      receiverId: business3.id,
+      receiverId: bulkBuyer3.id,
       orderId: order4.id,
       content: "Your order has been shipped and is on the way!",
       read: true,
@@ -748,22 +720,22 @@ async function main() {
 
   await prisma.notification.create({
     data: {
-      userId: business1.id,
+      userId: bulkBuyer1.id,
       type: "order_confirmed",
       title: "Order Confirmed",
       message: "Your order #1 has been confirmed by the seller.",
-      link: "/business/orders",
+      link: "/bulkBuyer/orders",
       read: true,
     },
   });
 
   await prisma.notification.create({
     data: {
-      userId: business2.id,
+      userId: bulkBuyer2.id,
       type: "order_delivered",
       title: "Order Delivered",
       message: "Your order #2 has been delivered successfully.",
-      link: "/business/orders",
+      link: "/bulkBuyer/orders",
       read: true,
     },
   });
@@ -784,7 +756,7 @@ async function main() {
       userId: buyer1.id,
       type: "message",
       title: "New Message",
-      message: "You have a new message from Highland Markets Reseller.",
+      message: "You have a new message from Green Valley Restaurant.",
       link: "/buyer/messages",
       read: false,
     },
@@ -792,11 +764,11 @@ async function main() {
 
   await prisma.notification.create({
     data: {
-      userId: business3.id,
+      userId: bulkBuyer3.id,
       type: "order_shipped",
       title: "Order Shipped",
       message: "Your order #4 has been shipped and is on the way.",
-      link: "/business/orders",
+      link: "/bulkBuyer/orders",
       read: false,
     },
   });
@@ -820,48 +792,48 @@ async function main() {
   await prisma.favorite.create({
     data: {
       userId: buyer1.id,
-      listingId: resellerListing1.id,
+      listingId: bulkBuyerListing1.id,
     },
   });
 
   await prisma.favorite.create({
     data: {
       userId: buyer1.id,
-      listingId: resellerListing4.id,
+      listingId: bulkBuyerListing4.id,
     },
   });
 
   await prisma.favorite.create({
     data: {
       userId: buyer2.id,
-      listingId: resellerListing3.id,
+      listingId: bulkBuyerListing3.id,
     },
   });
 
   await prisma.favorite.create({
     data: {
       userId: buyer3.id,
-      listingId: resellerListing5.id,
+      listingId: bulkBuyerListing5.id,
     },
   });
 
   await prisma.favorite.create({
     data: {
       userId: buyer3.id,
-      listingId: resellerListing6.id,
+      listingId: bulkBuyerListing6.id,
     },
   });
 
   await prisma.favorite.create({
     data: {
-      userId: business1.id,
+      userId: bulkBuyer1.id,
       listingId: listing1.id,
     },
   });
 
   await prisma.favorite.create({
     data: {
-      userId: business2.id,
+      userId: bulkBuyer2.id,
       listingId: listing3.id,
     },
   });
@@ -877,7 +849,7 @@ async function main() {
       email: "john.doe@example.com",
       subject: "Inquiry about bulk orders",
       message: "I would like to inquire about placing bulk orders for my restaurant chain.",
-      type: "business",
+      type: "bulkBuyer",
       status: "pending",
     },
   });
@@ -955,9 +927,9 @@ async function main() {
   });
 
   console.log("✅ Database seeded successfully!");
-  console.log(`  👤 Users: ${14} created (3 farmers, 3 businesses, 3 resellers, 4 buyers, 1 banned)`);
+  console.log(`  👤 Users: ${14} created (3 farmers, 3 bulkBuyers, 4 buyers, 1 banned)`);
   console.log(`  🥬 Products: ${10} created`);
-  console.log(`  📋 Listings: ${16} created (10 farmer, 6 reseller)`);
+  console.log(`  📋 Listings: ${16} created (10 farmer, 6 bulkBuyer)`);
   console.log(`  📦 Orders: ${6} created (various statuses)`);
   console.log(`  🚚 Delivery Schedules: ${3} created`);
   console.log(`  💬 Messages: ${5} created`);

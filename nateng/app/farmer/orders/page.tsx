@@ -137,11 +137,7 @@ export default function FarmerOrdersPage() {
   }
 
   const handleReviewSchedule = (schedule: any) => {
-    console.log('handleReviewSchedule called with:', schedule)
-    
-    // Add comprehensive validation
     if (!schedule) {
-      console.error('Schedule is null/undefined')
       toast.error("No schedule data available", {
         description: "The delivery schedule information is missing"
       })
@@ -149,13 +145,8 @@ export default function FarmerOrdersPage() {
     }
     
     if (!schedule.id) {
-      console.error('Schedule missing ID field:', schedule)
-      console.log('Schedule keys:', Object.keys(schedule))
-      
       // Try to find schedule by orderId if available
       if (schedule.orderId) {
-        console.log('Attempting to find schedule by orderId:', schedule.orderId)
-        // We'll handle this in the dialog with fallback logic
         setConfirmingSchedule(schedule)
         setConfirmationDialogOpen(true)
         return
@@ -167,7 +158,6 @@ export default function FarmerOrdersPage() {
       return
     }
     
-    console.log('Valid schedule with ID:', schedule.id)
     setConfirmingSchedule(schedule)
     setConfirmationDialogOpen(true)
   }
@@ -296,7 +286,6 @@ export default function FarmerOrdersPage() {
                 variant="outline"
                 className="h-7 border-blue-300 bg-white/80 px-3 text-[11px] font-medium text-blue-800 hover:bg-blue-600 hover:text-white"
                 onClick={() => {
-                  console.log('Review button clicked, schedule:', latestSchedule)
                   handleReviewSchedule(latestSchedule)
                 }}
               >

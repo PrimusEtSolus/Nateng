@@ -42,16 +42,16 @@ export function TermsAndConditions({ onAccept, onDecline, isOpen, userRole }: Te
   const termsSections = [
     {
       id: 'terms',
-      title: 'Terms of Service',
-      content: `Welcome to NatengHub! These Terms govern how you use our agricultural marketplace. By using NatengHub, you agree to these terms.
+  title: 'Terms of Service',
+  content: `Welcome to NatengHub! These Terms govern how you use our agricultural marketplace. By using NatengHub, you agree to these terms.
 
 1. Account Registration & Eligibility
 You need to be at least 18 to sign up. Provide accurate information when registering. Keep your account credentials safe and don't share them. One account per person or business unless we say otherwise. If signing up for a business, make sure you have the authority. Let us know right away if someone uses your account without permission.
 
 2. Platform Usage & User Roles
-NatengHub connects different people in the agricultural industry: Farmers (growers who list and sell products), Buyers (people who buy for personal use), Businesses (restaurants, hotels, and places needing bulk orders), Resellers (wholesale traders who buy from farmers and sell to buyers), Logistics (delivery coordination partners), Admin (people who run and moderate the platform).
+NatengHub connects different people in the agricultural industry: Farmers (growers who list and sell products), Buyers (people who buy for personal use), Bulk Buyers (restaurants, hotels, and places needing bulk orders), Admin (people who run and moderate the platform).
 
-Transaction rules: Farmers can sell to businesses, resellers, and buyers. Resellers can only sell to buyers. Businesses and resellers can buy from farmers. Buyers can purchase from farmers or resellers. Follow the rules that apply to your role.
+Transaction rules: Farmers can sell to buyers and bulk buyers. Bulk buyers can only sell to buyers. Bulk buyers can buy from farmers. Buyers can purchase from farmers or bulk buyers. Follow the rules that apply to your role.
 
 3. What You Can't Do
 Don't create fake listings or fraudulent transactions. Don't sell illegal or unauthorized agricultural products. Don't misrepresent product quality, origin, or freshness. Don't manipulate prices or engage in unfair trading. Don't try to avoid paying fees or break our rules. Don't use the platform for money laundering or illegal activities. Don't scrape or harvest user data. Don't interfere with how our platform works or its security. Don't pretend to be someone else. Don't break any laws, regulations, or local ordinances.

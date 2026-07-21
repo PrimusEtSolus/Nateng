@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import prisma from '@/lib/prisma'
 
 export async function GET(request: Request) {
   try {
@@ -38,7 +36,6 @@ export async function GET(request: Request) {
       banReason: user.banReason
     })
   } catch (error) {
-    console.error('Check ban status error:', error)
     return NextResponse.json(
       { error: 'Failed to check ban status' },
       { status: 500 }

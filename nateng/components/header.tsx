@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { getCurrentUser, logout, getRedirectPath } from "@/lib/auth"
-import type { UserRole } from "@/lib/types"
+import type { UserRole, User } from "@/lib/types"
 import { useRouter } from "next/navigation"
 import { NotificationBell } from "./notifications"
 
@@ -16,7 +16,7 @@ function getDashboardPath(role: string): string {
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [user, setUser] = useState<ReturnType<typeof getCurrentUser> | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
 

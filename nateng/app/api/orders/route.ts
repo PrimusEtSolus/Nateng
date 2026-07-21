@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   let user: any = null;
   try {
     // Authenticate user
-    user = await getCurrentUser(req);
+    user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -29,9 +29,9 @@ export async function GET(req: NextRequest) {
     
     // Users can only see their own orders unless they're admin
     if (user.role !== 'admin') {
-      if (user.role === 'buyer' || user.role === 'business') {
+      if (user.role === 'buyer' || user.role === 'bulkBuyer') {
         where.buyerId = user.id;
-      } else if (user.role === 'farmer' || user.role === 'reseller') {
+      } else if (user.role === 'farmer' || user.role === 'bulkBuyer') {
         where.sellerId = user.id;
       }
     } else {
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
   let user: any = null;
   try {
     // Optional authentication - allow guest orders for business users
-    user = await getCurrentUser(req);
+    user = await getCurrentUser();
     
     const body = await req.json();
     const { buyerId, sellerId, items }: { buyerId: number; sellerId: number; items: OrderItem[] } = body;
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Validate minimum order requirements
-        if (buyer.role === 'business' && listing.product.minimumOrderKg) {
+        if (buyer.role === 'bulkBuyer' && listing.product.minimumOrderKg) {
           const totalKgNeeded = item.quantity;
           if (totalKgNeeded < listing.product.minimumOrderKg) {
             throw new Error(`Minimum order requirement not met for ${listing.product.name}`);

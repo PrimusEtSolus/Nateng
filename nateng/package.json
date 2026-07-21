@@ -13,7 +13,9 @@
     "test:api": "node tests/test-api-comprehensive.js",
     "test:auth": "node tests/test-auth-comprehensive.js",
     "test:users": "node tests/test-user-persistence-and-interactions.js",
-    "test": "npm run test:api && npm run test:auth && npm run test:users"
+    "test": "npm run test:api && npm run test:auth && npm run test:users",
+    "deploy:firebase": "npm run build && npx firebase deploy --project default",
+    "deploy:hosting": "npm run build && npx firebase deploy --only hosting"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -58,7 +60,7 @@
     "input-otp": "1.4.1",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.454.0",
-    "next": "^16.0.7",
+    "next": "^16.0.0",
     "next-themes": "^0.4.6",
     "react": "19.2.0",
     "react-day-picker": "9.8.0",

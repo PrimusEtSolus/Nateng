@@ -50,8 +50,8 @@ export class Validator {
       return { isValid: false, errors };
     }
 
-    if (password.length < 6) {
-      errors.push('Password must be at least 6 characters long');
+    if (password.length < 8) {
+      errors.push('Password must be at least 8 characters long');
     }
 
     if (password.length > 128) {
@@ -88,7 +88,7 @@ export class Validator {
 
   static role(role: string): ValidationResult {
     const errors: string[] = [];
-    const validRoles = ['farmer', 'buyer', 'business', 'reseller', 'admin'];
+    const validRoles = ['farmer', 'buyer', 'bulkBuyer', 'admin'];
     
     if (!role || typeof role !== 'string') {
       errors.push('Role is required');

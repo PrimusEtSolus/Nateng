@@ -4,25 +4,19 @@ import { useState, useEffect } from "react"
 import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
-import { formatDate } from "@/lib/date-utils"
-import { TrendingUp, DollarSign, Package, Users, ArrowUpRight, Calendar, BarChart3, PieChart, Eye, TrendingDown, ChevronRight, Info } from "lucide-react"
+import { TrendingUp, DollarSign, Package, Users, ArrowUpRight } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
   PieChart as RePieChart,
   Pie,
   Cell,
-  Legend
 } from "recharts"
 
 interface Order {
@@ -56,11 +50,13 @@ interface Product {
 
 export default function FarmerAnalyticsPage() {
   const [user, setUser] = useState<User | null>(null)
-  const [selectedCrop, setSelectedCrop] = useState<any>(null)
-  const [cropDialogOpen, setCropDialogOpen] = useState(false)
 
   useEffect(() => {
-    setUser(getCurrentUser())
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
   }, [])
 
   // Fetch farmer's orders (as seller)
@@ -122,61 +118,59 @@ export default function FarmerAnalyticsPage() {
       .filter((crop) => crop.orderCount > 0)
       .sort((a, b) => b.totalRevenue - a.totalRevenue) : []
 
- // Generate monthly data from real orders
-const monthlyData = Array.from({ length: 6 }, (_, i) => {
-  const date = new Date()
-  date.setMonth(date.getMonth() - (5 - i))
-  const monthName = date.toLocaleDateString('en-US', { month: 'short' })
-  const monthOrders = completedOrders.filter((o) => {
-    const orderDate = new Date(o.createdAt)
-    return orderDate.getMonth() === date.getMonth() && orderDate.getFullYear() === date.getFullYear()
+  // Generate monthly data from real orders
+  const monthlyData = Array.from({ length: 6 }, (_, i) => {
+    const date = new Date()
+    date.setMonth(date.getMonth() - (5 - i))
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' })
+    const monthOrders = completedOrders.filter((o) => {
+      const orderDate = new Date(o.createdAt)
+      return orderDate.getMonth() === date.getMonth() && orderDate.getFullYear() === date.getFullYear()
+    })
+    const revenue = monthOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
+    const orderCount = monthOrders.length
+    return { month: monthName, revenue, orderCount }
   })
-  const revenue = monthOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
-  const orderCount = monthOrders.length
-  return { month: monthName, revenue, orderCount }
-})
 
-// Generate buyer type distribution data
-const buyerTypeData = completedOrders.reduce((acc, order) => {
-  const buyerType = order.buyer.role
-  const existing = acc.find(item => item.type === buyerType)
-  if (existing) {
-    existing.count += 1
-    existing.revenue += order.totalCents / 100
-  } else {
-    acc.push({ type: buyerType, count: 1, revenue: order.totalCents / 100 })
-  }
-  return acc
-}, [] as { type: string; count: number; revenue: number }[])
+  // Generate buyer type distribution data
+  const buyerTypeData = completedOrders.reduce((acc, order) => {
+    const buyerType = order.buyer.role
+    const existing = acc.find(item => item.type === buyerType)
+    if (existing) {
+      existing.count += 1
+      existing.revenue += order.totalCents / 100
+    } else {
+      acc.push({ type: buyerType, count: 1, revenue: order.totalCents / 100 })
+    }
+    return acc
+  }, [] as { type: string; count: number; revenue: number }[])
 
-// Colors for pie chart
-const COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444']
+  // Colors for pie chart
+  const COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444']
 
-// Calculate growth rates
-const currentMonth = new Date().getMonth()
-const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1
-const currentYear = new Date().getFullYear()
-const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear
+  // Calculate growth rates
+  const currentMonth = new Date().getMonth()
+  const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1
+  const currentYear = new Date().getFullYear()
+  const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear
 
-const currentMonthRevenue = completedOrders
-  .filter(o => {
-    const date = new Date(o.createdAt)
-    return date.getMonth() === currentMonth && date.getFullYear() === currentYear
-  })
-  .reduce((sum, o) => sum + o.totalCents, 0) / 100
+  const currentMonthRevenue = completedOrders
+    .filter(o => {
+      const date = new Date(o.createdAt)
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear
+    })
+    .reduce((sum, o) => sum + o.totalCents, 0) / 100
 
-const previousMonthRevenue = completedOrders
-  .filter(o => {
-    const date = new Date(o.createdAt)
-    return date.getMonth() === previousMonth && date.getFullYear() === previousYear
-  })
-  .reduce((sum, o) => sum + o.totalCents, 0) / 100
+  const previousMonthRevenue = completedOrders
+    .filter(o => {
+      const date = new Date(o.createdAt)
+      return date.getMonth() === previousMonth && date.getFullYear() === previousYear
+    })
+    .reduce((sum, o) => sum + o.totalCents, 0) / 100
 
-const revenueGrowth = previousMonthRevenue > 0 
-  ? ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue * 100).toFixed(1)
-  : '0'
-
-const maxRevenue = Math.max(...monthlyData.map((d) => d.revenue), 1)
+  const revenueGrowth = previousMonthRevenue > 0 
+    ? ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue * 100).toFixed(1)
+    : '0'
 
   const uniqueBuyers = new Set(completedOrders.map((o) => o.buyerId)).size
 
@@ -243,64 +237,65 @@ const maxRevenue = Math.max(...monthlyData.map((d) => d.revenue), 1)
         </div>
       </div>
 
+      {/* Charts Grid */}
       <div className="grid lg:grid-cols-3 gap-6">
-          {/* Revenue Chart */}
-          <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-border shadow-sm">
-            <h2 className="text-lg font-semibold mb-6">Revenue Overview</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`₱${value.toLocaleString()}`, 'Revenue']} />
-                <Bar dataKey="revenue" fill="#10B981" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        {/* Revenue Chart */}
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-border shadow-sm">
+          <h2 className="text-lg font-semibold mb-6">Revenue Overview</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip formatter={(value) => [`₱${value.toLocaleString()}`, 'Revenue']} />
+              <Bar dataKey="revenue" fill="#10B981" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Buyer Type Distribution */}
-<div className="bg-white rounded-2xl p-6 border border-border shadow-sm">
-  <h2 className="text-lg font-semibold mb-4">Buyer Distribution</h2>
-  <ResponsiveContainer width="100%" height={200}>
-    <RePieChart>
-      <Pie
-        data={buyerTypeData}
-        cx="50%"
-        cy="50%"
-        labelLine={false}
-        label={({type, percent}) => `${type} ${(percent * 100).toFixed(0)}%`}
-        outerRadius={80}
-        fill="#8884d8"
-        dataKey="count"
-      >
-        {buyerTypeData.map((entry, index) => (
-          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-        ))}
-      </Pie>
-      <Tooltip />
-    </RePieChart>
-  </ResponsiveContainer>
-</div>
-
-{/* Top Crops */}
-<div className="bg-white rounded-2xl p-6 border border-border shadow-sm mt-6">
-  <h2 className="text-lg font-semibold mb-4">Top Selling Crops</h2>
-  <div className="space-y-4">
-    {cropSales.slice(0, 5).map((crop, index) => (
-      <div key={crop.id} className="flex items-center gap-3">
-        <span className="w-6 h-6 bg-farmer-bg text-farmer text-sm font-medium rounded-full flex items-center justify-center">
-          {index + 1}
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">{crop.name}</p>
-          <p className="text-xs text-muted-foreground">{crop.orderCount} orders</p>
+        <div className="bg-white rounded-2xl p-6 border border-border shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">Buyer Distribution</h2>
+          <ResponsiveContainer width="100%" height={200}>
+            <RePieChart>
+              <Pie
+                data={buyerTypeData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({type, percent}) => `${type} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="count"
+              >
+                {buyerTypeData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </RePieChart>
+          </ResponsiveContainer>
         </div>
-        <p className="font-semibold text-sm text-farmer">₱{crop.totalRevenue.toLocaleString()}</p>
       </div>
-    ))}
-  </div>
-</div>
+
+      {/* Top Crops */}
+      <div className="bg-white rounded-2xl p-6 border border-border shadow-sm mt-6">
+        <h2 className="text-lg font-semibold mb-4">Top Selling Crops</h2>
+        <div className="space-y-4">
+          {cropSales.slice(0, 5).map((crop, index) => (
+            <div key={crop.id} className="flex items-center gap-3">
+              <span className="w-6 h-6 bg-farmer-bg text-farmer text-sm font-medium rounded-full flex items-center justify-center">
+                {index + 1}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">{crop.name}</p>
+                <p className="text-xs text-muted-foreground">{crop.orderCount} orders</p>
+              </div>
+              <p className="font-semibold text-sm text-farmer">₱{crop.totalRevenue.toLocaleString()}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

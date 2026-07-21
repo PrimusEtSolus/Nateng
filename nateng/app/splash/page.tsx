@@ -243,7 +243,7 @@ export default function SplashPage() {
               <h4 className="font-bold mb-4">For Buyers</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="/buyer/dashboard" className="hover:text-white">Dashboard</a></li>
-                <li><a href="/business/browse" className="hover:text-white">Browse Products</a></li>
+                           <li><a href="/bulkBuyer/browse" className="hover:text-white">Browse Wholesale</a></li>
                 <li><a href="/buyer/orders" className="hover:text-white">My Orders</a></li>
               </ul>
             </div>

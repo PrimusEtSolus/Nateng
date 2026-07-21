@@ -76,18 +76,19 @@
 
 ---
 
-## BUSINESS/RESELLER TESTING
+## BULK BUYER TESTING
 ### Login
 - [ ] Navigate to http://localhost:3000/login
-- [ ] Login with business/reseller credentials
-- [ ] Verify successful login and redirect to business dashboard
+- [ ] Login with bulkBuyer credentials
+- [ ] Verify successful login and redirect to bulkBuyer dashboard
 
-### Business Functions
+### Bulk Buyer Functions
 - [ ] View dashboard
 - [ ] Browse products for wholesale
 - [ ] Place bulk orders
 - [ ] View order history
-- [ ] Manage business profile
+- [ ] Manage bulkBuyer profile
+- [ ] Create retail listings (sell to buyers)
 
 ---
 
@@ -158,26 +159,24 @@
 ## COMPLETED FEATURES
 
 ### 1. Marketplace Rules Implementation
-- [x] Buyer can see both farmer and reseller products - API tested and confirmed
-- [x] Reseller can see only farmer products - API tested and confirmed  
-- [x] Business can see only farmer products - API tested and confirmed
+- [x] Buyer can see both farmer and bulkBuyer products - API tested and confirmed
+- [x] BulkBuyer can see only farmer products - API tested and confirmed  
 - [x] Proper filtering by user role - All marketplace rules working correctly
 
 ### 2. Terms and Conditions Implementation
 - [x] Terms component created - Comprehensive terms with 4 sections
 - [x] Buyer signup updated - Terms acceptance required
-- [x] Reseller signup updated - Terms acceptance required
-- [x] Business signup updated - Terms acceptance required
+- [x] BulkBuyer signup updated - Terms acceptance required
 - [x] Farmer signup updated - Terms acceptance required
 - [x] Validation logic - Cannot submit without accepting terms
 - [x] Scrolling functionality - Fixed modal scrolling issues
 
-### 3. Reseller Functionality
-- [x] Reseller can create products - API updated to allow resellers
+### 3. Bulk Buyer Functionality
+- [x] BulkBuyer can create products - API updated to allow bulkBuyers
 - [x] Add Product modal implemented - Complete modal with form validation
 - [x] Product listing management - Edit, delete, and display inventory
-- [x] Wholesale purchasing - Reseller can buy from farmers
-- [x] Retail sales - Reseller can sell to buyers
+- [x] Wholesale purchasing - BulkBuyer can buy from farmers
+- [x] Retail sales - BulkBuyer can sell to buyers
 - [x] Dashboard functionality - Stats and quick actions working
 ### 4. Admin Page Functionality
 - [x] Comprehensive dashboard - Users, products, listings, orders, appeals, messages, schedules
@@ -212,11 +211,11 @@
 - [x] Login integration - Shows for new users without prior setup
 - [x] Visual feedback - Clear status indicators and error messages
 ### 5. Order Status Logic Fixed
-- [x] Reseller pickup orders - Shows "Ready for Pickup" instead of "Shipped"
+- [x] BulkBuyer pickup orders - Shows "Ready for Pickup" instead of "Shipped"
 - [x] Buyer pickup orders - Displays correct pickup status labels
 - [x] Order progress tracking - Proper pickup vs delivery flow
-- [x] Status consistency - Both buyer and reseller see same status meanings
-- [x] Marketplace flow - Buyers can purchase from both farmers and resellers
+- [x] Status consistency - Both buyer and bulkBuyer see same status meanings
+- [x] Marketplace flow - Buyers can purchase from both farmers and bulkBuyers
 - [x] User Registration Flow - Tested all user types with terms acceptance
 - [x] Login/Authentication - Tested all user roles and redirects
 - [x] Product Listing Creation - Tested farmer and reseller product creation
@@ -229,7 +228,7 @@
 ## TEST RESULTS
 
 ### API Tests Passed:
-- Marketplace rules filtering (Buyer: 8 listings, Reseller: 5 listings, Business: 5 listings)
+- Marketplace rules filtering (Buyer: 8 listings, BulkBuyer: 5 listings)
 - Terms and conditions integration
 - Admin authentication and data loading
 

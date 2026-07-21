@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Logo } from "@/components/logo"
-import { ArrowLeft, ShoppingCart, Store, Leaf, Building2 } from "lucide-react"
+import { ArrowLeft, ShoppingCart, Store, Leaf } from "lucide-react"
 
 export default function SignUpPage() {
   return (
@@ -19,8 +19,8 @@ export default function SignUpPage() {
           How will you use NatengHub?
         </h1>
 
-        {/* Role Cards - 4 cards in grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl">
+        {/* Role Cards - 3 cards in grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
           {/* Buyer Card */}
           <div className="bg-white rounded-[40px] p-8 flex flex-col items-center text-center shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-4">
@@ -31,44 +31,27 @@ export default function SignUpPage() {
               I want to buy fresh vegetables for personal consumption
             </p>
             <Link
-              href="/signup/buyer"
+              href="/signup/Buyer"
               className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-colors text-center"
             >
               Join as Buyer
             </Link>
           </div>
 
-          {/* Reseller Card */}
+          {/* Bulk Buyer Card (combines Reseller + Business) */}
           <div className="bg-white rounded-[40px] p-8 flex flex-col items-center text-center shadow-lg hover:shadow-xl transition-shadow">
             <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mb-4">
               <Store className="w-8 h-8 text-teal-600" />
             </div>
-            <h2 className="text-2xl font-semibold text-[#064E3B] mb-2">Reseller</h2>
+            <h2 className="text-2xl font-semibold text-[#064E3B] mb-2">Bulk Buyer</h2>
             <p className="text-[#064E3B]/70 text-sm mb-6 flex-1">
-              I own a market stall and want to buy wholesale to resell
+              I own a market stall or business and want to buy wholesale to resell or consume
             </p>
             <Link
-              href="/signup/reseller"
+              href="/signup/bulkBuyer"
               className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-colors text-center"
             >
-              Join as Reseller
-            </Link>
-          </div>
-
-          {/* Business Card */}
-          <div className="bg-white rounded-[40px] p-8 flex flex-col items-center text-center shadow-lg hover:shadow-xl transition-shadow">
-            <div className="w-16 h-16 bg-cyan-100 rounded-2xl flex items-center justify-center mb-4">
-              <Building2 className="w-8 h-8 text-cyan-600" />
-            </div>
-            <h2 className="text-2xl font-semibold text-[#064E3B] mb-2">Business</h2>
-            <p className="text-[#064E3B]/70 text-sm mb-6 flex-1">
-              Restaurant, hotel, or institution buying wholesale for consumption
-            </p>
-            <Link
-              href="/signup/business"
-              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-colors text-center"
-            >
-              Join as Business
+              Join as Bulk Buyer
             </Link>
           </div>
 
@@ -82,7 +65,7 @@ export default function SignUpPage() {
               I grow vegetables and want to sell wholesale to businesses
             </p>
             <Link
-              href="/signup/farmer"
+              href="/signup/Farmer"
               className="w-full bg-amber-700 hover:bg-amber-800 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-colors text-center"
             >
               Join as Farmer

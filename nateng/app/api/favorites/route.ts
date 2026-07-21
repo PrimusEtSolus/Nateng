@@ -4,7 +4,7 @@ import { getCurrentUser } from '@/lib/auth-server'
 
 export async function GET(request: NextRequest) {
   try {
-    const currentUser = await getCurrentUser(request)
+    const currentUser = await getCurrentUser()
     if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -49,14 +49,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(favorites)
   } catch (error: unknown) {
-    console.error('GET favorites error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const currentUser = await getCurrentUser(request)
+    const currentUser = await getCurrentUser()
     if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -133,7 +132,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(favorite, { status: 201 })
   } catch (error: unknown) {
-    console.error('POST favorite error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

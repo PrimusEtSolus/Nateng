@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      ".git",
+      "**/node_modules/**",
+      ".next",
+      "prisma/dev.db",
+      "*.sqlite"
+    ],
+    "frameworksBackend": {
+      "name": "nextjs",
+      "region": "us-central1"
+    }
+  }
+}

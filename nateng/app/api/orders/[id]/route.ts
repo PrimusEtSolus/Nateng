@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate user
-    const user = await getCurrentUser(req as any);
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -38,7 +38,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate user
-    const user = await getCurrentUser(req as any);
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -137,6 +137,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Authenticate user
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const { id } = await params;
     // Only allow deletion of PENDING orders
     const order = await prisma.order.findUnique({
@@ -145,6 +151,11 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     if (!order) {
       return NextResponse.json({ error: 'order not found' }, { status: 404 });
+    }
+
+    // Check permissions - only buyer or admin can delete
+    if (order.buyerId !== user.id && user.role !== 'admin') {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (order.status !== 'PENDING') {

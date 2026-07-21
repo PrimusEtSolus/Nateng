@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 export async function GET(req: NextRequest) {
   try {
     // Authenticate user
-    const user = await getCurrentUser(req);
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'missing fields: name, email, role, password' }, { status: 400 });
     }
 
-    const validRoles = ['farmer', 'buyer', 'business', 'reseller', 'admin'];
+    const validRoles = ['farmer', 'buyer', 'bulkBuyer', 'admin'];
     if (!validRoles.includes(role)) {
       return NextResponse.json(
         { error: `invalid role. must be one of: ${validRoles.join(', ')}` },

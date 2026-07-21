@@ -35,7 +35,11 @@ export default function BuyerCheckoutPage() {
   })
 
   useEffect(() => {
-    setUser(getCurrentUser())
+    const loadUser = async () => {
+      const currentUser = await getCurrentUser()
+      setUser(currentUser)
+    }
+    loadUser()
     
     // Fetch seller information for all items in cart
     const fetchSellerInfo = async () => {
@@ -159,6 +163,13 @@ export default function BuyerCheckoutPage() {
     }
   }
 
+  // Handle empty cart redirect
+  useEffect(() => {
+    if (items.length === 0 && !orderPlaced) {
+      router.push("/buyer/cart")
+    }
+  }, [items.length, orderPlaced, router])
+
   if (orderPlaced) {
     return (
       <div className="p-8">
@@ -190,9 +201,6 @@ export default function BuyerCheckoutPage() {
   }
 
   if (items.length === 0) {
-    useEffect(() => {
-      router.push("/buyer/cart")
-    }, [])
     return null
   }
 

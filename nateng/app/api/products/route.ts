@@ -63,14 +63,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     // Authenticate user
-    const user = await getCurrentUser(req);
+    const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // Only farmers and resellers can create products
-    if (user.role !== 'farmer' && user.role !== 'reseller') {
-      return NextResponse.json({ error: 'Only farmers and resellers can create products' }, { status: 403 });
+    // Only farmers and bulkBuyers can create products
+    if (user.role !== 'farmer' && user.role !== 'bulkBuyer') {
+      return NextResponse.json({ error: 'Only farmers and bulkBuyers can create products' }, { status: 403 });
     }
     const body = await req.json();
     const { name, description, farmerId, imageUrl } = body;
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'missing fields: name, farmerId' }, { status: 400 });
     }
 
-    // Farmers and resellers can only create products for themselves
+    // Farmers and bulkBuyers can only create products for themselves
     if (farmerId !== user.id) {
       return NextResponse.json({ error: 'Cannot create products for other users' }, { status: 403 });
     }

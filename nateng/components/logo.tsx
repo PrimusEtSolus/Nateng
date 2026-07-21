@@ -2,7 +2,7 @@ import { Leaf } from "lucide-react"
 
 interface LogoProps {
   size?: "sm" | "md" | "lg"
-  variant?: "light" | "dark" | "farmer" | "buyer" | "business" | "reseller"
+  variant?: "light" | "dark" | "farmer" | "buyer" | "business" | "reseller" | "bulkBuyer"
 }
 
 export function Logo({ size = "md", variant = "light" }: LogoProps) {
@@ -25,6 +25,7 @@ export function Logo({ size = "md", variant = "light" }: LogoProps) {
     buyer: "text-[#F97316]",
     business: "text-[#0891B2]",
     reseller: "text-[#0D9488]",
+    bulkBuyer: "text-[#0D9488]",
   }
 
   const bgClasses = {
@@ -34,6 +35,7 @@ export function Logo({ size = "md", variant = "light" }: LogoProps) {
     buyer: "bg-[#F97316]/10",
     business: "bg-[#0891B2]/10",
     reseller: "bg-[#0D9488]/10",
+    bulkBuyer: "bg-[#0D9488]/10",
   }
 
   return (

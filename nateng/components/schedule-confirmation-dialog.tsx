@@ -27,23 +27,10 @@ export function ScheduleConfirmationDialog({
   const [loading, setLoading] = useState(false)
   const [action, setAction] = useState<"confirm" | "reject" | null>(null)
 
-  // Debug logging when schedule changes
   useEffect(() => {
-    if (schedule) {
-      console.log('ScheduleConfirmationDialog received schedule:', schedule)
-      console.log('Schedule ID:', schedule.id)
-      console.log('Schedule keys:', Object.keys(schedule))
-      console.log('Schedule orderId:', schedule.orderId)
-      console.log('Schedule status:', schedule.status)
-      console.log('Full schedule data:', JSON.stringify(schedule, null, 2))
-      
-      // Check if schedule has nested order data
-      if (schedule.order) {
-        console.log('Schedule has order data:', schedule.order)
-        console.log('Order ID from schedule.order:', schedule.order.id)
-      }
-    } else {
-      console.log('ScheduleConfirmationDialog received null/undefined schedule')
+    // Schedule validation on mount
+    if (!schedule) {
+      return
     }
   }, [schedule])
 
@@ -54,12 +41,6 @@ export function ScheduleConfirmationDialog({
     setLoading(true)
 
     try {
-      // Debug logging
-      console.log('Schedule ID:', schedule.id)
-      console.log('Schedule object:', schedule)
-      console.log('Schedule type:', typeof schedule)
-      console.log('Full schedule JSON:', JSON.stringify(schedule, null, 2))
-      
       // Get current user for authentication
       const { getCurrentUser } = await import('@/lib/auth')
       const user = await getCurrentUser()
@@ -74,15 +55,8 @@ export function ScheduleConfirmationDialog({
 
       // Use orderId to find the schedule if ID is missing
       let scheduleId = schedule.id
-      console.log('=== SCHEDULE ID RESOLUTION DEBUG ===')
-      console.log('1. Initial schedule.id:', schedule.id)
-      console.log('2. schedule.orderId:', schedule.orderId)
-      console.log('3. typeof schedule.id:', typeof schedule.id)
-      console.log('4. typeof schedule.orderId:', typeof schedule.orderId)
       
       if (!scheduleId && schedule.orderId) {
-        console.log('5. Missing schedule ID, attempting to find by orderId')
-        
         // Find schedule by orderId
         const findResponse = await fetch(`/api/delivery-schedule?orderId=${schedule.orderId}`, {
           headers: { 
@@ -90,18 +64,13 @@ export function ScheduleConfirmationDialog({
           }
         })
         
-        console.log('6. Find response status:', findResponse.status)
-        
         if (findResponse.ok) {
           const schedules = await findResponse.json()
-          console.log('7. Found schedules:', schedules)
           const foundSchedule = Array.isArray(schedules) ? schedules.find(s => s.status === 'proposed') : null
           
           if (foundSchedule && foundSchedule.id) {
             scheduleId = foundSchedule.id
-            console.log('8. Found schedule ID:', scheduleId)
           } else {
-            console.error('9. No proposed schedule found for this order')
             toast.error("No proposed schedule found", {
               description: "This order doesn't have any proposed schedules to review"
             })
@@ -109,7 +78,6 @@ export function ScheduleConfirmationDialog({
             return
           }
         } else {
-          console.error('10. Failed to find schedule by order ID, status:', findResponse.status)
           toast.error("Failed to find schedule", {
             description: "Unable to locate the delivery schedule"
           })
@@ -120,7 +88,6 @@ export function ScheduleConfirmationDialog({
       
       // Additional fallback: try to find any schedule for this order
       if (!scheduleId && schedule.orderId) {
-        console.log('11. Still no schedule ID, trying to find any schedule for order')
         try {
           const allSchedulesResponse = await fetch(`/api/delivery-schedule?orderId=${schedule.orderId}`, {
             headers: { 
@@ -128,28 +95,20 @@ export function ScheduleConfirmationDialog({
             }
           })
           
-          console.log('12. All schedules response status:', allSchedulesResponse.status)
-          
           if (allSchedulesResponse.ok) {
             const allSchedules = await allSchedulesResponse.json()
-            console.log('13. All schedules for order:', allSchedules)
             
             if (Array.isArray(allSchedules) && allSchedules.length > 0) {
               const anySchedule = allSchedules[0]
               if (anySchedule.id) {
                 scheduleId = anySchedule.id
-                console.log('14. Using any available schedule ID:', scheduleId)
               }
             }
           }
         } catch (error) {
-          console.error('15. Error finding any schedule:', error)
+          // Fallback failed, continue with attempt
         }
       }
-      
-      console.log('16. Final resolved scheduleId:', scheduleId)
-      console.log('17. typeof final scheduleId:', typeof scheduleId)
-      console.log('=== END SCHEDULE ID RESOLUTION DEBUG ===')
 
       const resolvedOrderId = schedule?.orderId ?? schedule?.order?.id
       const parsedResolvedOrderId = Number(resolvedOrderId)
@@ -159,7 +118,6 @@ export function ScheduleConfirmationDialog({
       const hasValidScheduleId = !isNaN(parsedScheduleId) && parsedScheduleId > 0
 
       if (!hasValidScheduleId && !hasValidOrderId) {
-        console.error('18. No valid scheduleId and no valid orderId fallback', { scheduleId, resolvedOrderId })
         toast.error("Schedule information incomplete", {
           description: "Missing schedule and order reference"
         })
@@ -168,8 +126,6 @@ export function ScheduleConfirmationDialog({
       }
 
       const pathId = hasValidScheduleId ? String(parsedScheduleId) : '0'
-      console.log('Making API call to:', `/api/delivery-schedule/${pathId}/confirm`)
-      console.log('Using scheduleId:', scheduleId, 'orderId:', resolvedOrderId)
 
       const response = await fetch(`/api/delivery-schedule/${pathId}/confirm`, {
         method: 'POST',
@@ -186,7 +142,6 @@ export function ScheduleConfirmationDialog({
 
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('API Response Error:', response.status, errorText)
         
         let errorData
         try {
@@ -195,18 +150,15 @@ export function ScheduleConfirmationDialog({
           errorData = { error: errorText }
         }
         
-        console.error('Parsed Error Data:', errorData)
         throw new Error(errorData.error || 'Failed to process schedule')
       }
 
       const updatedSchedule = await response.json()
-      console.log('API Response Success:', updatedSchedule)
       onActionComplete(updatedSchedule)
       onOpenChange(false)
       setNotes("")
       setAction(null)
     } catch (error: any) {
-      console.error('Error processing schedule:', error)
       toast.error(error.message || "Failed to process schedule", {
         description: "Please try again or contact support if the issue persists"
       })

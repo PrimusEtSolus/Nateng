@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth'
+import prisma from '@/lib/prisma'
+import { getCurrentUser } from '@/lib/auth-server'
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ listingId: string }> }
 ) {
   try {
-    const currentUser = getCurrentUser()
+    const currentUser = await getCurrentUser()
     if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -38,7 +38,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('DELETE favorite by listing error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

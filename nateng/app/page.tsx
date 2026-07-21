@@ -62,36 +62,6 @@ export default function HomePage() {
             </p>
           </div>
         </section>
-
-        {/* Stats Section */}
-        <section className="py-16">
-          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl">
-            <h2 className="text-2xl md:text-3xl font-semibold text-[#064E3B] text-center mb-12">Growing Together</h2>
-            <div className="grid md:grid-cols-3 gap-8 text-center">
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Users className="w-6 h-6 text-[#34D399]" />
-                  <span className="text-4xl font-bold text-[#064E3B]">500+</span>
-                </div>
-                <p className="text-muted-foreground">Active Farmers</p>
-              </div>
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Truck className="w-6 h-6 text-[#34D399]" />
-                  <span className="text-4xl font-bold text-[#064E3B]">10K+</span>
-                </div>
-                <p className="text-muted-foreground">Orders Delivered</p>
-              </div>
-              <div>
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <TrendingUp className="w-6 h-6 text-[#34D399]" />
-                  <span className="text-4xl font-bold text-[#064E3B]">₱50M+</span>
-                </div>
-                <p className="text-muted-foreground">Farmer Earnings</p>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Footer */}

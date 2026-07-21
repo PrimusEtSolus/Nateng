@@ -8,18 +8,17 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// Use a plain string for role to avoid enum compatibility issues with this connector
-
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   email     String   @unique
   phone     String?  @unique // Mobile number for farmers (unique constraint)
   password  String   // Hashed password
-  role      String
-  minimumOrderKg Int? // Minimum order quantity in kg (for farmers: 50 or 100)
-  deliveryAreas String? // JSON string array of delivery areas (e.g., municipalities)
-  paymentMethods String? // JSON string array of payment methods
+  role      String   // UserRole: farmer, buyer, bulkBuyer, admin
+  businessName String? // Business name (for bulk buyers)
+  minimumOrderKg Int? // Minimum order quantity in kg (for sellers: farmer and bulkBuyer)
+  deliveryAreas String? // JSON string array of delivery areas (for sellers)
+  paymentMethods String? // JSON string array of payment methods (for sellers)
   profilePhotoUrl String? // URL to profile photo
   isBanned  Boolean  @default(false) // User ban status
   bannedAt  DateTime? // When user was banned
@@ -43,6 +42,7 @@ model User {
   notifications Notification[]
   favorites      Favorite[]
   auditLogs      AuditLog[]
+  analyticsEvents AnalyticsEvent[]
   proposedSchedules DeliverySchedule[] @relation("ScheduleProposer")
   confirmedSchedules DeliverySchedule[] @relation("ScheduleConfirmer")
 }
@@ -198,4 +198,13 @@ model DeliverySchedule {
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AnalyticsEvent {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     // Optional: user who triggered the event
+  user        User?    @relation(fields: [userId], references: [id])
+  eventType   String   // "product_view", "search", "order_placed", etc.
+  metadata    String?  // JSON string for additional context
+  createdAt   DateTime @default(now())
 }

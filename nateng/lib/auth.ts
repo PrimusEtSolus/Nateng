@@ -70,17 +70,13 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 }
 
-export function getAuthToken(): string | null {
-  // No longer needed - cookies are handled automatically by browser
-  return null
-}
-
-export async function register(name: string, email: string, password: string, role: UserRole, stallLocation?: string, municipality?: string, businessType?: string): Promise<User | null> {
+export async function register(name: string, email: string, password: string, role: UserRole, location?: string, municipality?: string, businessType?: string): Promise<User | null> {
   try {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, role, stallLocation, municipality, businessType }),
+      body: JSON.stringify({ name, email, password, role, location, municipality, businessType }),
+      credentials: 'include', // Include cookies for auth token
     })
 
     if (!response.ok) {
@@ -104,10 +100,10 @@ export function getRedirectPath(role: UserRole): string {
       return "/farmer/dashboard"
     case "buyer":
       return "/buyer/dashboard"
-    case "business":
-      return "/business/dashboard"
-    case "reseller":
-      return "/reseller/dashboard"
+    case "bulkBuyer":
+      return "/bulkBuyer/dashboard"
+    case "admin":
+      return "/admin"
     default:
       return "/"
   }

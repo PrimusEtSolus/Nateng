@@ -1,6 +1,6 @@
 // Centralized type definitions for the application
 
-export type UserRole = 'farmer' | 'buyer' | 'business' | 'reseller' | 'admin' | 'logistics'
+export type UserRole = 'farmer' | 'buyer' | 'bulkBuyer' | 'admin'
 
 export interface User {
   id: number

@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger'
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const user = await getCurrentUser(req)
+    const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }

@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label"
 import { getCurrentUser, logout } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { usersAPI } from "@/lib/api-client"
-import { UserIcon, MapPin, Lock, Check, Loader2, Eye, EyeOff } from "lucide-react"
+import { UserIcon, MapPin, Lock, Check, Loader2, Eye, EyeOff, Store } from "lucide-react"
 import { toast } from "sonner"
+import { SellerSettingsFields } from "@/components/SellerSettingsFields"
 
 export default function FarmerSettingsPage() {
   const [user, setUser] = useState<User | null>(null)
@@ -235,6 +236,7 @@ export default function FarmerSettingsPage() {
   const tabs = [
     { id: "profile", label: "Profile", icon: UserIcon },
     { id: "farm", label: "Farm Details", icon: MapPin },
+    { id: "seller", label: "Seller Settings", icon: Store },
     { id: "security", label: "Security", icon: Lock },
   ]
 
@@ -369,6 +371,18 @@ export default function FarmerSettingsPage() {
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === "seller" && (
+            <div className="bg-card rounded-2xl border border-border p-6">
+              <h2 className="text-xl font-semibold mb-6">Seller Settings</h2>
+              <SellerSettingsFields
+                minimumOrderKg={formData.minimumOrderKg}
+                deliveryAreas={formData.deliveryAreas}
+                paymentMethods={formData.paymentMethods}
+                onInputChange={(field, value) => setFormData({ ...formData, [field]: value })}
+              />
             </div>
           )}
 

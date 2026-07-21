@@ -35,7 +35,6 @@ export function ContactForm() {
       })
 
       const result = await response.json()
-      console.log('Contact form response:', result)
 
       if (response.ok) {
         if (messageType === "appeal") {
@@ -58,7 +57,6 @@ export function ContactForm() {
         })
       }
     } catch (error) {
-      console.error('Contact form error:', error)
       toast.error("Failed to send message", {
         description: "Please try again later.",
       })
