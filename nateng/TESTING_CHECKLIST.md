@@ -1,7 +1,8 @@
 # COMPREHENSIVE APPLICATION TESTING CHECKLIST
 
 ## Status: ✅ READY FOR TESTING
-**Server**: Running on http://localhost:3000  
+
+**Server**: Running on <http://localhost:3000>  
 **Database**: SQLite with 5 seeded products, 5 listings, 5 users, 1 order  
 **Build**: Production-ready (no TypeScript errors)  
 **Last Updated**: 2026-02-06 (Farmer Settings & Logistics Update)
@@ -9,12 +10,15 @@
 ---
 
 ## ADMIN TESTING
-### Login
-- [ ] Navigate to http://localhost:3000/admin
+
+### Admin Login
+
+- [ ] Navigate to <http://localhost:3000/admin>
 - [ ] Login with username: "admin" password: "admin123"
 - [ ] Verify successful login and admin panel access
 
 ### Admin Panel Functions
+
 - [ ] Dashboard - Check stats display
 - [ ] Users tab - View all users, ban/unban functionality
 - [ ] Products tab - View all products
@@ -27,12 +31,15 @@
 ---
 
 ## FARMER TESTING
-### Login
-- [ ] Navigate to http://localhost:3000/login
+
+### Farmer Login
+
+- [ ] Navigate to <http://localhost:3000/login>
 - [ ] Login with farmer credentials (check database for farmer emails)
 - [ ] Verify successful login and redirect to farmer dashboard
 
 ### Farmer Dashboard
+
 - [ ] View dashboard stats
 - [ ] View products
 - [ ] View listings
@@ -43,6 +50,7 @@
 - [ ] Manage orders (confirm, ship, deliver)
 
 ### Farmer Settings (NEW)
+
 - [ ] Profile tab: Upload photo, update name/phone, validate mobile format
 - [ ] Farm Details tab: Select municipality, fill barangay/farm size
 - [ ] Payments tab: **Shows blank for new accounts**, Add Method disabled
@@ -50,6 +58,7 @@
 - [ ] Security/Notifications tabs: Render correctly
 
 ### Farmer Logistics (NEW)
+
 - [ ] Navigate to /farmer/logistics (sidebar link updated)
 - [ ] View Benguet coverage area placeholder
 - [ ] Check ordinance compliance section (truck ban rules)
@@ -60,12 +69,15 @@
 ---
 
 ## BUYER TESTING
-### Login
-- [ ] Navigate to http://localhost:3000/login
+
+### Buyer Login
+
+- [ ] Navigate to <http://localhost:3000/login>
 - [ ] Login with buyer credentials
 - [ ] Verify successful login and redirect to buyer dashboard
 
 ### Buyer Functions
+
 - [ ] Browse products/marketplace
 - [ ] Search products
 - [ ] Add products to cart
@@ -77,12 +89,15 @@
 ---
 
 ## BULK BUYER TESTING
-### Login
-- [ ] Navigate to http://localhost:3000/login
+
+### Bulk Buyer Login
+
+- [ ] Navigate to <http://localhost:3000/login>
 - [ ] Login with bulkBuyer credentials
 - [ ] Verify successful login and redirect to bulkBuyer dashboard
 
 ### Bulk Buyer Functions
+
 - [ ] View dashboard
 - [ ] Browse products for wholesale
 - [ ] Place bulk orders
@@ -93,23 +108,28 @@
 ---
 
 ## CROSS-FUNCTIONALITY TESTING
+
 ### Registration
+
 - [ ] Test new user registration for all roles
 - [ ] Verify email validation
 - [ ] Verify role assignment
 - [ ] Verify terms and conditions acceptance
 
 ### Navigation
+
 - [ ] Test all navigation links
 - [ ] Test responsive design
 - [ ] Test logout functionality
 
 ### Error Handling
+
 - [ ] Test invalid login credentials
 - [ ] Test access to restricted pages
 - [ ] Test form validation errors
 
 ### Data Integrity
+
 - [ ] Test CRUD operations
 - [ ] Test data persistence
 - [ ] Test concurrent user actions
@@ -117,15 +137,19 @@
 ---
 
 ## API TESTING (NEW)
+
 ### Orders API
+
 - [ ] **FIXED**: GET /api/orders requires Authorization header (no more 401 error)
 
 ### Users API
+
 - [ ] **NEW**: PATCH /api/users/[id] supports minimumOrderKg, deliveryAreas, paymentMethods
 
 ---
 
 ## PERFORMANCE TESTING
+
 - [ ] Test page load speeds
 - [ ] Test database query performance
 - [ ] Test file upload functionality
@@ -133,6 +157,7 @@
 ---
 
 ## SECURITY TESTING
+
 - [ ] Test SQL injection protection
 - [ ] Test XSS protection
 - [ ] Test authentication bypass attempts
@@ -141,6 +166,7 @@
 ---
 
 ## COMPATIBILITY TESTING
+
 - [ ] Test in different browsers
 - [ ] Test on different screen sizes
 - [ ] Test mobile responsiveness
@@ -148,6 +174,7 @@
 ---
 
 ## RECENT UPDATES (2026-02-06)
+
 - Farmer Settings: Blank payment methods for new accounts; minimum order in kg; delivery areas derived from location
 - Farmer Logistics: New page at /farmer/logistics with Benguet coverage and ordinance compliance
 - Database: Added deliveryAreas, paymentMethods, minimumOrderKg to User model
@@ -159,11 +186,13 @@
 ## COMPLETED FEATURES
 
 ### 1. Marketplace Rules Implementation
+
 - [x] Buyer can see both farmer and bulkBuyer products - API tested and confirmed
-- [x] BulkBuyer can see only farmer products - API tested and confirmed  
+- [x] BulkBuyer can see only farmer products - API tested and confirmed
 - [x] Proper filtering by user role - All marketplace rules working correctly
 
 ### 2. Terms and Conditions Implementation
+
 - [x] Terms component created - Comprehensive terms with 4 sections
 - [x] Buyer signup updated - Terms acceptance required
 - [x] BulkBuyer signup updated - Terms acceptance required
@@ -172,13 +201,16 @@
 - [x] Scrolling functionality - Fixed modal scrolling issues
 
 ### 3. Bulk Buyer Functionality
+
 - [x] BulkBuyer can create products - API updated to allow bulkBuyers
 - [x] Add Product modal implemented - Complete modal with form validation
 - [x] Product listing management - Edit, delete, and display inventory
 - [x] Wholesale purchasing - BulkBuyer can buy from farmers
 - [x] Retail sales - BulkBuyer can sell to buyers
 - [x] Dashboard functionality - Stats and quick actions working
+
 ### 4. Admin Page Functionality
+
 - [x] Comprehensive dashboard - Users, products, listings, orders, appeals, messages, schedules
 - [x] User management - Ban/unban, delete functionality
 - [x] Analytics and statistics - Revenue tracking, user roles, top products
@@ -190,6 +222,7 @@
 ## TESTING COMPLETED
 
 ### 6. Two-Factor Authentication (2FA) System
+
 - [x] 2FA utility functions - Mock TOTP implementation with secure secrets
 - [x] 2FA setup API - Generate secret keys and backup codes
 - [x] 2FA verification API - Time-based code verification
@@ -202,6 +235,7 @@
 - [x] Mock implementation - Simulates real 2FA behavior for testing
 
 ### 7. Mock Authentication System
+
 - [x] Mock auth utility - 8-character code generation and verification
 - [x] Mock authentication component - Visual code display with formatted presentation
 - [x] Code generation - Browser-compatible random code generation
@@ -211,6 +245,7 @@
 - [x] Login integration - Shows for new users without prior setup
 - [x] Visual feedback - Clear status indicators and error messages
 ### 5. Order Status Logic Fixed
+
 - [x] BulkBuyer pickup orders - Shows "Ready for Pickup" instead of "Shipped"
 - [x] Buyer pickup orders - Displays correct pickup status labels
 - [x] Order progress tracking - Proper pickup vs delivery flow
@@ -228,11 +263,13 @@
 ## TEST RESULTS
 
 ### API Tests Passed:
+
 - Marketplace rules filtering (Buyer: 8 listings, BulkBuyer: 5 listings)
 - Terms and conditions integration
 - Admin authentication and data loading
 
 ### Frontend Tests Passed:
+
 - User registration with terms acceptance for all roles
 - Login and authentication flow working correctly
 - Product creation and management functional
@@ -258,6 +295,7 @@ The application is now feature-complete with proper security, terms compliance, 
 ## Test Results Log
 
 ### Passed Tests
+
 - ✅ All GET endpoints responding correctly
 - ✅ Database connections working
 - ✅ TypeScript compilation successful
@@ -269,9 +307,11 @@ The application is now feature-complete with proper security, terms compliance, 
 - ✅ **NEW**: Unauthorized /api/orders error fixed
 
 ### Failed Tests
+
 - None identified yet - ready for comprehensive testing!
 
 ### Warnings
+
 - Some baseline-browser-mapping warnings (non-critical)
 - Consider updating packages in next maintenance cycle
 
@@ -291,7 +331,8 @@ All critical systems are operational. Ready to execute full test suite and ident
 5. Implement authentication
 
 **Server Details**:
-- URL: http://localhost:3000
+
+- URL: <http://localhost:3000>
 - Start: `npm start` (from project root)
 - Database: SQLite (./dev.db)
 - Logs: Console output shows all requests
