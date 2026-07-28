@@ -3,6 +3,7 @@
 ## Deployment Checklist
 
 ### Pre-Launch Verification
+
 - [x] All 4 API modules complete (products, listings, orders, users)
 - [x] Error handling on all endpoints
 - [x] Input validation implemented
@@ -45,6 +46,7 @@ npm run dev
 Server runs at http://localhost:3000
 
 **Step 4: Verify Setup**
+
 - Visit http://localhost:3000/splash (Landing page)
 - Visit http://localhost:3000/api/products (API test)
 - Visit http://localhost:3000/farmer/dashboard (Farmer portal)
@@ -52,6 +54,7 @@ Server runs at http://localhost:3000
 ### Production Deployment
 
 **Before deploying:**
+
 - Update `.env` with production values
 - Switch from SQLite to PostgreSQL
 - Set up proper authentication (JWT)
@@ -69,34 +72,40 @@ npx prisma migrate dev --name add_delivery_scheduling
 ## Troubleshooting
 
 ### Port 3000 in use?
+
 ```bash
 PORT=3001 npm run dev
 ```
 
 ### Database error?
+
 ```bash
 npx prisma migrate reset
 npm run seed
 ```
 
 ### API not responding?
+
 ```bash
 curl http://localhost:3000/api/products
 ```
 
 ### Change data?
+
 ```bash
 npm run migrate:reset
 npm run seed
 ```
 
 ### Build issues?
+
 ```bash
 rm -rf .next
 npm run build
 ```
 
 ### Prisma client generation?
+
 ```bash
 npx prisma generate
 ```
@@ -130,6 +139,7 @@ curl http://localhost:3000/api/orders?buyerId=1&status=PENDING
 After running `npm run seed`:
 
 **Users:**
+
 - Maria Santos (Farmer)
 - Juan Dela Cruz (Farmer)
 - Green Valley Restaurant (Business)
@@ -137,6 +147,7 @@ After running `npm run seed`:
 - Alberto Garcia (Buyer)
 
 **Products:**
+
 - Highland Tomatoes (₱60/kg)
 - Highland Cabbage (₱40/kg)
 - Fresh Carrots (₱55/kg)
@@ -144,6 +155,7 @@ After running `npm run seed`:
 - Highland Potatoes (₱35/kg)
 
 **Sample Order:**
+
 - Buyer: Green Valley Restaurant
 - Seller: Maria Santos
 - Items: 50kg tomatoes + 30kg cabbage
@@ -152,6 +164,7 @@ After running `npm run seed`:
 ## Performance Benchmarks
 
 Monitor after launch:
+
 - API response time < 200ms
 - Page load time < 3s
 - Database queries < 100ms
@@ -160,6 +173,7 @@ Monitor after launch:
 ## Testing Checklist
 
 ### API Testing
+
 - [ ] GET /api/products returns products
 - [ ] POST /api/products creates product
 - [ ] GET /api/listings?available=true filters correctly
@@ -168,6 +182,7 @@ Monitor after launch:
 - [ ] GET /api/users?role=farmer returns farmers
 
 ### Frontend Testing
+
 - [ ] Splash page loads with hero image
 - [ ] Navigation scrolls to sections
 - [ ] Contact form displays correctly
@@ -176,6 +191,7 @@ Monitor after launch:
 - [ ] Cart functionality working
 
 ### Database Testing
+
 - [ ] 5 sample users created
 - [ ] 5 sample products created
 - [ ] 5 sample listings created
@@ -197,6 +213,7 @@ Monitor after launch:
 ## Support
 
 For issues:
+
 - Check logs: `npm run dev` output
 - Verify database: `npx prisma studio`
 - Check API: `curl http://localhost:3000/api/products`
@@ -211,6 +228,7 @@ For issues:
 ## Remaining Mock Data
 
 The following pages still use mock data (for future updates):
+
 - `app/business/inventory/page.tsx` - Uses `getWholesaleCrops()` for product selection dialog
 - `app/farmer/analytics/page.tsx` - Uses mock data for analytics
 - `app/buyer/favorites/page.tsx` - Uses mock retail products

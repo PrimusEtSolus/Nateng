@@ -7,15 +7,15 @@ export default function SignUpPage() {
     <div className="min-h-screen bg-[#34D399] flex flex-col">
       {/* Header */}
       <header className="p-6">
-        <Link href="/" className="inline-flex items-center gap-2 text-white hover:opacity-80">
+        <Link href="/" className="inline-flex items-center gap-2 text-[#064E3B] hover:opacity-80">
           <ArrowLeft className="w-5 h-5" />
-          <Logo size="md" variant="light" />
+          <Logo size="md" variant="dark" />
         </Link>
       </header>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center px-4 pb-12">
-        <h1 className="text-2xl md:text-4xl lg:text-5xl font-semibold text-white text-center mt-8 mb-12 tracking-tight">
+        <h1 className="text-2xl md:text-4xl lg:text-5xl font-semibold text-[#064E3B] text-center mt-8 mb-12 tracking-tight">
           How will you use NatengHub?
         </h1>
 
@@ -31,8 +31,8 @@ export default function SignUpPage() {
               I want to buy fresh vegetables for personal consumption
             </p>
             <Link
-              href="/signup/Buyer"
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-colors text-center"
+              href="/signup/buyer"
+              className="w-full bg-orange-700 hover:bg-orange-800 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-colors text-center"
             >
               Join as Buyer
             </Link>
@@ -49,7 +49,7 @@ export default function SignUpPage() {
             </p>
             <Link
               href="/signup/bulkBuyer"
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-colors text-center"
+              className="w-full bg-teal-700 hover:bg-teal-800 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-colors text-center"
             >
               Join as Bulk Buyer
             </Link>
@@ -65,7 +65,7 @@ export default function SignUpPage() {
               I grow vegetables and want to sell wholesale to businesses
             </p>
             <Link
-              href="/signup/Farmer"
+              href="/signup/farmer"
               className="w-full bg-amber-700 hover:bg-amber-800 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition-colors text-center"
             >
               Join as Farmer
@@ -73,7 +73,7 @@ export default function SignUpPage() {
           </div>
         </div>
 
-        <p className="text-white mt-12">
+        <p className="text-[#064E3B] mt-12">
           Already have an account?{" "}
           <Link href="/login" className="underline font-medium hover:opacity-80">
             Log In
