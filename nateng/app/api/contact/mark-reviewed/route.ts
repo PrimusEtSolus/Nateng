@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import prisma from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
@@ -14,12 +12,10 @@ export async function POST(request: Request) {
       )
     }
 
-    // Update message status to reviewed using raw SQL
-    const result = await prisma.$queryRaw`
-      UPDATE ContactMessage 
-      SET status = 'reviewed', updatedAt = datetime('now')
-      WHERE id = ${messageId}
-    `
+    await prisma.contactMessage.update({
+      where: { id: Number(messageId) },
+      data: { status: 'reviewed' },
+    })
 
     return NextResponse.json({ 
       success: true,

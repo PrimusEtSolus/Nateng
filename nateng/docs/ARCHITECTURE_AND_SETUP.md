@@ -5,6 +5,7 @@
 NatengHub is a web-based digital marketplace integrating predictive data analytics and hub-and-spoke logistics to improve farmer income and optimize vegetable market flow in Benguet.
 
 **Key Objectives:**
+
 - Crop Supply Forecasting via predictive analytics
 - Truck Ban-Compliant Delivery Scheduling aligned with Baguio City regulations
 - Multi-actor ecosystem (Farmers, Resellers, Businesses, Consumers)
@@ -75,11 +76,13 @@ Seller Updates Status → Buyer Tracks Order
 ## API Routes
 
 ### Authentication
+
 - `POST /api/auth/login` - User login with email/password
 - `POST /api/auth/register` - User registration
 - `GET /api/auth/session` - Get current user session
 
 ### Users
+
 - `GET /api/users` - List users (optional `?role=farmer` filter)
 - `GET /api/users/[id]` - Get user by ID
 - `POST /api/users` - Create user (admin only)
@@ -87,6 +90,7 @@ Seller Updates Status → Buyer Tracks Order
 - `DELETE /api/users/[id]` - Delete user
 
 ### Products
+
 - `GET /api/products` - List all products
 - `GET /api/products/[id]` - Get product by ID
 - `POST /api/products` - Create product (farmer)
@@ -94,6 +98,7 @@ Seller Updates Status → Buyer Tracks Order
 - `DELETE /api/products/[id]` - Delete product
 
 ### Listings
+
 - `GET /api/listings` - List listings (filters: `?sellerId=1&available=true`)
 - `GET /api/listings/[id]` - Get listing by ID
 - `POST /api/listings` - Create listing (seller/farmer/reseller)
@@ -101,6 +106,7 @@ Seller Updates Status → Buyer Tracks Order
 - `DELETE /api/listings/[id]` - Delete listing
 
 ### Orders
+
 - `GET /api/orders` - List orders (filters: `?buyerId=1&sellerId=2&status=PENDING`)
 - `GET /api/orders/[id]` - Get order by ID
 - `POST /api/orders` - Create order (creates notifications)
@@ -108,10 +114,12 @@ Seller Updates Status → Buyer Tracks Order
 - `DELETE /api/orders/[id]` - Cancel order (PENDING only)
 
 ### Messages
+
 - `GET /api/messages?userId=1&conversationWith=2` - Get messages/conversations
 - `POST /api/messages` - Send message (creates notification)
 
 ### Notifications
+
 - `GET /api/notifications?userId=1&unreadOnly=true` - Get notifications
 - `PATCH /api/notifications` - Mark as read
 
@@ -176,11 +184,13 @@ nateng/
 ## API Usage Examples
 
 ### Get Data
+
 ```typescript
 const { data, loading, error } = useFetch('/api/products');
 ```
 
 ### Post Data
+
 ```typescript
 const product = await productsAPI.create({
   name: 'Tomatoes',
@@ -190,6 +200,7 @@ const product = await productsAPI.create({
 ```
 
 ### Update Data
+
 ```typescript
 await listingsAPI.update(listingId, {
   quantity: 100,
@@ -198,6 +209,7 @@ await listingsAPI.update(listingId, {
 ```
 
 ### Delete Data
+
 ```typescript
 await ordersAPI.delete(orderId);
 ```

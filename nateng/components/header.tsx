@@ -36,7 +36,7 @@ export function Header() {
   }
 
   return (
-    <header className="w-full bg-[#059669]/60 backdrop-blur-sm">
+    <header className="w-full bg-[#047857] backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 md:h-24">
           <Link 
@@ -48,13 +48,13 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-lg font-semibold text-[#064E3B] hover:text-white transition-all duration-200 hover:scale-105">
+            <Link href="/" className="text-lg font-semibold text-white hover:text-[#D1FAE5] transition-all duration-200 hover:scale-105">
               Home
             </Link>
-            <Link href="/about" className="text-lg font-semibold text-[#064E3B] hover:text-white transition-all duration-200 hover:scale-105">
+            <Link href="/about" className="text-lg font-semibold text-white hover:text-[#D1FAE5] transition-all duration-200 hover:scale-105">
               About
             </Link>
-            <Link href="/contact" className="text-lg font-semibold text-[#064E3B] hover:text-white transition-all duration-200 hover:scale-105">
+            <Link href="/contact" className="text-lg font-semibold text-white hover:text-[#D1FAE5] transition-all duration-200 hover:scale-105">
               Contact
             </Link>
           </nav>
@@ -68,7 +68,7 @@ export function Header() {
                 <NotificationBell />
                 <Button
                   variant="ghost"
-                  className="bg-white/45 text-white font-semibold text-sm px-4 hover:bg-white/60"
+                  className="bg-white text-[#065F46] font-semibold text-sm px-4 hover:bg-white/90"
                   asChild
                 >
                   <Link href={getDashboardPath(user.role)}>Dashboard</Link>
@@ -77,7 +77,7 @@ export function Header() {
                   <span className="text-white font-medium">{user.name}</span>
                   <Button
                     variant="ghost"
-                    className="bg-white/45 text-white font-semibold text-sm px-4 hover:bg-white/60"
+                    className="bg-white text-[#065F46] font-semibold text-sm px-4 hover:bg-white/90"
                     onClick={handleLogout}
                   >
                     Logout
@@ -88,12 +88,12 @@ export function Header() {
               <>
                 <Button
                   variant="ghost"
-                  className="bg-white/45 text-white font-semibold text-lg px-6 hover:bg-white/60 shadow-md"
+                  className="bg-white text-[#065F46] font-semibold text-lg px-6 hover:bg-white/90 shadow-md"
                   asChild
                 >
                   <Link href="/login">Sign In</Link>
                 </Button>
-                <Button className="bg-white text-[#31E672] font-semibold text-lg px-6 hover:bg-white/90" asChild>
+                <Button className="bg-white text-[#065F46] font-semibold text-lg px-6 hover:bg-white/90" asChild>
                   <Link href="/signup">Sign Up</Link>
                 </Button>
               </>
@@ -102,7 +102,7 @@ export function Header() {
 
           {/* Mobile Menu Button */}
           <button 
-            className="md:hidden p-2 text-[#064E3B] hover:bg-white/20 rounded-lg transition-colors" 
+            className="md:hidden p-2 text-white hover:bg-white/20 rounded-lg transition-colors" 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -116,21 +116,21 @@ export function Header() {
             <nav className="flex flex-col gap-2">
               <Link 
                 href="/" 
-                className="text-lg font-semibold text-[#064E3B] py-2 hover:text-white transition-colors"
+                className="text-lg font-semibold text-white py-2 hover:text-[#D1FAE5] transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Home
               </Link>
               <Link 
                 href="/about" 
-                className="text-lg font-semibold text-[#064E3B] py-2 hover:text-white transition-colors"
+                className="text-lg font-semibold text-white py-2 hover:text-[#D1FAE5] transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About
               </Link>
               <Link 
                 href="/contact" 
-                className="text-lg font-semibold text-[#064E3B] py-2 hover:text-white transition-colors"
+                className="text-lg font-semibold text-white py-2 hover:text-[#D1FAE5] transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Contact
@@ -141,7 +141,7 @@ export function Header() {
                 <>
                   <Button 
                     variant="ghost" 
-                    className="bg-white/45 text-white font-semibold" 
+                    className="bg-white text-[#065F46] font-semibold" 
                     asChild
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -149,7 +149,7 @@ export function Header() {
                   </Button>
                   <Button 
                     variant="ghost" 
-                    className="bg-white/45 text-white font-semibold" 
+                    className="bg-white text-[#065F46] font-semibold" 
                     onClick={() => {
                       setMobileMenuOpen(false)
                       handleLogout()
@@ -162,14 +162,14 @@ export function Header() {
                 <>
                   <Button 
                     variant="ghost" 
-                    className="bg-white/45 text-white font-semibold" 
+                    className="bg-white text-[#065F46] font-semibold" 
                     asChild
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Link href="/login">Sign In</Link>
                   </Button>
                   <Button 
-                    className="bg-white text-[#31E672] font-semibold" 
+                    className="bg-white text-[#065F46] font-semibold" 
                     asChild
                     onClick={() => setMobileMenuOpen(false)}
                   >

@@ -20,6 +20,7 @@
 ### What This Application Does
 
 NatengHub is a marketplace connecting Benguet farmers with buyers. It has:
+
 - User registration and login (Farmers, Buyers, Bulk Buyers, Admins)
 - Product listings with search and filtering
 - Shopping cart and checkout
@@ -233,6 +234,7 @@ This will ask you several questions. Answer them like this:
    - Press Enter (accept default: `storage.rules`)
 
 **What you should see:** Firebase created several files in your project:
+
 - `firestore.rules`
 - `firestore.indexes.json`
 - `storage.rules`
@@ -442,9 +444,11 @@ i  storage: deploying rules...
 #### Test Your API
 
 Find your function URL in the Firebase console:
+
 1. Go to Firebase Console → Your Project
 2. Click **"Functions"** in the left sidebar
 3. You'll see a list of your functions with URLs like:
+
    `https://us-central1-nateng-hub.cloudfunctions.net/registerUser`
 
 Test it with curl or Postman:
@@ -795,6 +799,7 @@ Click **"Environment Variables"** and add these one at a time:
 | `NEXT_PUBLIC_APP_URL` | Will be your domain once deployed | All |
 
 > **How to get `BLOB_READ_WRITE_TOKEN`:**
+>
 > 1. Go to Vercel Dashboard → Storage
 > 2. Click **"Create Database"** → **"Blob"**
 > 3. Follow prompts to create a Blob store
@@ -979,16 +984,19 @@ Go to Vercel Dashboard → Your Project → **"Deployments"** → **"Redeploy"**
 #### Monitor Logs
 
 **Vercel logs:**
+
 1. Go to Vercel Dashboard → Your Project → **"Logs"**
 2. Filter by: Errors, Warnings, or All
 
 **Database logs (Neon):**
+
 1. Go to https://console.neon.tech → Your Project
 2. Click **"Monitoring"** in the left sidebar
 
 #### Check Analytics
 
 **Vercel Analytics (built-in):**
+
 1. Go to Vercel Dashboard → Your Project → **"Analytics"**
 2. Enable Web Analytics (toggle on)
 

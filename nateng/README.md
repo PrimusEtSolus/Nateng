@@ -210,16 +210,19 @@ For detailed API documentation, see [README_BACKEND.md](./README_BACKEND.md).
 ### Authentication & User Management
 
 **Registration:**
+
 - Users can register as: Farmer, Buyer, or Bulk Buyer
 - Passwords are hashed with bcrypt (10 rounds)
 - Email uniqueness enforced
 
 **Login:**
+
 - Secure password authentication
 - Session management via localStorage (upgradeable to JWT)
 - Automatic role-based dashboard redirection
 
 **Seed Data:**
+
 - Running `npm run seed` creates sample users, products, and listings for testing
 - Users can register new accounts through the signup pages
 

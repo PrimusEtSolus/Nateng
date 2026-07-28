@@ -12,19 +12,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create contact message using raw SQL since Prisma client hasn't been regenerated
-    const result = await prisma.$queryRaw`
-      INSERT INTO ContactMessage (name, email, subject, message, type, status, createdAt, updatedAt)
-      VALUES (${name}, ${email}, ${subject}, ${message}, ${type}, 'pending', datetime('now'), datetime('now'))
-      RETURNING id
-    `
+    const created = await prisma.contactMessage.create({
+      data: { name, email, subject, message, type, status: 'pending' },
+      select: { id: true },
+    })
 
     return NextResponse.json({ 
       success: true,
       message: type === 'appeal' 
         ? 'Appeal submitted successfully. We will review your case and contact you soon.'
         : 'Message sent successfully. We will get back to you soon.',
-      id: (result as any)[0]?.id
+      id: created.id
     })
   } catch (error: unknown) {
     return NextResponse.json(
@@ -36,11 +34,10 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Fetch messages using raw SQL (no auth required - admin page handles frontend auth)
-    const messages = await prisma.$queryRaw`
-      SELECT * FROM ContactMessage 
-      ORDER BY createdAt DESC
-    `
+    // No auth required here - the admin page handles frontend auth
+    const messages = await prisma.contactMessage.findMany({
+      orderBy: { createdAt: 'desc' },
+    })
 
     return NextResponse.json({ messages })
   } catch (error: unknown) {

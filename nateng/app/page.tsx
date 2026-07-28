@@ -12,7 +12,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <section className="py-20 md:py-32 text-center">
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight text-balance max-w-4xl mx-auto leading-tight">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-semibold text-[#064E3B] tracking-tight text-balance max-w-4xl mx-auto leading-tight">
             Fresh Vegetables From Benguet Farmers
           </h1>
           <p className="mt-6 text-lg md:text-xl text-[#064E3B] max-w-2xl mx-auto">
@@ -22,7 +22,7 @@ export default function HomePage() {
           <div className="mt-10">
             <Button
               size="lg"
-              className="bg-white text-[#10B981] font-semibold text-xl px-8 py-6 rounded-xl shadow-lg hover:bg-white/90"
+              className="bg-white text-[#065F46] font-semibold text-xl px-8 py-6 rounded-xl shadow-lg hover:bg-white/90"
               asChild
             >
               <Link href="/signup">Start Buying</Link>
@@ -36,7 +36,7 @@ export default function HomePage() {
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
               <Leaf className="w-8 h-8 text-[#064E3B]" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">For Farmers</h3>
+            <h3 className="text-xl font-semibold text-[#064E3B] mb-2">For Farmers</h3>
             <p className="text-[#064E3B]">
               List your crops and connect with wholesale buyers directly. Set your prices and manage orders efficiently.
             </p>
@@ -46,7 +46,7 @@ export default function HomePage() {
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
               <Store className="w-8 h-8 text-[#064E3B]" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">For Markets</h3>
+            <h3 className="text-xl font-semibold text-[#064E3B] mb-2">For Markets</h3>
             <p className="text-[#064E3B]">
               Source fresh vegetables at wholesale prices. Build relationships with trusted local farmers.
             </p>
@@ -56,7 +56,7 @@ export default function HomePage() {
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
               <ShoppingCart className="w-8 h-8 text-[#064E3B]" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">For Buyers</h3>
+            <h3 className="text-xl font-semibold text-[#064E3B] mb-2">For Buyers</h3>
             <p className="text-[#064E3B]">
               Shop for fresh produce from multiple farmers. Enjoy competitive prices and quality vegetables.
             </p>
