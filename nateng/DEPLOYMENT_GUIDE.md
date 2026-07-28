@@ -4,14 +4,29 @@
 
 ---
 
+## 🚀 Zero Cost, Zero Credit Card Required
+
+Everything in this guide uses **free tiers that do not require a credit card**:
+
+| Service | Plan | Cost | Card Required? |
+|---------|------|------|----------------|
+| **Vercel** | Hobby | Free | ❌ No |
+| **Neon PostgreSQL** | Free Tier | Free | ❌ No |
+| **Vercel Blob** | Hobby | Free (250 MB) | ❌ No |
+| **Cloudinary** (alt. storage) | Free | Free (25 GB) | ❌ No |
+| **GitHub** | Free | Free | ❌ No |
+
+You can deploy this entire application to production **without ever entering a credit card number**.
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
-- [Option 1: Vercel + Firebase](#option-1-vercel--firebase)
-- [Option 2: Vercel Full Stack](#option-2-vercel-full-stack)
-- [Architecture Comparison](#architecture-comparison)
-- [Recommendation](#recommendation)
+- [The Only Option: Vercel + Neon PostgreSQL](#the-only-option-vercel--neon-postgresql)
+- [Card-Free Cost Summary](#card-free-cost-summary)
+- [Quick Start Checklist](#quick-start-checklist)
 
 ---
 
@@ -45,8 +60,8 @@ The application was built for local development using SQLite and local file stor
 
 | Technology | Problem | Solution |
 |------------|---------|----------|
-| SQLite | Needs write access to a file on disk. Serverless functions are read-only. | Switch to PostgreSQL |
-| Local file uploads | Files saved to `public/uploads/` are lost on every deployment | Switch to cloud storage (Vercel Blob, AWS S3, Cloudinary) |
+| SQLite | Needs write access to a file on disk. Serverless functions are read-only. | Switch to PostgreSQL (Neon) |
+| Local file uploads | Files saved to `public/uploads/` are lost on every deployment | Switch to cloud storage (Vercel Blob or Cloudinary) |
 | Local image paths | Image URLs point to `/uploads/filename.jpg` which don't exist in the cloud | Use cloud storage URLs |
 
 ---
@@ -82,7 +97,7 @@ vercel --version
 
 > **If a command is not found**, install that tool from the links above, close and reopen your terminal, then try again.
 
-### Accounts You Need to Create
+### Accounts You Need to Create (All Free, No Card)
 
 | Account | Why | Sign Up |
 |---------|-----|---------|
@@ -234,7 +249,6 @@ This will ask you several questions. Answer them like this:
    - Press Enter (accept default: `storage.rules`)
 
 **What you should see:** Firebase created several files in your project:
-
 - `firestore.rules`
 - `firestore.indexes.json`
 - `storage.rules`
@@ -444,11 +458,9 @@ i  storage: deploying rules...
 #### Test Your API
 
 Find your function URL in the Firebase console:
-
 1. Go to Firebase Console → Your Project
 2. Click **"Functions"** in the left sidebar
 3. You'll see a list of your functions with URLs like:
-
    `https://us-central1-nateng-hub.cloudfunctions.net/registerUser`
 
 Test it with curl or Postman:
@@ -554,9 +566,9 @@ Skip the database migration steps (you're using Firebase, not PostgreSQL).
 Vercel
 ├── Frontend (Next.js pages)
 ├── Backend (Next.js API Routes = Vercel Functions)
-├── Database: Neon PostgreSQL (hosted elsewhere, connected via Prisma)
-├── Storage: Vercel Blob (for file uploads)
-└── Auth: JWT (stays the same)
+├── Database: Neon PostgreSQL (hosted, connected via Prisma)
+├── Storage: Vercel Blob OR Cloudinary (for file uploads)
+└── Auth: JWT (stays the same — no external service needed)
 ```
 
 ---
@@ -565,23 +577,28 @@ Vercel
 
 #### Step 1: Create a `.env.production` File
 
-Create `.env.production` in your project root:
+Create `.env.production` in your project root (`c:\Nateng\nateng\.env.production`):
 
 ```bash
-# Database - get these from Neon after setting up your database
+# Database - get this from Neon after setting up your database
 DATABASE_URL="postgresql://user:password@ep-example-123456.us-east-2.aws.neon.tech/neondb?sslmode=require"
 
 # JWT Secret - generate a random 64-character string
 JWT_SECRET="your-64-character-random-secret-here-change-this-in-production"
 
-# Vercel Blob - for file uploads
+# Vercel Blob - for file uploads (only if using Vercel Blob)
 BLOB_READ_WRITE_TOKEN="your-blob-token-here"
+
+# Cloudinary - for file uploads (only if using Cloudinary instead)
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your-cloud-name"
+CLOUDINARY_API_KEY="your-api-key"
+CLOUDINARY_API_SECRET="your-api-secret"
 
 # App URL
 NEXT_PUBLIC_APP_URL="https://your-app.vercel.app"
 ```
 
-> **⚠️ IMPORTANT:** Never commit this file to GitHub. It contains secrets.
+> **⚠️ IMPORTANT:** Never commit this file to GitHub. It contains secrets. Add `.env.production` to your `.gitignore` if it's not already there.
 
 #### Step 2: Generate a Strong JWT Secret
 
@@ -591,8 +608,10 @@ Run this command in your terminal:
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Copy the output — that's your JWT_SECRET. It will look like:
+Copy the output — that's your `JWT_SECRET`. It will look like:
 `a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1`
+
+**Save this somewhere safe** (like a password manager). You'll need it in Vercel later.
 
 ---
 
@@ -600,15 +619,19 @@ Copy the output — that's your JWT_SECRET. It will look like:
 
 **What you're doing:** Creating a cloud-hosted PostgreSQL database to replace SQLite.
 
-**Why:** Vercel serverless functions can't write to a local SQLite file. They need a remote database.
+**Why:** Vercel serverless functions can't write to a local SQLite file. They need a remote database. Neon gives you a free PostgreSQL database that works perfectly with Prisma.
+
+**Cost:** Free (500 MB storage, 100 compute hours per month). No credit card required.
 
 #### Steps:
 
 1. Go to https://neon.tech
 2. Click **"Sign Up"** and sign in with GitHub
+   - This authorizes Neon to use your GitHub identity
+   - No credit card asked at any point
 3. Click **"Create a project"**
 4. Project name: `nateng-hub`
-5. Region: Select **"Singapore"** (closest to Philippines)
+5. Region: Select **"Singapore"** (closest to Philippines — lower latency)
 6. Click **"Create project"**
 
 **What you should see:** A dashboard with your database connection string. It looks like:
@@ -618,41 +641,54 @@ postgresql://neondb_owner:xxxxxxxx@ep-yourserver-123456.us-east-2.aws.neon.tech/
 ```
 
 7. Click the **"Copy"** button to copy this string.
-8. Save it — you'll use it as `DATABASE_URL`.
+8. **Save it** — you'll use it as `DATABASE_URL` in Vercel.
+
+> **Common Mistake:** If you lose this string, go to Neon Dashboard → Your Project → **"Connection Details"** to copy it again.
 
 #### Update Prisma Schema for PostgreSQL
 
-Edit `prisma/schema.prisma`:
+Edit `prisma/schema.prisma` in your project:
 
+**Before (SQLite):**
 ```prisma
-generator client {
-  provider = "prisma-client-js"
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
+```
 
+**After (PostgreSQL):**
+```prisma
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// ... rest of your models stay exactly the same
 ```
 
-The change is: `provider = "sqlite"` → `provider = "postgresql"` and `url = "file:./dev.db"` → `url = env("DATABASE_URL")`
+The change is:
+- `provider = "sqlite"` → `provider = "postgresql"`
+- `url = "file:./dev.db"` → `url = env("DATABASE_URL")`
 
-#### Install Prisma PostgreSQL Dependencies
-
-```bash
-npm install @prisma/client
-npm install -D prisma
-```
+**All your models stay exactly the same.** Prisma handles the differences between SQLite and PostgreSQL automatically.
 
 #### Run the Migration
 
 ```bash
+c:
+cd \Nateng\nateng
+
+# Set your DATABASE_URL temporarily (replace with your actual Neon URL)
+set DATABASE_URL=postgresql://neondb_owner:xxxxxxxx@ep-yourserver-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
+
+# Create the migration
 npx prisma migrate dev --name init
 ```
 
-This creates the tables in your Neon PostgreSQL database.
+**What you should see:**
+```
+Your database is now in sync with your schema.
+✔ Generated Prisma Client (v5.x.x) to .\node_modules\@prisma\client
+```
 
 #### Verify the Migration
 
@@ -660,27 +696,47 @@ This creates the tables in your Neon PostgreSQL database.
 npx prisma studio
 ```
 
-This opens a browser window showing your database tables. Click through to verify data is structured correctly.
+This opens a browser window at `http://localhost:5555` showing your database tables. Click through each table to verify the structure is correct.
 
-> **Common Mistake:** If you get an SSL error, make sure your `DATABASE_URL` includes `?sslmode=require` at the end.
+> **If you get an SSL error:** Make sure your `DATABASE_URL` ends with `?sslmode=require`. This tells Prisma to use an encrypted connection.
 
 ---
 
 ### Phase 3 — Set Up Cloud Storage for File Uploads
 
-**What you're doing:** Replacing local file storage with Vercel Blob (cloud storage).
+**What you're doing:** Replacing local file storage with cloud storage.
 
-**Why:** Files saved to `public/uploads/` on Vercel are lost on every deployment. Vercel Blob stores files permanently.
+**Why:** Files saved to `public/uploads/` on Vercel are lost on every deployment. Cloud storage keeps files permanently.
 
-#### Step 1: Install Vercel Blob
+**You have two options, both card-free:**
+
+| Option | Free Tier | Best For |
+|--------|-----------|----------|
+| **Vercel Blob** | 250 MB storage, 10K requests/day | Simple, built into Vercel |
+| **Cloudinary** | 25 GB storage, 25 GB bandwidth | More features, larger free tier |
+
+---
+
+#### Option A: Vercel Blob (Simpler)
+
+**Step 1: Install the package**
 
 ```bash
 npm install @vercel/blob
 ```
 
-#### Step 2: Update `app/api/upload/route.ts`
+**Step 2: Create a Blob store**
 
-Replace the current implementation with Vercel Blob:
+1. Go to your Vercel Dashboard → **Storage** tab
+2. Click **"Create Database"** → **"Blob"**
+3. Give it a name: `nateng-uploads`
+4. Click **"Create"**
+5. Copy the `BLOB_READ_WRITE_TOKEN` that appears
+6. Save it — you'll add it to Vercel environment variables later
+
+**Step 3: Update `app/api/upload/route.ts`**
+
+Replace the entire file content with:
 
 ```javascript
 import { put } from "@vercel/blob";
@@ -690,7 +746,6 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("image") as File;
-    const type = formData.get("type") as string;
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -711,11 +766,68 @@ export async function POST(request: Request) {
 }
 ```
 
-#### Step 3: Update Image URLs
+---
 
-Anywhere in the code that constructs image URLs like `/uploads/filename.jpg` needs to use the Vercel Blob URL instead.
+#### Option B: Cloudinary (Larger Free Tier)
 
-For product images stored in the database, migrate them to use the full URL from Vercel Blob.
+**Step 1: Create a Cloudinary account**
+
+1. Go to https://cloudinary.com/signup
+2. Sign up with email or Google/GitHub
+3. **No credit card required** for the free tier
+4. After signup, you'll see a dashboard with your **Cloud Name**, **API Key**, and **API Secret**
+
+**Step 2: Install the Cloudinary SDK**
+
+```bash
+npm install cloudinary
+```
+
+**Step 3: Update `app/api/upload/route.ts`**
+
+Replace the entire file content with:
+
+```javascript
+import { v2 as cloudinary } from "cloudinary";
+import { NextResponse } from "next/server";
+
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export async function POST(request: Request) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get("image") as File;
+
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: "nateng-uploads" },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(buffer);
+    });
+
+    return NextResponse.json({ imageUrl: result.secure_url });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Upload failed" },
+      { status: 500 }
+    );
+  }
+}
+```
 
 ---
 
@@ -741,6 +853,7 @@ git commit -m "Initial commit"
 3. Create a GitHub repository:
    - Go to https://github.com/new
    - Repository name: `nateng-hub`
+   - Description: "Fresh vegetables marketplace connecting Benguet farmers with buyers"
    - Click **"Create repository"**
    - Do NOT check any boxes (no README, no .gitignore)
 
@@ -766,11 +879,13 @@ To https://github.com/YOUR_USERNAME/nateng-hub.git
  * [new branch]      main -> main
 ```
 
+> **Troubleshooting:** If you get an authentication error, you may need to use a Personal Access Token instead of a password. See GitHub's guide: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+
 #### Step 2: Connect Vercel to GitHub
 
 1. Go to https://vercel.com
 2. Click **"Add New..."** → **"Project"**
-3. Click **"Install GitHub App"** if prompted
+3. Click **"Install GitHub App"** if prompted (this lets Vercel read your repositories)
 4. Find and select your `nateng-hub` repository
 5. Click **"Import"**
 
@@ -785,7 +900,7 @@ Vercel should auto-detect Next.js. Verify these settings:
 | **Output Directory** | (leave blank — default) |
 | **Install Command** | `npm install` |
 
-> **Why the build command includes `prisma generate`:** Prisma needs to generate its client code. This command must run before `next build` so your code can import `@prisma/client`.
+> **Why the build command includes `prisma generate`:** Prisma needs to generate its client code before the build. Without this, your code can't import `@prisma/client` and the build will fail.
 
 #### Step 4: Add Environment Variables
 
@@ -795,11 +910,13 @@ Click **"Environment Variables"** and add these one at a time:
 |------|-------|--------|
 | `DATABASE_URL` | Your Neon PostgreSQL connection string | All |
 | `JWT_SECRET` | The 64-character string you generated earlier | All |
-| `BLOB_READ_WRITE_TOKEN` | Your Vercel Blob token | All |
+| `BLOB_READ_WRITE_TOKEN` | Your Vercel Blob token (if using Vercel Blob) | All |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Your Cloudinary cloud name (if using Cloudinary) | All |
+| `CLOUDINARY_API_KEY` | Your Cloudinary API key (if using Cloudinary) | All |
+| `CLOUDINARY_API_SECRET` | Your Cloudinary API secret (if using Cloudinary) | All |
 | `NEXT_PUBLIC_APP_URL` | Will be your domain once deployed | All |
 
 > **How to get `BLOB_READ_WRITE_TOKEN`:**
->
 > 1. Go to Vercel Dashboard → Storage
 > 2. Click **"Create Database"** → **"Blob"**
 > 3. Follow prompts to create a Blob store
@@ -826,6 +943,11 @@ Running "next build"
 
 **Your app is now live at:** `https://nateng-hub.vercel.app`
 
+> **If the build fails:** Check the build logs for the specific error. The most common issues are:
+> - Missing environment variables (add them in Vercel Dashboard → Settings → Environment Variables)
+> - Prisma client not generated (make sure build command is `npx prisma generate && next build`)
+> - Database connection failed (verify `DATABASE_URL` is correct)
+
 ---
 
 ### Phase 5 — Connect Frontend to Backend
@@ -845,7 +967,7 @@ Test each major API endpoint:
 curl https://nateng-hub.vercel.app/api/health
 
 # Expected:
-{"status":"ok","timestamp":"2026-07-27T..."}
+{"status":"ok","timestamp":"2026-07-28T..."}
 
 # Test products
 curl https://nateng-hub.vercel.app/api/products
@@ -853,6 +975,16 @@ curl https://nateng-hub.vercel.app/api/products
 # Expected:
 {"data":[...]} or {"data":[]} (empty if no products)
 ```
+
+#### Test in Browser
+
+1. Open `https://nateng-hub.vercel.app` in your browser
+2. Try registering a new account
+3. Try logging in
+4. Browse products
+5. Add items to cart
+
+If any of these fail, open your browser's Developer Tools (F12) → **Network** tab and look for failed API requests (shown in red).
 
 ---
 
@@ -865,6 +997,7 @@ curl https://nateng-hub.vercel.app/api/products
 #### Steps:
 
 1. Buy a domain name from a registrar like Namecheap, GoDaddy, or Google Domains
+   - Cost: Typically $8-15 per year
 2. Go to your Vercel project dashboard
 3. Click **"Settings"** → **"Domains"**
 4. Enter your domain (e.g., `natenghub.com`)
@@ -893,31 +1026,31 @@ Value: cname.vercel-dns.com
 Go through each item and verify it works on your live deployment:
 
 ```
-✅ Website loads at your URL
-✅ Registration works (create Farmer, Buyer, Bulk Buyer accounts)
-✅ Login works for all account types
-✅ Logout works
-✅ Session persists on page refresh
-✅ Browse products
-✅ Search/filter products
-✅ Add items to cart
-✅ Update cart quantity
-✅ Remove items from cart
-✅ Checkout/create order
-✅ View order status
-✅ Messages between buyers and farmers
-✅ Delivery scheduling works
-✅ Favorite listings
-✅ Farmer dashboard loads
-✅ Buyer dashboard loads
-✅ Bulk buyer flows work
-✅ Admin panel loads (localhost only)
-✅ Admin can manage users
-✅ Profile photo upload
-✅ Contact form submission
-✅ Mobile responsive (check on phone)
-✅ All pages render without 404 errors
-✅ API health endpoint returns OK
+☐ Website loads at your URL
+☐ Registration works (create Farmer, Buyer, Bulk Buyer accounts)
+☐ Login works for all account types
+☐ Logout works
+☐ Session persists on page refresh
+☐ Browse products
+☐ Search/filter products
+☐ Add items to cart
+☐ Update cart quantity
+☐ Remove items from cart
+☐ Checkout/create order
+☐ View order status
+☐ Messages between buyers and farmers
+☐ Delivery scheduling works
+☐ Favorite listings
+☐ Farmer dashboard loads
+☐ Buyer dashboard loads
+☐ Bulk buyer flows work
+☐ Admin panel loads (localhost only)
+☐ Admin can manage users
+☐ Profile photo upload
+☐ Contact form submission
+☐ Mobile responsive (check on phone)
+☐ All pages render without 404 errors
+☐ API health endpoint returns OK
 ```
 
 ---
@@ -930,32 +1063,32 @@ Go through each item and verify it works on your live deployment:
 | 2 | Build fails: "DATABASE_URL is not set" | Missing env var | Add `DATABASE_URL` to Vercel environment variables |
 | 3 | Build fails: "JWT_SECRET is not set" | Missing env var | Add `JWT_SECRET` to Vercel environment variables |
 | 4 | Login returns 500 error | Database connection failed | Check `DATABASE_URL` is correct and the database is running |
-| 5 | Login returns "Unauthorized" | JWT secret mismatch | Make sure `JWT_SECRET` is set and consistent |
-| 6 | File upload fails | Local storage path doesn't exist on Vercel | Migrate to Vercel Blob or AWS S3 |
-| 7 | Images don't load | Image paths are local | Use cloud storage URLs instead |
-| 8 | Application loads slowly | Cold start on serverless functions | Add a cron job to keep functions warm, or upgrade to Pro |
-| 9 | Database connection timed out | Neon free tier goes to sleep after inactivity | Use Neon's "scale to zero" config or upgrade to paid tier |
-| 10 | CORS error in browser | API is on different domain | For Vercel Full Stack: not needed (same domain). For Firebase: see below |
-| 11 | CORS error (Firebase) | Frontend and Cloud Functions on different domains | Add `Access-Control-Allow-Origin: *` header to all Cloud Functions |
-| 12 | Prisma migration fails | PostgreSQL schema mismatch | Run `npx prisma migrate dev` and push migration to GitHub |
-| 13 | "Relation does not exist" error | Migration not applied | Create initial migration with `npx prisma migrate dev --name init` |
-| 14 | 404 on page refresh | No fallback routing configured | Vercel handles this automatically for Next.js — check if routes are correct |
-| 15 | 504 Gateway Timeout | Function execution exceeded limit | Optimize database queries or increase function timeout in Vercel |
-| 16 | "Cannot read property of undefined" | Missing environment variable | Check all env vars are set in Vercel dashboard |
-| 17 | Auth session doesn't persist | httpOnly cookie domain mismatch | Set `NEXT_PUBLIC_APP_URL` to match your domain |
-| 18 | Admin page not restricted | Middleware not working | Verify middleware.ts has the correct matcher for `/admin/*` |
-| 19 | Sitemap doesn't include all pages | `siteUrl` not configured | Update `next-sitemap` config with your domain |
-| 20 | PDF/export doesn't work | Missing server-side dependency | Install required packages as regular dependencies (not devDependencies) |
-| 21 | CSS animations not working | Missing `tw-animate-css` import | Verify `@import "tw-animate-css"` is in `app/globals.css` |
-| 22 | Prisma Studio won't connect to Neon | SSL connection issue | Add `?sslmode=require` to your `DATABASE_URL` |
-| 23 | "Too many connections" error | Neon free tier connection limit | Reduce Prisma connection pool or upgrade Neon plan |
-| 24 | Function timed out deploying | Large npm packages | Run `npm prune --production` before deploy, check bundle size |
-| 25 | Form submission fails silently | CORS or network error | Open browser DevTools → Network tab to see actual error |
-| 26 | "Invalid `prisma.user.create()` invocation" | Schema mismatch | Run `npx prisma generate` after schema changes |
-| 27 | Email notifications not sending | No email service configured | Add SendGrid, Resend, or similar email provider |
-| 28 | Rate limiting blocks legitimate users | In-memory rate limiter doesn't work across serverless instances | Replace with database-backed rate limiter or skip for MVP |
-| 29 | "Failed to fetch" errors | API route not deployed | Check Vercel deployment logs for function errors |
-| 30 | Images return 403 | Hotlinking protection | Configure CORS and image access rules in blob storage |
+| 5 | Login returns "Unauthorized" | JWT secret mismatch | Make sure `JWT_SECRET` is set and consistent across all environments |
+| 6 | File upload fails | Local storage path doesn't exist on Vercel | Migrate to Vercel Blob or Cloudinary (see Phase 3) |
+| 7 | Images don't load | Image paths are local `/uploads/` paths | Use cloud storage URLs instead (Vercel Blob or Cloudinary) |
+| 8 | Application loads slowly | Cold start on serverless functions | Normal for free tier. Upgrade to Vercel Pro for faster starts |
+| 9 | Database connection timed out | Neon free tier goes to sleep after 5 minutes of inactivity | First request after idle will be slow (~3 seconds). Normal behavior |
+| 10 | Prisma migration fails | PostgreSQL schema mismatch | Run `npx prisma migrate dev` locally and push migration to GitHub |
+| 11 | "Relation does not exist" error | Migration not applied | Create initial migration with `npx prisma migrate dev --name init` |
+| 12 | 404 on page refresh | No fallback routing configured | Vercel handles this automatically for Next.js — check if routes are correct |
+| 13 | 504 Gateway Timeout | Function execution exceeded 10-second limit | Optimize database queries or increase function timeout in Vercel Pro |
+| 14 | "Cannot read property of undefined" | Missing environment variable | Check all env vars are set in Vercel dashboard |
+| 15 | Auth session doesn't persist | httpOnly cookie domain mismatch | Set `NEXT_PUBLIC_APP_URL` to match your domain |
+| 16 | Admin page not restricted | Middleware not working | Verify `middleware.ts` has the correct matcher for `/admin/*` |
+| 17 | CSS animations not working | Missing `tw-animate-css` import | Verify `@import "tw-animate-css"` is in `app/globals.css` |
+| 18 | Prisma Studio won't connect to Neon | SSL connection issue | Add `?sslmode=require` to your `DATABASE_URL` |
+| 19 | "Too many connections" error | Neon free tier connection limit (10 connections) | Reduce Prisma connection pool or upgrade Neon plan |
+| 20 | Function timed out deploying | Large npm packages | Run `npm prune --production` before deploy to remove dev dependencies |
+| 21 | Form submission fails silently | Network error | Open browser DevTools → Network tab to see actual error response |
+| 22 | "Invalid `prisma.user.create()` invocation" | Schema mismatch | Run `npx prisma generate` after schema changes |
+| 23 | Email notifications not sending | No email service configured | Add SendGrid, Resend, or similar email provider (separate setup) |
+| 24 | Rate limiting blocks legitimate users | In-memory rate limiter doesn't work across serverless instances | Replace with database-backed rate limiter or skip for MVP |
+| 25 | "Failed to fetch" errors | API route not deployed | Check Vercel deployment logs for function errors |
+| 26 | Images return 403 | Hotlinking protection | Configure CORS and image access rules in your storage provider |
+| 27 | Git push fails: "Authentication failed" | Password authentication deprecated | Use a GitHub Personal Access Token instead of password |
+| 28 | Vercel deploy shows "Error: No output directory" | Build command failed | Check build logs for the actual error |
+| 29 | Neon database is slow | Free tier has limited resources | Normal for free tier. Upgrade to paid for better performance |
+| 30 | Can't connect to Neon from local machine | IP not allowed | Go to Neon Dashboard → Settings → IP Allow and add your IP |
 
 ---
 
@@ -972,14 +1105,15 @@ git commit -m "Describe your changes here"
 git push origin main
 ```
 
-**Manual:**
-Go to Vercel Dashboard → Your Project → **"Deployments"** → **"Redeploy"**
+Vercel will detect the push and start a new deployment automatically. You can watch progress at https://vercel.com/YOUR_USERNAME/nateng-hub/deployments
 
 #### How to Roll Back a Deployment
 
 1. Go to Vercel Dashboard → Your Project → **"Deployments"**
-2. Find the working deployment (green checkmark)
+2. Find the working deployment (green checkmark ✓)
 3. Click the **"..."** menu → **"Promote to Production"**
+
+This instantly reverts your live site to the previous working version.
 
 #### Monitor Logs
 
@@ -987,47 +1121,52 @@ Go to Vercel Dashboard → Your Project → **"Deployments"** → **"Redeploy"**
 
 1. Go to Vercel Dashboard → Your Project → **"Logs"**
 2. Filter by: Errors, Warnings, or All
+3. Click any log entry to see the full error details
 
 **Database logs (Neon):**
 
 1. Go to https://console.neon.tech → Your Project
 2. Click **"Monitoring"** in the left sidebar
+3. View query performance, connection counts, and error rates
 
 #### Check Analytics
 
 **Vercel Analytics (built-in):**
 
 1. Go to Vercel Dashboard → Your Project → **"Analytics"**
-2. Enable Web Analytics (toggle on)
+2. Click **"Enable"** on Web Analytics
+3. After a few hours, you'll see visitor counts, page views, and geographic data
 
-#### Backup Firestore (Firebase Option 1)
+#### Backup PostgreSQL Database
 
-1. Go to Firebase Console → Firestore → **"Export"**
-2. Select **"Export entire database"**
-3. Choose a Cloud Storage bucket
-4. Click **"Export"**
-
-#### Backup PostgreSQL (Neon — Option 2)
-
-Neon automatically creates backups. To manually backup:
+Neon automatically creates daily backups. To manually backup:
 
 ```bash
-pg_dump --no-owner --no-acl "postgresql://user:pass@ep-host.aws.neon.tech/neondb" > backup.sql
+# Install PostgreSQL tools if you don't have them
+# Download from: https://www.postgresql.org/download/
+
+# Backup your database
+pg_dump --no-owner --no-acl "postgresql://user:pass@ep-host.aws.neon.tech/neondb" > backup_2026-07-28.sql
 ```
 
-To restore:
+To restore from a backup:
 
 ```bash
-psql "postgresql://user:pass@ep-host.aws.neon.tech/neondb" < backup.sql
+psql "postgresql://user:pass@ep-host.aws.neon.tech/neondb" < backup_2026-07-28.sql
 ```
+
+> **Pro tip:** Set up a monthly calendar reminder to take a manual backup. Even though Neon auto-backs up, having your own copy gives you extra safety.
 
 #### Rotate Secrets
 
 Every 90 days, update your `JWT_SECRET`:
 
-1. Generate a new secret: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+1. Generate a new secret:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
 2. Update `JWT_SECRET` in Vercel Dashboard → Settings → Environment Variables
-3. **All existing user sessions will be invalidated** — users will need to log in again
+3. **Important:** All existing user sessions will be invalidated — users will need to log in again
 
 #### Update Dependencies
 
@@ -1039,159 +1178,83 @@ npm update      # Update within version ranges
 npm audit fix   # Fix security vulnerabilities
 ```
 
----
+Then commit and push to redeploy:
 
-## Architecture Comparison
-
-### Cost
-
-| Factor | Vercel + Firebase | Vercel Full Stack |
-|--------|-------------------|-------------------|
-| **Hosting (Vercel)** | Free tier (100 GB bandwidth, 6000 build mins/mo) | Free tier (same) |
-| **Database** | Firestore free tier (1 GB storage, 50K reads/day) | Neon free tier (500 MB, 100 hrs compute/month) |
-| **Auth** | Firebase Auth free (50K users) | JWT in httpOnly cookies — included |
-| **Storage** | Firebase Storage free (5 GB) | Vercel Blob free (250 MB, 10K requests/day) |
-| **Functions** | Firebase free tier (2M invocations/mo) | Vercel Functions included in hosting (100 GB-hours) |
-| **Total monthly (free)** | $0 | $0 |
-| **Total monthly (scaled)** | ~$50-150/mo | ~$20-100/mo |
-
-### Performance
-
-| Factor | Vercel + Firebase | Vercel Full Stack |
-|--------|-------------------|-------------------|
-| **Cold start** | Cloud Functions: ~2-5 seconds | Vercel Functions: ~0.5-1 second |
-| **Query speed** | Firestore: fast for simple queries | PostgreSQL (Neon): fast for complex queries |
-| **Edge caching** | No | Yes (Vercel Edge Network) |
-| **Global latency** | Firebase servers in 20+ regions | Vercel Edge Network in 100+ locations |
-
-### Scalability
-
-| Factor | Vercel + Firebase | Vercel Full Stack |
-|--------|-------------------|-------------------|
-| **Auto-scaling** | Yes (Firebase scales automatically) | Yes (Vercel scales automatically) |
-| **Database limits** | 1M concurrent connections | Neon: 100 connections (free), up to 10K (paid) |
-| **Storage limits** | Firestore: 1 TB per document | Neon: 500 MB (free), up to 500 GB (paid) |
-
-### Development Complexity
-
-| Factor | Vercel + Firebase | Vercel Full Stack |
-|--------|-------------------|-------------------|
-| **Code changes needed** | **Major rewrite** — all Prisma → Firestore | **Minimal** — change DB URL, switch to cloud storage |
-| **Learning curve** | Steep — Firestore is fundamentally different from SQL | Shallow — same Prisma, same SQL queries |
-| **Local development** | Requires Firebase emulator | Works with local SQLite, swap URL for production |
-| **Framework compatibility** | Partial — Firebase doesn't integrate with Next.js natively | Full — Next.js API Routes + Prisma work perfectly together |
-
-### Security
-
-| Factor | Vercel + Firebase | Vercel Full Stack |
-|--------|-------------------|-------------------|
-| **Authentication** | Firebase Auth (managed) | JWT (self-managed) |
-| **Database security** | Firestore Security Rules | Database connection string (keep secret) |
-| **API security** | Cloud Functions + Firebase Auth tokens | httpOnly cookies + JWT verification |
-| **Vendor security** | Google (SOC 2, ISO 27001) | Vercel + Neon (SOC 2) |
-
-### Vendor Lock-in
-
-| Factor | Vercel + Firebase | Vercel Full Stack |
-|--------|-------------------|-------------------|
-| **Database** | Firestore — Google-specific, hard to migrate | PostgreSQL — industry standard, portable |
-| **Auth** | Firebase Auth — Google-specific | JWT — no vendor dependency |
-| **Functions** | Firebase Cloud Functions — Google-specific | Next.js API Routes — portable to any Node.js host |
-| **Storage** | Firebase Storage — Google-specific | Vercel Blob — S3-compatible, easy to switch |
+```bash
+git add package.json package-lock.json
+git commit -m "Monthly dependency update"
+git push origin main
+```
 
 ---
 
-## Recommendation
+## Card-Free Cost Summary
 
-### Choose Option 2: Vercel Full Stack
+| Service | What It Provides | Free Tier Limits | Upgrade Cost |
+|---------|-----------------|------------------|--------------|
+| **Vercel** | Hosting, CDN, serverless functions | 100 GB bandwidth, 6000 build minutes/month, 100 serverless function executions/day | $20/month (Pro) |
+| **Neon** | PostgreSQL database | 500 MB storage, 100 compute hours/month, 10 simultaneous connections | $19/month (Launch) |
+| **Vercel Blob** | File/image storage | 250 MB storage, 10K requests/day | $10/month |
+| **Cloudinary** | File/image storage (alternative) | 25 GB storage, 25 GB bandwidth/month | $89/month (Plus) |
+| **GitHub** | Code hosting | Unlimited public repositories | $4/month (Pro) |
+| **Total (free)** | | **$0/month** | |
+| **Total (scaled)** | | | **~$20-50/month** |
 
-**Why:** For your specific application, Option 2 is the clear winner:
-
-1. **Minimal code changes** — You keep Prisma, same database schema, same API routes. The only changes are:
-   - `prisma/schema.prisma`: `sqlite` → `postgresql`
-   - `app/api/upload/route.ts`: Local file → Vercel Blob
-   - Environment variables: Add `DATABASE_URL`, `JWT_SECRET`, `BLOB_READ_WRITE_TOKEN`
-
-2. **No architectural rewrite** — Option 1 (Firebase) would require rewriting every single API route and data access call. That's months of work.
-
-3. **Same development experience** — You can still develop locally with SQLite and switch to PostgreSQL for production by changing one line in the Prisma schema.
-
-4. **Lower cost at scale** — PostgreSQL (via Neon) is cheaper than Firestore at high read/write volumes.
-
-5. **No vendor lock-in** — Prisma supports MySQL, PostgreSQL, SQLite, SQL Server, and MongoDB. If you switch hosting, you keep your database queries.
-
-6. **Next.js-native** — Everything stays within the Next.js framework. No external backend to manage.
-
-### Migration Effort Estimate
-
-| Task | Time |
-|------|------|
-| Switch Prisma to PostgreSQL | 30 minutes |
-| Set up Neon database | 15 minutes |
-| Set up Vercel Blob for uploads | 30 minutes |
-| Update upload API route | 15 minutes |
-| Deploy to Vercel | 15 minutes |
-| Test all functionality | 1 hour |
-| **Total** | **~3 hours** |
-
-### What Won't Work on Vercel (and What to Do)
-
-| Feature | Problem | Fix |
-|---------|---------|-----|
-| **Admin page** | Middleware restricts `/admin` to localhost | Remove localhost check OR create a separate admin deployment |
-| **File upload to `public/uploads/`** | Read-only filesystem | Use Vercel Blob (details above) |
-| **SQLite database** | Read-only filesystem | Switch to Neon PostgreSQL (details above) |
-| **Images from local paths** | Don't exist in cloud | Use cloud storage URLs |
-| **Rate limiter** | In-memory Map doesn't scale across instances | Upgrade to database-backed rate limiting or skip for MVP |
+> **Realistic cost for a small marketplace:** If you have ~100 daily active users, you'll likely stay within all free tiers for the first 6-12 months. When you outgrow them, upgrading Vercel to Pro ($20/mo) and Neon to Launch ($19/mo) gives you plenty of headroom.
 
 ---
 
 ## Quick Start — Deployment Checklist
 
 ```
-Phase 1: Preparation
-☐ Install Node.js
-☐ Install Git
-☐ Install Vercel CLI
-☐ Create GitHub account
-☐ Create Vercel account
-☐ Create Neon account
+Phase 1: Preparation (30 min)
+☐ Install Node.js (https://nodejs.org)
+☐ Install Git (https://git-scm.com)
+☐ Install Vercel CLI: npm install -g vercel
+☐ Create GitHub account (https://github.com)
+☐ Create Vercel account (https://vercel.com)
+☐ Create Neon account (https://neon.tech)
 
-Phase 2: Database Setup
+Phase 2: Database Setup (30 min)
 ☐ Create Neon PostgreSQL database
-☐ Copy DATABASE_URL
-☐ Update prisma/schema.prisma to use postgresql
-☐ Run npx prisma migrate dev --name init
+☐ Copy DATABASE_URL connection string
+☐ Update prisma/schema.prisma: sqlite → postgresql
+☐ Run: npx prisma migrate dev --name init
+☐ Verify: npx prisma studio
 
-Phase 3: Storage Setup
-☐ Create Vercel Blob store
-☐ Copy BLOB_READ_WRITE_TOKEN
-☐ Update /api/upload to use @vercel/blob
+Phase 3: Storage Setup (30 min)
+☐ Choose: Vercel Blob OR Cloudinary
+☐ If Vercel Blob: Create Blob store, copy token
+☐ If Cloudinary: Create account, copy API keys
+☐ Update app/api/upload/route.ts with new code
 
-Phase 4: Environment Variables
-☐ Generate JWT_SECRET
-☐ Create .env.production with all vars
+Phase 4: Environment Variables (10 min)
+☐ Generate JWT_SECRET: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+☐ Create .env.production with all variables
 
-Phase 5: Deploy
-☐ Push code to GitHub
+Phase 5: Deploy (15 min)
+☐ git init && git add . && git commit -m "Initial commit"
+☐ Create GitHub repository: nateng-hub
+☐ git push -u origin main
 ☐ Connect GitHub to Vercel
-☐ Add environment variables in Vercel
+☐ Add environment variables in Vercel dashboard
 ☐ Set build command: npx prisma generate && next build
 ☐ Click Deploy
-☐ Verify deployment succeeds
+☐ Verify: https://nateng-hub.vercel.app loads
 
-Phase 6: Verification
+Phase 6: Verification (1 hour)
 ☐ Website loads
-☐ Login works
 ☐ Registration works
+☐ Login works
 ☐ Database reads/writes work
 ☐ API endpoints respond
 ☐ File upload works
 ☐ All pages render
+☐ Mobile responsive
 
-Phase 7: Production Readiness
+Phase 7: Production Readiness (30 min)
 ☐ Add custom domain
 ☐ Enable Vercel Analytics
-☐ Set up monitoring
-☐ Create backup strategy
+☐ Set up monthly backup reminder
 ☐ Document rollback procedure
+☐ Share URL with your first users!

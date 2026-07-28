@@ -1,52 +1,71 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
+import { put } from '@vercel/blob';
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as const;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FOLDERS = ['products', 'profile'] as const;
+type FolderType = typeof ALLOWED_FOLDERS[number];
+
+function sanitizeFilename(name: string): string {
+  const cleaned = name.replace(/[^a-zA-Z0-9.-]/g, '');
+  return cleaned || 'unnamed';
+}
 
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-    const file = formData.get('image') as File;
-    const type = formData.get('type') as string || 'products'; // 'products' or 'profile'
+    const rawFile = formData.get('image');
+    const rawType = formData.get('type') as string | null;
 
-    if (!file) {
-      return NextResponse.json({ error: 'No image file provided' }, { status: 400 });
+    // Validate file exists
+    if (!(rawFile instanceof File)) {
+      return NextResponse.json(
+        { error: 'No image file provided' },
+        { status: 400 }
+      );
     }
+
+    const file = rawFile;
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: 'Invalid file type. Only JPEG, PNG, and WebP are allowed' }, { status: 400 });
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type as typeof ALLOWED_IMAGE_TYPES[number])) {
+      return NextResponse.json(
+        { error: 'Invalid file type. Only JPEG, PNG, and WebP are allowed', allowedTypes: ALLOWED_IMAGE_TYPES.join(', ') },
+        { status: 400 }
+      );
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      return NextResponse.json({ error: 'File too large. Maximum size is 5MB' }, { status: 400 });
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: 'File too large', maxSizeMB: MAX_FILE_SIZE / (1024 * 1024), actualSizeMB: (file.size / (1024 * 1024)).toFixed(2) },
+        { status: 400 }
+      );
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', type);
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
+    // Determine and validate folder
+    const folder = rawType && ALLOWED_FOLDERS.includes(rawType as FolderType)
+      ? (rawType as FolderType)
+      : 'products';
 
     // Generate unique filename
     const timestamp = Date.now();
-    const filename = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
-    const filepath = join(uploadsDir, filename);
+    const cleanName = sanitizeFilename(file.name);
+    const filename = `${folder}/${timestamp}-${cleanName}`;
 
-    // Write file
-    await writeFile(filepath, buffer);
+    // Upload to Vercel Blob with content type preserved
+    const blob = await put(filename, file, {
+      access: 'public',
+      contentType: file.type,
+    });
 
-    // Return the public URL
-    const imageUrl = `/uploads/${type}/${filename}`;
-    
-    return NextResponse.json({ imageUrl });
-  } catch (error: any) {
-    return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 });
+    return NextResponse.json({ imageUrl: blob.url });
+  } catch (error) {
+    console.error('Upload error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json(
+      { error: 'Failed to upload image', details: errorMessage },
+      { status: 500 }
+    );
   }
 }
