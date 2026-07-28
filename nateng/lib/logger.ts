@@ -16,9 +16,16 @@ interface LogEntry {
 }
 
 class Logger {
-  private isDevelopment = process.env.NODE_ENV === 'development'
+  private logLevel: LogLevel = process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG;
+
+  private shouldLog(level: LogLevel): boolean {
+    const levels = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR];
+    return levels.indexOf(level) >= levels.indexOf(this.logLevel);
+  }
 
   private log(level: LogLevel, message: string, context?: Record<string, any>) {
+    if (!this.shouldLog(level)) return;
+
     const logEntry: LogEntry = {
       level,
       message,
@@ -26,14 +33,11 @@ class Logger {
       context,
     }
 
-    if (this.isDevelopment) {
-      // Only log in development
-      const logMethod = level === LogLevel.ERROR ? 'error' : 
-                       level === LogLevel.WARN ? 'warn' : 
-                       level === LogLevel.INFO ? 'info' : 'log'
-      
-      console[logMethod](`[${level.toUpperCase()}] ${message}`, context || '')
-    }
+    const logMethod = level === LogLevel.ERROR ? 'error' : 
+                     level === LogLevel.WARN ? 'warn' : 
+                     level === LogLevel.INFO ? 'info' : 'log'
+    
+    console[logMethod](`[${level.toUpperCase()}] ${message}`, context || '')
 
     // In production, you could send logs to a service like Sentry, LogRocket, etc.
     // this.sendToLogService(logEntry)

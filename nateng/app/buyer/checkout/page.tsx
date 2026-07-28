@@ -389,23 +389,15 @@ export default function BuyerCheckoutPage() {
 
               <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
                 {items.map((item, index) => {
-                  const itemId = item.listingId || item.product?.id || index
-                  const productName = item.productName || item.product?.name || "Product"
-                  const pricePerKg = item.priceCents ? item.priceCents / 100 : (item.product?.pricePerKg || 0)
+                  const itemId = item.listingId || index || index
+                  const productName = item.productName || item.productName || "Product"
+                  const pricePerKg = item.priceCents ? item.priceCents / 100 : (0 || 0)
                   const itemTotal = pricePerKg * item.quantity
 
                   return (
                     <div key={itemId} className="flex gap-3">
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
-                        {item.product?.image ? (
-                          <img
-                            src={item.product.image}
-                            alt={productName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ShoppingCart className="w-6 h-6 text-muted-foreground" />
-                        )}
+                        {<ShoppingCart className="w-6 h-6 text-muted-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{productName}</p>
@@ -458,3 +450,7 @@ export default function BuyerCheckoutPage() {
     </div>
   )
 }
+
+
+
+

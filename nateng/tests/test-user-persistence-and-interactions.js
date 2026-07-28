@@ -82,6 +82,7 @@ async function testUserRegistration() {
       results[`farmer${i}`] = 'FAIL';
       console.log(`   ❌ atokfarmer${i} registration failed: ${result.data?.error || result.error}`);
     }
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
   // Register 5 buyers
@@ -102,6 +103,7 @@ async function testUserRegistration() {
       results[`buyer${i}`] = 'FAIL';
       console.log(`   ❌ buyer${i} registration failed: ${result.data?.error || result.error}`);
     }
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
   // Register 5 bulkBuyers
@@ -123,6 +125,7 @@ async function testUserRegistration() {
       results[`bulkBuyer${i}`] = 'FAIL';
       console.log(`   ❌ bulkBuyer${i} registration failed: ${result.data?.error || result.error}`);
     }
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
   
   // Verify user persistence

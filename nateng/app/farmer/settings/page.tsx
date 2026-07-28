@@ -50,12 +50,10 @@ export default function FarmerSettingsPage() {
           email: currentUser.phone || currentUser.email || "",
           phone: currentUser.phone || currentUser.email || "",
           municipality: currentUser.city || currentUser.address || "",
-          barangay: currentUser.barangay || "",
-          farmSize: currentUser.farmSize || "",
           minimumOrderKg: currentUser.minimumOrderKg || 50,
           deliveryAreas: currentUser.deliveryAreas || "",
           paymentMethods: currentUser.paymentMethods || "",
-        })
+        } as any)
         // Set existing profile photo if available
         if (currentUser.profilePhotoUrl) {
           setPhotoPreview(currentUser.profilePhotoUrl)
@@ -249,7 +247,7 @@ export default function FarmerSettingsPage() {
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Sidebar Tabs */}
-        <div className="lg:w-64 flex-shrink-0">
+        <div className="lg:w-64 shrink-0">
           <div className="bg-card rounded-2xl border border-border p-2">
             {tabs.map((tab) => (
               <button
@@ -492,3 +490,4 @@ export default function FarmerSettingsPage() {
     </div>
   )
 }
+

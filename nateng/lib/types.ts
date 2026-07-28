@@ -20,10 +20,6 @@ export interface User {
   city?: string
   province?: string
   country?: string
-  barangay?: string
-  farmSize?: string
-  businessType?: string
-  taxId?: string
 }
 
 export interface Product {

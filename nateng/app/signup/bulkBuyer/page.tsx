@@ -21,7 +21,6 @@ export default function BulkBuyerSignupPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    businessType: "",
     location: "",
   })
 
@@ -55,9 +54,7 @@ export default function BulkBuyerSignupPage() {
         formData.email,
         formData.password,
         "bulkBuyer",
-        formData.location,
-        undefined,
-        formData.businessType
+        formData.location
       )
       
       if (user) {
@@ -125,20 +122,6 @@ export default function BulkBuyerSignupPage() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="businessType" className="text-lg text-foreground">
-                Business Type
-              </Label>
-              <Input
-                id="businessType"
-                type="text"
-                placeholder="e.g., Market Stall, Restaurant, etc."
-                className="h-14 bg-muted border-border text-lg"
-                value={formData.businessType}
-                onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
               />
             </div>
 

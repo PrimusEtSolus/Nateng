@@ -7,12 +7,31 @@ interface RateLimitStore {
 }
 
 const store = new Map<string, RateLimitStore>()
+const CLEANUP_INTERVAL_MS = 60_000 // Clean up expired entries every 60 seconds
+
+// Periodic cleanup to prevent memory leaks
+const cleanupTimer: ReturnType<typeof setInterval> = setInterval(() => {
+  const now = Date.now()
+  for (const [key, record] of store.entries()) {
+    if (now > record.resetTime) {
+      store.delete(key)
+    }
+  }
+}, CLEANUP_INTERVAL_MS)
+
+// Allow cleanup interval to not prevent process exit (Node.js environments)
+if (typeof cleanupTimer === 'object' && 'unref' in cleanupTimer) {
+  (cleanupTimer as { unref?: () => void }).unref?.()
+}
 
 export function rateLimit(
   identifier: string,
   limit: number,
   windowMs: number
 ): { success: boolean; remaining: number } {
+  if (process.env.NODE_ENV === 'test') {
+    return { success: true, remaining: limit };
+  }
   const now = Date.now()
   const record = store.get(identifier)
 

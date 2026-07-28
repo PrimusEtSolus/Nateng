@@ -1,7 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Nunito_Sans, Source_Serif_4 } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
@@ -21,7 +20,6 @@ export const metadata: Metadata = {
   title: "NatengHub - Fresh Vegetables From Benguet Farmers",
   description:
     "Connect directly with Benguet farmers for fresh, wholesale vegetables. Buy, sell, and manage your agricultural business.",
-  generator: 'v0.app',
   icons: {
     icon: '/favicon.svg',
     apple: '/favicon-32x32.png',
@@ -42,7 +40,6 @@ export default function RootLayout({
       >
         {children}
         <Toaster />
-        <Analytics />
       </body>
     </html>
   )

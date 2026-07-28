@@ -56,24 +56,16 @@ export default function BuyerCartPage() {
         <div className="lg:col-span-2 space-y-4">
           {items.map((item, index) => {
             // Support both old format (product) and new format (listingId)
-            const itemId = item.listingId || item.product?.id || index
-            const productName = item.productName || item.product?.name || "Product"
+            const itemId = item.listingId || index || index
+            const productName = item.productName || item.productName || "Product"
             const sellerName = item.sellerName || "Seller"
-            const pricePerKg = item.priceCents ? item.priceCents / 100 : (item.product?.pricePerKg || 0)
+            const pricePerKg = item.priceCents ? item.priceCents / 100 : (0 || 0)
             const totalPrice = pricePerKg * item.quantity
 
             return (
               <div key={itemId} className="bg-white rounded-2xl border border-border p-4 shadow-sm flex gap-4 hover:shadow-md transition-all card-hover">
                 <div className="w-24 h-24 rounded-xl overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
-                  {item.product?.image ? (
-                    <img
-                      src={item.product.image}
-                      alt={productName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <ShoppingCart className="w-8 h-8 text-muted-foreground" />
-                  )}
+                  {<ShoppingCart className="w-8 h-8 text-muted-foreground" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between">
@@ -231,3 +223,4 @@ export default function BuyerCartPage() {
     </div>
   )
 }
+

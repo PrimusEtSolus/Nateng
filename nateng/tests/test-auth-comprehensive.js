@@ -89,7 +89,8 @@ async function testLogin(email, password, expectedRole) {
       console.log(`   User ID: ${data.user.id}`);
       console.log(`   Email: ${data.user.email}`);
       console.log(`   Role: ${data.user.role}`);
-      return data.user;
+      const cookie = response.headers.get('set-cookie');
+      return { user: data.user, cookie };
     } else {
       console.error(`❌ Login returned invalid data or wrong role`);
       return null;
@@ -100,13 +101,13 @@ async function testLogin(email, password, expectedRole) {
   }
 }
 
-async function testSession(userId) {
+async function testSession(userId, cookie) {
   console.log(`\n🔍 Testing SESSION for user ID ${userId}...`);
   
   try {
     const response = await fetch(`${BASE_URL}/api/auth/session`, {
       method: 'GET',
-      headers: { 'x-user-id': userId.toString() }
+      headers: { cookie }
     });
 
     const data = await response.json();
@@ -142,12 +143,12 @@ async function runTests() {
     
     if (registeredUser) {
       // Test login with the newly registered user
-      const loggedInUser = await testLogin(userData.email, userData.password, role);
-      results.login[role] = loggedInUser ? 'PASS' : 'FAIL';
+      const loginResult = await testLogin(userData.email, userData.password, role);
+      results.login[role] = loginResult ? 'PASS' : 'FAIL';
       
-      if (loggedInUser) {
+      if (loginResult) {
         // Test session
-        const sessionOk = await testSession(loggedInUser.id);
+        const sessionOk = await testSession(loginResult.user.id, loginResult.cookie);
         results.session[role] = sessionOk ? 'PASS' : 'FAIL';
       } else {
         results.session[role] = 'SKIP';
@@ -158,7 +159,7 @@ async function runTests() {
     }
     
     // Wait a bit between tests
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 2000));
   }
 
   // Print summary
