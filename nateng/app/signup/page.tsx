@@ -27,7 +27,7 @@ export default function SignUpPage() {
               <ShoppingCart className="w-8 h-8 text-orange-600" />
             </div>
             <h2 className="text-2xl font-semibold text-[#064E3B] mb-2">Buyer</h2>
-            <p className="text-[#064E3B]/70 text-sm mb-6 flex-1">
+            <p className="text-[#064E3B] text-sm mb-6 flex-1">
               I want to buy fresh vegetables for personal consumption
             </p>
             <Link
@@ -44,7 +44,7 @@ export default function SignUpPage() {
               <Store className="w-8 h-8 text-teal-600" />
             </div>
             <h2 className="text-2xl font-semibold text-[#064E3B] mb-2">Bulk Buyer</h2>
-            <p className="text-[#064E3B]/70 text-sm mb-6 flex-1">
+            <p className="text-[#064E3B] text-sm mb-6 flex-1">
               I own a market stall or business and want to buy wholesale to resell or consume
             </p>
             <Link
@@ -61,7 +61,7 @@ export default function SignUpPage() {
               <Leaf className="w-8 h-8 text-amber-700" />
             </div>
             <h2 className="text-2xl font-semibold text-[#064E3B] mb-2">Farmer</h2>
-            <p className="text-[#064E3B]/70 text-sm mb-6 flex-1">
+            <p className="text-[#064E3B] text-sm mb-6 flex-1">
               I grow vegetables and want to sell wholesale to businesses
             </p>
             <Link
