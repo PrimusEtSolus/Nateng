@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { logger } from '@/lib/logger'
 
 const prisma = new PrismaClient()
 
@@ -33,7 +34,7 @@ export async function GET() {
       pendingAppeals
     })
   } catch (error) {
-    console.error('Admin stats error:', error)
+    logger.error('Admin stats error', { error })
     return NextResponse.json(
       { error: 'Failed to fetch stats' },
       { status: 500 }

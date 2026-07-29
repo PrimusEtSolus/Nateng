@@ -7,6 +7,7 @@ import { useCart } from "@/lib/cart-context"
 import { useFetch } from "@/hooks/use-fetch"
 import { toast } from "sonner"
 import { ProductImage } from "@/components/product-image"
+import { logger } from "@/lib/logger"
 
 interface FavoriteListing {
   id: number
@@ -73,7 +74,7 @@ export default function BuyerFavoritesPage() {
         toast.error(error.error || "Failed to remove from favorites")
       }
     } catch (error) {
-      console.error('Remove favorite error:', error)
+      logger.error('Remove favorite error', { error })
       toast.error("Failed to remove from favorites")
     }
   }

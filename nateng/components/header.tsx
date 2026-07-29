@@ -23,8 +23,12 @@ export function Header() {
   useEffect(() => {
     setMounted(true)
     const loadUser = async () => {
-      const currentUser = await getCurrentUser()
-      setUser(currentUser)
+      try {
+        const currentUser = await getCurrentUser()
+        setUser(currentUser)
+      } catch (error) {
+        setUser(null)
+      }
     }
     loadUser()
   }, [])
@@ -32,7 +36,10 @@ export function Header() {
   const handleLogout = async () => {
     await logout()
     setUser(null)
-    router.push("/")
+    // Small delay to ensure cookie is cleared before redirect
+    setTimeout(() => {
+      router.push("/")
+    }, 100)
   }
 
   return (
@@ -93,7 +100,11 @@ export function Header() {
                 >
                   <Link href="/login">Sign In</Link>
                 </Button>
-                <Button className="bg-white text-[#065F46] font-semibold text-lg px-6 hover:bg-white/90" asChild>
+                <Button
+                  variant="ghost"
+                  className="bg-white text-[#065F46] font-semibold text-lg px-6 hover:bg-white/90 shadow-md"
+                  asChild
+                >
                   <Link href="/signup">Sign Up</Link>
                 </Button>
               </>
@@ -137,7 +148,7 @@ export function Header() {
               </Link>
             </nav>
             <div className="flex flex-col gap-2 pt-2">
-              {user ? (
+              {mounted && user ? (
                 <>
                   <Button 
                     variant="ghost" 
@@ -158,7 +169,7 @@ export function Header() {
                     Logout
                   </Button>
                 </>
-              ) : (
+              ) : mounted && !user ? (
                 <>
                   <Button 
                     variant="ghost" 
@@ -169,6 +180,7 @@ export function Header() {
                     <Link href="/login">Sign In</Link>
                   </Button>
                   <Button 
+                    variant="ghost" 
                     className="bg-white text-[#065F46] font-semibold" 
                     asChild
                     onClick={() => setMobileMenuOpen(false)}
@@ -176,6 +188,11 @@ export function Header() {
                     <Link href="/signup">Sign Up</Link>
                   </Button>
                 </>
+              ) : (
+                <div className="space-y-2">
+                  <div className="w-full h-10 bg-white/20 animate-pulse rounded" />
+                  <div className="w-full h-10 bg-white/20 animate-pulse rounded" />
+                </div>
               )}
             </div>
           </div>

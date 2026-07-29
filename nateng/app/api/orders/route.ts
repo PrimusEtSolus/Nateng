@@ -243,6 +243,30 @@ export async function POST(req: NextRequest) {
       return newOrder;
     });
 
+    // Create notifications for buyer and seller
+    try {
+      await prisma.notification.createMany({
+        data: [
+          {
+            userId: Number(sellerId),
+            type: 'order_placed',
+            title: 'New Order Received',
+            message: `You have a new order #${order.id} from ${user?.name || 'a customer'}`,
+            link: `/orders/${order.id}`,
+          },
+          {
+            userId: Number(buyerId),
+            type: 'order_placed',
+            title: 'Order Placed Successfully',
+            message: `Your order #${order.id} has been placed with ${order.seller.name}`,
+            link: `/orders/${order.id}`,
+          }
+        ]
+      });
+    } catch (notificationError) {
+      logger.error('Failed to create order notifications', { notificationError });
+    }
+
     // Record analytics event for order placement
     try {
       await prisma.analyticsEvent.create({
@@ -253,7 +277,7 @@ export async function POST(req: NextRequest) {
         },
       });
     } catch (analyticsError) {
-      console.error('Failed to track order analytics:', analyticsError);
+      logger.error('Failed to track order analytics', { analyticsError });
     }
 
     return NextResponse.json(order);

@@ -36,9 +36,9 @@ export async function POST(request: Request) {
       }
     })
     
-    logger.info(`User ${user.email} (ID: ${userId}) banned in database. Reason: ${reason}`)
+      logger.info(`User ${user.email} (ID: ${userId}) banned in database. Reason: ${reason}`)
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'User banned successfully. Access restrictions applied immediately.',
       user: {
         id: user.id,
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       }
     })
   } catch (error) {
-    console.error('Ban user error:', error)
+    logger.error('Ban user error', { error })
     return NextResponse.json(
       { error: 'Failed to ban user' },
       { status: 500 }

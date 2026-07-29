@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Calendar, Clock, MapPin, Truck, User, CheckCircle, XCircle, MessageSquare } from "lucide-react"
 import { toast } from "sonner"
+import { logger } from "@/lib/logger"
 
 interface ProposalsListDialogProps {
   open: boolean
@@ -44,7 +45,7 @@ export function ProposalsListDialog({
         setProposals(Array.isArray(data) ? data : [])
       }
     } catch (error) {
-      console.error('Error fetching proposals:', error)
+      logger.error('Error fetching proposals', { error })
     } finally {
       setLoading(false)
     }

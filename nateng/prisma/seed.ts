@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { logger } from "@/lib/logger";
 
 const prisma = new PrismaClient();
 
@@ -1000,7 +1001,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error("❌ Seed failed:", e);
+    logger.error("Seed failed", { error: e });
     process.exit(1);
   })
   .finally(async () => {

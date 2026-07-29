@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: Request) {
   try {
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ user })
   } catch (error) {
-    console.error('Error finding user:', error)
+    logger.error('Error finding user', { error })
     return NextResponse.json(
       { error: 'Failed to find user' },
       { status: 500 }

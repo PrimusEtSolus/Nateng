@@ -27,6 +27,12 @@ export default function BuyerSignupPage() {
     e.preventDefault()
     setError("")
 
+    // Name validation
+    if (!formData.name.trim()) {
+      setError("Please enter your full name")
+      return
+    }
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
@@ -54,7 +60,7 @@ export default function BuyerSignupPage() {
         formData.password,
         "buyer"
       )
-      
+
       if (user) {
         toast.success("Account created successfully!")
         router.push(getRedirectPath(user.role))

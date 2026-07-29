@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { logger } from '@/lib/logger'
 
 const prisma = new PrismaClient()
 
@@ -31,7 +32,7 @@ export async function GET() {
 
     return NextResponse.json(users)
   } catch (error) {
-    console.error('Admin users error:', error)
+    logger.error('Admin users error', { error })
     return NextResponse.json(
       { error: 'Failed to fetch users' },
       { status: 500 }
@@ -57,7 +58,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ message: 'User deleted successfully' })
   } catch (error) {
-    console.error('Admin delete user error:', error)
+    logger.error('Admin delete user error', { error })
     return NextResponse.json(
       { error: 'Failed to delete user' },
       { status: 500 }

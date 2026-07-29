@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { logger } from "@/lib/logger"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -73,7 +74,7 @@ export function DeliveryScheduler({ orderId, onSchedule, initialSchedule }: Deli
           })
           setValidationResult(validation)
         } catch (error: any) {
-          console.error('Validation error:', error)
+          logger.error('Validation error', { error })
           setValidationResult({
             isValid: false,
             violations: [error.message || 'Invalid schedule'],

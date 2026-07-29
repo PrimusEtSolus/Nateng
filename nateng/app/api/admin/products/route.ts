@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { logger } from '@/lib/logger'
 
 const prisma = new PrismaClient()
 
@@ -28,7 +29,7 @@ export async function GET() {
 
     return NextResponse.json(products)
   } catch (error) {
-    console.error('Admin products error:', error)
+    logger.error('Admin products error', { error })
     return NextResponse.json(
       { error: 'Failed to fetch products' },
       { status: 500 }
@@ -54,7 +55,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ message: 'Product deleted successfully' })
   } catch (error) {
-    console.error('Admin delete product error:', error)
+    logger.error('Admin delete product error', { error })
     return NextResponse.json(
       { error: 'Failed to delete product' },
       { status: 500 }

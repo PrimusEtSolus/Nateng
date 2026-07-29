@@ -1,6 +1,7 @@
 "use client"
 
 import type { User, UserRole } from "./types"
+import { logger } from "@/lib/logger"
 
 export async function login(email: string, password: string): Promise<User | null> {
   try {
@@ -25,7 +26,7 @@ export async function login(email: string, password: string): Promise<User | nul
 
     return user
   } catch (error: unknown) {
-    console.error('Login error:', error)
+    logger.error('Login error', { error })
     throw error
   }
 }
@@ -37,13 +38,28 @@ export async function logout(): Promise<void> {
       credentials: 'include', // Include cookies
     })
   } catch (error) {
-    console.error('Logout error:', error)
+    logger.error('Logout error', { error })
+  } finally {
+    // Always clear sessionStorage and cookies on logout
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('user_data')
+    }
   }
 }
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    // First check sessionStorage for newly registered users
+    // First check session API for current session
+    const response = await fetch('/api/auth/session', {
+      credentials: 'include', // Include cookies
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      return data.user || null
+    }
+
+    // Fall back to sessionStorage for newly registered users (if API fails)
     if (typeof window !== 'undefined') {
       const sessionUser = sessionStorage.getItem('user_data')
       if (sessionUser) {
@@ -54,18 +70,9 @@ export async function getCurrentUser(): Promise<User | null> {
       }
     }
 
-    const response = await fetch('/api/auth/session', {
-      credentials: 'include', // Include cookies
-    })
-
-    if (!response.ok) {
-      return null
-    }
-
-    const data = await response.json()
-    return data.user || null
+    return null
   } catch (error) {
-    console.error('Get current user error:', error)
+    logger.error('Get current user error', { error })
     return null
   }
 }
@@ -89,7 +96,7 @@ export async function register(name: string, email: string, password: string, ro
 
     return user
   } catch (error: unknown) {
-    console.error('Registration error:', error)
+    logger.error('Registration error', { error })
     throw error
   }
 }

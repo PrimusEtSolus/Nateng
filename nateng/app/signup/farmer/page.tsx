@@ -28,6 +28,12 @@ export default function FarmerSignupPage() {
     e.preventDefault()
     setError("")
 
+    // Name validation
+    if (!formData.name.trim()) {
+      setError("Please enter your full name")
+      return
+    }
+
     // Mobile number validation (for farmers)
     const mobileRegex = /^09\d{9}$/
     if (!mobileRegex.test(formData.phone)) {
@@ -57,7 +63,7 @@ export default function FarmerSignupPage() {
         undefined,
         formData.municipality
       )
-      
+
       if (user) {
         toast.success("Account created successfully!")
         router.push(getRedirectPath(user.role))
@@ -124,6 +130,9 @@ export default function FarmerSignupPage() {
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 required
               />
+              <p className="text-xs text-muted-foreground">
+                This will be used for login and order notifications
+              </p>
             </div>
 
             <div className="space-y-2">

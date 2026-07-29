@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { useCart } from "@/lib/cart-context"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
+import { logger } from "@/lib/logger"
 import { type User } from "@/lib/types"
 import { ordersAPI, listingsAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
@@ -61,7 +62,7 @@ export default function BuyerCheckoutPage() {
             sellerData[sellerId as number] = listingsResponse[0].seller
           }
         } catch (error) {
-          console.error('Failed to fetch seller info:', error)
+          logger.error('Failed to fetch seller info', { error })
         }
       }
       

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { validateDeliverySchedule, requiresTruckBanCompliance } from '@/lib/truck-ban';
+import { logger } from '@/lib/logger';
 
 /**
  * PATCH /api/orders/[id]/schedule
@@ -161,7 +162,7 @@ export async function PATCH(
 
     return NextResponse.json(updatedOrder);
   } catch (error: any) {
-    console.error('Error scheduling delivery:', error);
+    logger.error('Error scheduling delivery', { error });
     return NextResponse.json(
       { error: error.message || 'Failed to schedule delivery' },
       { status: 500 }
@@ -205,7 +206,7 @@ export async function GET(
 
     return NextResponse.json(order);
   } catch (error: any) {
-    console.error('Error fetching delivery schedule:', error);
+    logger.error('Error fetching delivery schedule', { error });
     return NextResponse.json(
       { error: error.message || 'Failed to fetch delivery schedule' },
       { status: 500 }

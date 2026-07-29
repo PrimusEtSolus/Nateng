@@ -15,6 +15,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { messagesAPI } from "@/lib/api-client"
 import { getCurrentUser } from "@/lib/auth"
+import { logger } from "@/lib/logger"
 import { formatDistanceToNow } from "date-fns"
 
 interface Message {
@@ -79,7 +80,7 @@ export function MessageDialog({
         if (Array.isArray(data)) {
           setMessages(data)
         } else {
-          console.warn("Unexpected messages payload", data)
+          logger.warn("Unexpected messages payload", { data })
           setMessages([])
         }
         setHasFetched(true)
@@ -93,7 +94,7 @@ export function MessageDialog({
           }
         }, 100)
       } catch (error) {
-        console.error("Failed to fetch messages:", error)
+        logger.error("Failed to fetch messages", { error })
       } finally {
         setLoading(false)
       }
@@ -131,7 +132,7 @@ export function MessageDialog({
       setMessages(prev => [...prev, message])
       setNewMessage("")
     } catch (error: any) {
-      console.error("Failed to send message:", error)
+      logger.error("Failed to send message", { error })
       alert(error.message || "Failed to send message")
     } finally {
       setSending(false)

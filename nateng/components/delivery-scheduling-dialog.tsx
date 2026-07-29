@@ -80,7 +80,7 @@ export function DeliverySchedulingDialog({
         notes: ""
       })
     } catch (error: any) {
-      console.error('Error proposing schedule:', error)
+      logger.error('Error proposing schedule', { error })
     } finally {
       setLoading(false)
     }

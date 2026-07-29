@@ -28,6 +28,12 @@ export default function BulkBuyerSignupPage() {
     e.preventDefault()
     setError("")
 
+    // Name validation
+    if (!formData.name.trim()) {
+      setError("Please enter your business/organization name")
+      return
+    }
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
@@ -56,7 +62,7 @@ export default function BulkBuyerSignupPage() {
         "bulkBuyer",
         formData.location
       )
-      
+
       if (user) {
         toast.success("Account created successfully!")
         router.push(getRedirectPath(user.role))
@@ -127,7 +133,7 @@ export default function BulkBuyerSignupPage() {
 
             <div className="space-y-2">
               <Label htmlFor="location" className="text-lg text-foreground">
-                Location
+                Location (Optional)
               </Label>
               <Input
                 id="location"
@@ -137,6 +143,9 @@ export default function BulkBuyerSignupPage() {
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               />
+              <p className="text-xs text-muted-foreground">
+                You can update this later in your account settings
+              </p>
             </div>
 
             <div className="space-y-2">

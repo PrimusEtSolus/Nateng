@@ -26,7 +26,7 @@ export async function GET() {
 
     return NextResponse.json(appeals)
   } catch (error) {
-    console.error('Get appeals error:', error)
+    logger.error('Get appeals error', { error })
     return NextResponse.json(
       { error: 'Failed to fetch appeals' },
       { status: 500 }

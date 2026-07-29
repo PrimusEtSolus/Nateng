@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { put } from '@vercel/blob';
+import { logger } from '@/lib/logger';
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'] as const;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ imageUrl: blob.url });
   } catch (error) {
-    console.error('Upload error:', error);
+    logger.error('Upload error', { error });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
       { error: 'Failed to upload image', details: errorMessage },

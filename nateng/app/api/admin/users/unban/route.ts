@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       }
     })
   } catch (error) {
-    console.error('Unban user error:', error)
+    logger.error('Unban user error', { error })
     return NextResponse.json(
       { error: 'Failed to unban user' },
       { status: 500 }
