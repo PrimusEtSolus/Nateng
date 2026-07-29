@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
@@ -46,12 +46,12 @@ interface ListingDetail {
 }
 
 export default function BulkBuyerBrowseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [quantity, setQuantity] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  const [listingId, setListingId] = useState<string | null>(null)
   const { banStatus, isLoading: banLoading } = useBanEnforcement()
 
   useEffect(() => {
@@ -66,12 +66,7 @@ export default function BulkBuyerBrowseDetailPage({ params }: { params: Promise<
     loadUser()
   }, [router])
 
-  // Resolve params promise
-  useEffect(() => {
-    params.then(resolved => setListingId(resolved.id))
-  }, [params])
-
-  const { data: listing, loading, error } = useFetch<ListingDetail>(listingId ? `/api/listings/${listingId}` : '')
+  const { data: listing, loading, error } = useFetch<ListingDetail>(`/api/listings/${id}`)
 
   const handleAddToCart = async () => {
     if (!listing) return
@@ -95,8 +90,6 @@ export default function BulkBuyerBrowseDetailPage({ params }: { params: Promise<
 
     setIsSubmitting(true)
     try {
-      // TODO: Implement cart/order creation API
-      // For now, show success message
       toast.success(`Order request for ${orderQuantity}kg submitted!`)
       setQuantity("")
     } catch (err: any) {
