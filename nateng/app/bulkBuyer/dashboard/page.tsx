@@ -159,7 +159,7 @@ export default function BulkBuyerDashboardPage() {
               <div className={`p-3 rounded-xl ${stat.color}`}>
                 <stat.icon className="w-6 h-6 text-white" />
               </div>
-              <span className="flex items-center gap-1 text-sm font-medium text-emerald-600">
+              <span className="flex items-center gap-1 text-sm font-medium text-emerald-700">
                 <ArrowUpRight className="w-4 h-4" />
                 {stat.change}
               </span>
@@ -183,7 +183,7 @@ export default function BulkBuyerDashboardPage() {
             </div>
             <Link
               href="/bulkBuyer/orders"
-              className="text-sm font-medium text-teal-600 hover:text-teal-700 transition-colors"
+              className="text-sm font-medium text-teal-700 hover:text-teal-700 transition-colors"
             >
               View all
             </Link>
@@ -222,7 +222,7 @@ export default function BulkBuyerDashboardPage() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
-                        <Package className="w-6 h-6 text-teal-600" />
+                        <Package className="w-6 h-6 text-teal-700" />
                       </div>
                       <div>
                         <p className="font-medium text-foreground">{productName}</p>
@@ -344,7 +344,7 @@ export default function BulkBuyerDashboardPage() {
                             </p>
                           </div>
                         </div>
-                        <p className="font-semibold text-sm text-teal-600">
+                        <p className="font-semibold text-sm text-teal-700">
                           ₱{((listing.priceCents || 0) / 100).toLocaleString()}/kg
                         </p>
                       </div>
@@ -353,7 +353,7 @@ export default function BulkBuyerDashboardPage() {
                 </div>
                 <Link
                   href="/bulkBuyer/browse"
-                  className="block text-center text-sm font-medium text-teal-600 mt-4 hover:text-teal-700"
+                  className="block text-center text-sm font-medium text-teal-700 mt-4 hover:text-teal-700"
                 >
                   View all products
                 </Link>

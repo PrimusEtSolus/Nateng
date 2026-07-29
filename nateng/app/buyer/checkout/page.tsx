@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { ArrowLeft, CreditCard, Wallet, Building2, CheckCircle, MapPin, Truck, Loader2, ShoppingCart } from "lucide-react"
+import { ArrowLeft, CreditCard, Wallet, Building2, CheckCircle, MapPin, Truck, Loader2, ShoppingCart, Calendar } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
@@ -32,6 +32,13 @@ export default function BuyerCheckoutPage() {
     address: "",
     city: "",
     notes: "",
+    scheduledDate: "",
+    scheduledTime: "",
+    route: "",
+    isCBD: false,
+    truckWeightKg: "",
+    isExempt: false,
+    exemptionType: "",
   })
 
   useEffect(() => {
@@ -97,7 +104,7 @@ export default function BuyerCheckoutPage() {
       }
     }
 
-    // Validate minimum order: 0.2kg (200 grams) per item for retail
+    // Validate minimum order per item
     const MIN_QUANTITY = 0.2
     const invalidItems = items.filter(item => item.quantity > 0 && item.quantity < MIN_QUANTITY)
     if (invalidItems.length > 0) {
@@ -105,6 +112,20 @@ export default function BuyerCheckoutPage() {
         description: `Each item must be at least ${MIN_QUANTITY}kg (200 grams)`,
       })
       return
+    }
+
+    // Validate seller minimum order requirements
+    for (const item of items) {
+      if (!item.sellerId || !item.listingId) continue
+      const seller = sellerInfo[item.sellerId]
+      const listingPrice = item.priceCents ? item.priceCents / 100 : 0
+      
+      if (seller && seller.minimumOrderKg && seller.minimumOrderKg > 0 && item.quantity < seller.minimumOrderKg) {
+        toast.error("Minimum order not met", {
+          description: `${seller.name} requires minimum ${seller.minimumOrderKg}kg per order`,
+        })
+        return
+      }
     }
 
     setIsProcessing(true)
@@ -137,7 +158,13 @@ export default function BuyerCheckoutPage() {
           sellerId: Number(sellerId),
           items: orderItems,
           deliveryAddress: deliveryOption === "delivery" ? formData.address : null,
-          deliveryOption: deliveryOption,
+          scheduledDate: formData.scheduledDate || undefined,
+          scheduledTime: formData.scheduledTime || undefined,
+          route: formData.route || undefined,
+          isCBD: formData.isCBD,
+          truckWeightKg: formData.truckWeightKg ? Number(formData.truckWeightKg) : undefined,
+          isExempt: formData.isExempt,
+          exemptionType: formData.exemptionType || undefined,
         })
       )
 
@@ -297,6 +324,104 @@ export default function BuyerCheckoutPage() {
             </div>
             )}
 
+            {/* Delivery Scheduling */}
+            <div className="bg-white rounded-2xl border border-border p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-buyer-bg rounded-lg">
+                  <Calendar className="w-5 h-5 text-buyer" />
+                </div>
+                <h2 className="text-lg font-semibold">Delivery Scheduling</h2>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="scheduledDate">Preferred Date</Label>
+                  <Input
+                    id="scheduledDate"
+                    type="date"
+                    value={formData.scheduledDate}
+                    onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
+                    className="h-12"
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="scheduledTime">Preferred Time</Label>
+                  <Input
+                    id="scheduledTime"
+                    type="time"
+                    value={formData.scheduledTime}
+                    onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
+                    className="h-12"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="route">Delivery Route</Label>
+                  <select
+                    id="route"
+                    value={formData.route}
+                    onChange={(e) => setFormData({ ...formData, route: e.target.value })}
+                    className="w-full h-12 px-3 rounded-md border border-border bg-background"
+                  >
+                    <option value="">Select route</option>
+                    <option value="Kennon Road">Kennon Road</option>
+                    <option value="Quirino Highway">Quirino Highway</option>
+                    <option value="Marcos Highway">Marcos Highway</option>
+                    <option value="Naguilian Road">Naguilian Road</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="truckWeightKg">Truck Weight (kg)</Label>
+                  <Input
+                    id="truckWeightKg"
+                    type="number"
+                    placeholder="e.g., 3000"
+                    value={formData.truckWeightKg}
+                    onChange={(e) => setFormData({ ...formData, truckWeightKg: e.target.value })}
+                    className="h-12"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="isCBD"
+                      checked={formData.isCBD}
+                      onChange={(e) => setFormData({ ...formData, isCBD: e.target.checked })}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <Label htmlFor="isCBD" className="cursor-pointer">
+                      Delivery within CBD (Central Business District)
+                    </Label>
+                  </div>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="isExempt"
+                      checked={formData.isExempt}
+                      onChange={(e) => setFormData({ ...formData, isExempt: e.target.checked })}
+                      className="h-4 w-4 rounded border-border"
+                    />
+                    <Label htmlFor="isExempt" className="cursor-pointer">
+                      Vehicle is exempt from truck ban
+                    </Label>
+                  </div>
+                  {formData.isExempt && (
+                    <div className="ml-6 mt-2">
+                      <Input
+                        placeholder="Exemption type (e.g., water_delivery, government, emergency)"
+                        value={formData.exemptionType}
+                        onChange={(e) => setFormData({ ...formData, exemptionType: e.target.value })}
+                        className="h-12"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Delivery Option */}
             <div className="bg-white rounded-2xl border border-border p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-6">
@@ -307,7 +432,7 @@ export default function BuyerCheckoutPage() {
               </div>
 
               <RadioGroup value={deliveryOption} onValueChange={setDeliveryOption} className="space-y-3">
-                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
+                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-checked:border-buyer has-checked:bg-buyer-bg/50">
                   <RadioGroupItem value="delivery" id="delivery" />
                   <Truck className="w-5 h-5 text-muted-foreground" />
                   <div className="flex-1">
@@ -315,7 +440,7 @@ export default function BuyerCheckoutPage() {
                     <p className="text-sm text-muted-foreground">Deliver to your address</p>
                   </div>
                 </label>
-                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
+                <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-checked:border-buyer has-checked:bg-buyer-bg/50">
                   <RadioGroupItem value="pickup" id="pickup" />
                   <MapPin className="w-5 h-5 text-muted-foreground" />
                   <div className="flex-1">
@@ -344,7 +469,7 @@ export default function BuyerCheckoutPage() {
 
               <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-3">
                 {deliveryOption === "pickup" ? (
-                  <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
+                  <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer has-checked:border-buyer has-checked:bg-buyer-bg/50">
                     <RadioGroupItem value="cod" id="cod" />
                     <Wallet className="w-5 h-5 text-muted-foreground" />
                     <div className="flex-1">
@@ -353,7 +478,7 @@ export default function BuyerCheckoutPage() {
                     </div>
                   </label>
                 ) : (
-                  <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-[:checked]:border-buyer has-[:checked]:bg-buyer-bg/50">
+                  <label className="flex items-center gap-4 p-4 border border-border rounded-xl cursor-pointer hover:bg-muted/50 transition-colors has-checked:border-buyer has-checked:bg-buyer-bg/50">
                     <RadioGroupItem value="cod" id="cod" />
                     <Truck className="w-5 h-5 text-muted-foreground" />
                     <div className="flex-1">
@@ -396,7 +521,7 @@ export default function BuyerCheckoutPage() {
 
                   return (
                     <div key={itemId} className="flex gap-3">
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted shrink-0 flex items-center justify-center">
                         {<ShoppingCart className="w-6 h-6 text-muted-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -450,7 +575,3 @@ export default function BuyerCheckoutPage() {
     </div>
   )
 }
-
-
-
-

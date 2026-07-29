@@ -18,6 +18,7 @@ async function main() {
   await prisma.appeal.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.contactMessage.deleteMany();
+  await prisma.analyticsEvent.deleteMany();
   await prisma.user.deleteMany();
 
   // Hash passwords for seed users
@@ -27,6 +28,17 @@ async function main() {
   // CREATE USERS
   // ============================================
   console.log("  👤 Creating users...");
+
+  // Admin User
+  const adminUser = await prisma.user.create({
+    data: {
+      name: "Admin Nateng",
+      email: "admin@natenghub.ph",
+      phone: "09000000000",
+      password: defaultPassword,
+      role: "admin",
+    },
+  });
 
   // Farmers
   const farmer1 = await prisma.user.create({
@@ -839,6 +851,51 @@ async function main() {
   });
 
   // ============================================
+  // CREATE ANALYTICS EVENTS
+  // ============================================
+  console.log("  📊 Creating analytics events...");
+
+  await prisma.analyticsEvent.create({
+    data: {
+      userId: bulkBuyer1.id,
+      eventType: "product_view",
+      metadata: JSON.stringify({ productId: listing1.id, productName: "Highland Tomatoes" }),
+    },
+  });
+
+  await prisma.analyticsEvent.create({
+    data: {
+      userId: bulkBuyer1.id,
+      eventType: "search",
+      metadata: JSON.stringify({ query: "tomatoes", resultsCount: 3 }),
+    },
+  });
+
+  await prisma.analyticsEvent.create({
+    data: {
+      userId: bulkBuyer1.id,
+      eventType: "order_placed",
+      metadata: JSON.stringify({ orderId: order1.id, totalCents: order1.totalCents }),
+    },
+  });
+
+  await prisma.analyticsEvent.create({
+    data: {
+      userId: buyer1.id,
+      eventType: "product_view",
+      metadata: JSON.stringify({ productId: bulkBuyerListing1.id, productName: "Highland Tomatoes" }),
+    },
+  });
+
+  await prisma.analyticsEvent.create({
+    data: {
+      userId: buyer2.id,
+      eventType: "search",
+      metadata: JSON.stringify({ query: "carrots", resultsCount: 2 }),
+    },
+  });
+
+  // ============================================
   // CREATE CONTACT MESSAGES
   // ============================================
   console.log("  📧 Creating contact messages...");
@@ -927,7 +984,7 @@ async function main() {
   });
 
   console.log("✅ Database seeded successfully!");
-  console.log(`  👤 Users: ${14} created (3 farmers, 3 bulkBuyers, 4 buyers, 1 banned)`);
+  console.log(`  👤 Users: ${15} created (1 admin, 3 farmers, 3 bulkBuyers, 4 buyers, 1 banned)`);
   console.log(`  🥬 Products: ${10} created`);
   console.log(`  📋 Listings: ${16} created (10 farmer, 6 bulkBuyer)`);
   console.log(`  📦 Orders: ${6} created (various statuses)`);
@@ -935,6 +992,7 @@ async function main() {
   console.log(`  💬 Messages: ${5} created`);
   console.log(`  🔔 Notifications: ${6} created`);
   console.log(`  ⭐ Favorites: ${7} created`);
+  console.log(`  📊 Analytics Events: ${5} created`);
   console.log(`  📧 Contact Messages: ${3} created`);
   console.log(`  📋 Appeals: ${1} created`);
   console.log(`  📝 Audit Logs: ${2} created`);

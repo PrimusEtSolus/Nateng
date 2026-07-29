@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import { Loader2, Package, Search } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { useDebounce } from "@/hooks/use-debounce"
 import Link from "next/link"
 
 interface Listing {
@@ -36,6 +38,7 @@ interface Listing {
 export default function BulkBuyerBrowsePage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
   
   // Check if user is banned and enforce restrictions
   const { banStatus, isLoading: banLoading } = useBanEnforcement()
@@ -52,10 +55,21 @@ export default function BulkBuyerBrowsePage() {
     loadUser()
   }, [router])
 
+  const debouncedSearchTerm = useDebounce(searchTerm, 300)
+
   // Fetch available listings - filtered for bulk buyers
   const { data: listings = [], loading: listingsLoading, error: listingsError } = useFetch<Listing[]>(
     '/api/listings?available=true&userRole=bulkBuyer'
   )
+
+  const filteredListings = useMemo(() => {
+    if (!Array.isArray(listings)) return []
+    
+    return listings.filter((listing) => {
+      const matchesSearch = listing.product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      return matchesSearch && listing.available && listing.quantity > 0
+    })
+  }, [listings, debouncedSearchTerm])
 
   return (
     <div className="p-8">
@@ -64,19 +78,50 @@ export default function BulkBuyerBrowsePage() {
         <p className="text-muted-foreground mt-1">Purchase fresh produce from farmers in bulk</p>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Input
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {debouncedSearchTerm && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Found {filteredListings.length} result{filteredListings.length !== 1 ? 's' : ''} for "{debouncedSearchTerm}"
+          </p>
+        )}
+      </div>
+
       {listingsLoading ? (
         <div className="p-8 text-center">
           <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-3 animate-spin" />
           <p className="text-muted-foreground">Loading products...</p>
         </div>
-      ) : (listings || []).length === 0 ? (
+      ) : filteredListings.length === 0 ? (
         <div className="p-8 text-center">
           <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">No products available for wholesale purchase</p>
+          <p className="text-muted-foreground">
+            {debouncedSearchTerm 
+              ? `No products match "${debouncedSearchTerm}". Try a different search term.`
+              : "No products available for wholesale purchase"
+            }
+          </p>
+          {debouncedSearchTerm && (
+            <button 
+              onClick={() => setSearchTerm("")}
+              className="mt-4 text-teal-600 hover:text-teal-700 underline"
+            >
+              Clear search
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(listings || []).map((listing) => (
+          {filteredListings.map((listing) => (
             <div
               key={listing.id}
               className="bg-white rounded-2xl border border-border p-6 hover:shadow-md transition-shadow"

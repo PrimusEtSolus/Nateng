@@ -136,11 +136,6 @@ export async function POST(req: NextRequest) {
           province: 'Benguet', 
           country: 'Philippines'
         }),
-        ...(role === 'buyer' && {
-          city: 'Baguio',
-          province: 'Benguet', 
-          country: 'Philippines'
-        }),
       },
     });
 

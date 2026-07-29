@@ -74,7 +74,19 @@ export async function POST(req: NextRequest) {
     user = await getCurrentUser();
     
     const body = await req.json();
-    const { buyerId, sellerId, items }: { buyerId: number; sellerId: number; items: OrderItem[] } = body;
+    const { buyerId, sellerId, items, deliveryAddress, scheduledDate, scheduledTime, route, isCBD, truckWeightKg, isExempt, exemptionType }: {
+      buyerId: number;
+      sellerId: number;
+      items: OrderItem[];
+      deliveryAddress?: string;
+      scheduledDate?: string;
+      scheduledTime?: string;
+      route?: string;
+      isCBD?: boolean;
+      truckWeightKg?: number;
+      isExempt?: boolean;
+      exemptionType?: string;
+    } = body;
     
     if (!buyerId || !sellerId || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -132,7 +144,7 @@ export async function POST(req: NextRequest) {
     // Create order and update listings in a transaction
     const order = await prisma.$transaction(async (tx: any) => {
       // Calculate total price
-      let totalCents = 0;
+      let calculatedTotalCents = 0;
       const orderItems = [];
 
       for (const item of items) {
@@ -158,7 +170,7 @@ export async function POST(req: NextRequest) {
         }
 
         const itemTotalCents = item.quantity * listing.priceCents;
-        totalCents += itemTotalCents;
+        calculatedTotalCents += itemTotalCents;
 
         // Update listing quantity
         await tx.listing.update({
@@ -176,13 +188,21 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Create the order
+      // Create the order with delivery scheduling fields
       const newOrder = await tx.order.create({
         data: {
           buyerId: Number(buyerId),
           sellerId: Number(sellerId),
-          totalCents,
+          totalCents: calculatedTotalCents,
           status: 'PENDING',
+          deliveryAddress: deliveryAddress || null,
+          scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+          scheduledTime: scheduledTime || null,
+          route: route || null,
+          isCBD: Boolean(isCBD),
+          truckWeightKg: truckWeightKg ? Number(truckWeightKg) : null,
+          isExempt: Boolean(isExempt),
+          exemptionType: exemptionType || null,
           items: {
             create: orderItems
           }
@@ -222,6 +242,19 @@ export async function POST(req: NextRequest) {
 
       return newOrder;
     });
+
+    // Record analytics event for order placement
+    try {
+      await prisma.analyticsEvent.create({
+        data: {
+          userId: Number(buyerId),
+          eventType: 'order_placed',
+          metadata: JSON.stringify({ orderId: order.id, sellerId: Number(sellerId), totalCents: order.totalCents, itemCount: items.length }),
+        },
+      });
+    } catch (analyticsError) {
+      console.error('Failed to track order analytics:', analyticsError);
+    }
 
     return NextResponse.json(order);
   } catch (error: any) {
