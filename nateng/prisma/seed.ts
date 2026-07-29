@@ -84,7 +84,7 @@ async function main() {
   const bulkBuyer1 = await prisma.user.create({
     data: {
       name: "Green Valley Restaurant",
-      email: "bulkBuyer1@email.com",
+      email: "bulkbuyer1@email.com",
       password: defaultPassword,
       role: "bulkBuyer",
       businessName: "Green Valley Restaurant",
@@ -101,7 +101,7 @@ async function main() {
   const bulkBuyer2 = await prisma.user.create({
     data: {
       name: "Mountain View Hotel",
-      email: "bulkBuyer2@email.com",
+      email: "bulkbuyer2@email.com",
       password: defaultPassword,
       role: "bulkBuyer",
       businessName: "Mountain View Hotel",
@@ -118,7 +118,7 @@ async function main() {
   const bulkBuyer3 = await prisma.user.create({
     data: {
       name: "Benguet Fresh Market",
-      email: "bulkBuyer3@email.com",
+      email: "bulkbuyer3@email.com",
       password: defaultPassword,
       role: "bulkBuyer",
       businessName: "Benguet Fresh Market",

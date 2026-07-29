@@ -152,29 +152,19 @@ const [users, setUsers] = useState<User[]>([])
   const router = useRouter()
 
   useEffect(() => {
-    // Check if running on localhost
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname
-      if (!hostname.includes('localhost') && !hostname.includes('127.0.0.1')) {
-        toast.error("Access denied. Admin panel is only available on localhost.")
-        router.push('/')
-        return
-      }
-
-      // Check if already authenticated via session
-      fetch('/api/auth/session', { credentials: 'include' })
-        .then(res => res.json())
-        .then(data => {
-          if (data.user && data.user.role === 'admin') {
-            setIsAuthenticated(true)
-            fetchData()
-          }
-        })
-        .catch(() => {
-          // Not authenticated
-        })
-    }
-  }, [router])
+    // Check if already authenticated via session (admin access controlled by JWT role, not hostname)
+    fetch('/api/auth/session', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        if (data.user && data.user.role === 'admin') {
+          setIsAuthenticated(true)
+          fetchData()
+        }
+      })
+      .catch(() => {
+        // Not authenticated
+      })
+  }, [])
 
   const fetchData = async () => {
     setIsLoading(true)
@@ -567,7 +557,7 @@ const [users, setUsers] = useState<User[]>([])
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin"
+                  placeholder="Enter admin email"
                   required
                 />
               </div>
@@ -578,7 +568,7 @@ const [users, setUsers] = useState<User[]>([])
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="admin123"
+                  placeholder="Enter password"
                   required
                 />
               </div>

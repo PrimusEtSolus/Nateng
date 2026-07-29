@@ -19,29 +19,11 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Only allow admin access from localhost
-  if (pathname.startsWith('/admin')) {
-    const hostname = request.headers.get('host') || ''
-    
-    // Check if the request is from localhost
-    const isLocalhost = hostname.includes('localhost') || 
-                       hostname.includes('127.0.0.1') || 
-                       hostname.includes('::1')
-
-    if (!isLocalhost) {
-      // Redirect to home page with error message
-      const url = request.nextUrl.clone()
-      url.pathname = '/'
-      url.searchParams.set('error', 'admin_access_denied')
-      return NextResponse.redirect(url)
-    }
-  }
-
-  // Ban checking is done at API level using JWT validation from httpOnly cookies
-  // Middleware only enforces localhost-only admin access
+  // Admin access is controlled by authentication (JWT role check), not by hostname.
+  // Ban checking is done at API level using JWT validation from httpOnly cookies.
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/signup/:role']
+  matcher: ['/signup/:role']
 }

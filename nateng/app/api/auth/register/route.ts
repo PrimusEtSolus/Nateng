@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
     const { name, email: userEmail, password, role, location, municipality, businessType } = await req.json();
     
     if (!userEmail) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Email or mobile number is required' }, { status: 400 });
     }
-    email = userEmail;
+    email = userEmail.trim();
 
     // Input validation
     if (!name || !password || !role) {
@@ -37,24 +37,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // For farmers, email should be a mobile number
-    if (role === 'farmer') {
-      const isMobile = /^09\d{9}$/.test(email);
-      if (!isMobile) {
-        return NextResponse.json(
-          { error: 'Invalid mobile number format. Use format: 09xxxxxxxx' },
-          { status: 400 }
-        );
-      }
-    } else {
-      // For other roles, validate email format
-      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-      if (!isEmail) {
-        return NextResponse.json(
-          { error: 'Invalid email format' },
-          { status: 400 }
-        );
-      }
+    // Detect if input is email or mobile number (ALL roles can use either)
+    const isMobile = /^09\d{9}$/.test(email);
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    if (!isMobile && !isEmail) {
+      return NextResponse.json(
+        { error: 'Please enter a valid email address (user@example.com) or mobile number (09123456789)' },
+        { status: 400 }
+      );
     }
 
     // Name validation
@@ -80,27 +71,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user already exists (email or phone for farmers)
-    let existingUser;
-    if (role === 'farmer') {
-      // For farmers, check both email and phone fields
-      existingUser = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { email: email.toLowerCase() },
-            { phone: email } // Farmers register with mobile number as email
-          ]
-        }
-      });
+    // Determine storage: if mobile, store in phone field and generate placeholder email
+    // If email, store lowercased in email field
+    let storedEmail: string;
+    let storedPhone: string | undefined;
+
+    if (isMobile) {
+      // User registered with phone number — generate a unique placeholder email
+      storedEmail = `phone_${email}@natenghub.ph`;
+      storedPhone = email;
     } else {
-      // For other roles, check email only
-      existingUser = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
-      });
+      // User registered with email — normalize to lowercase
+      storedEmail = email.toLowerCase();
     }
 
+    // Check if user already exists (case-insensitive for email, exact for phone)
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: { equals: storedEmail, mode: 'insensitive' } },
+          ...(storedPhone ? [{ phone: storedPhone }] : []),
+          // Also check if the raw input matches an existing phone or email
+          { phone: email },
+          { email: { equals: email, mode: 'insensitive' } },
+        ]
+      }
+    });
+
     if (existingUser) {
-      const conflictField = role === 'farmer' && existingUser.phone === email ? 'Mobile number' : 'Email';
+      const conflictField = existingUser.phone === email ? 'Mobile number' : 'Email';
       return NextResponse.json({ error: `${conflictField} already registered` }, { status: 409 });
     }
 
@@ -111,11 +110,11 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: {
         name,
-        email: role === 'farmer' ? email : email.toLowerCase(), // Farmers keep mobile format, others use lowercase email
+        email: storedEmail,
         password: hashedPassword,
         role,
-        // Save phone number for farmers
-        ...(role === 'farmer' && { phone: email }),
+        // Save phone number if provided
+        ...(storedPhone && { phone: storedPhone }),
         // Save location data based on role
         ...(role === 'farmer' && municipality && { 
           address: municipality,
@@ -129,6 +128,10 @@ export async function POST(req: NextRequest) {
           city: location,
           province: 'Benguet',
           country: 'Philippines'
+        }),
+        // Save business name for bulkBuyer
+        ...(role === 'bulkBuyer' && businessType && {
+          businessName: businessType
         }),
         // Default location data for buyer
         ...(role === 'buyer' && {
@@ -166,9 +169,8 @@ export async function POST(req: NextRequest) {
     logger.authError('register', error, email);
     const message = error instanceof Error ? error.message : 'Internal server error';
     if (message.includes('Unique constraint')) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+      return NextResponse.json({ error: 'Email or phone number already registered' }, { status: 409 });
     }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-

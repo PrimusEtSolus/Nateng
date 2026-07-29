@@ -4,8 +4,12 @@
 import prisma from './prisma';
 
 export async function addBannedUser(email: string, reason?: string, adminEmail?: string): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: 'insensitive' } }
+  });
+  if (!user) throw new Error('User not found');
   await prisma.user.update({
-    where: { email: email.toLowerCase() },
+    where: { id: user.id },
     data: {
       isBanned: true,
       bannedAt: new Date(),
@@ -27,8 +31,12 @@ export async function addBannedUser(email: string, reason?: string, adminEmail?:
 }
 
 export async function removeBannedUser(email: string, adminEmail?: string): Promise<void> {
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: 'insensitive' } }
+  });
+  if (!user) throw new Error('User not found');
   await prisma.user.update({
-    where: { email: email.toLowerCase() },
+    where: { id: user.id },
     data: {
       isBanned: false,
       bannedAt: null,
@@ -50,8 +58,8 @@ export async function removeBannedUser(email: string, adminEmail?: string): Prom
 }
 
 export async function isUserBanned(email: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { email: email.toLowerCase() },
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: 'insensitive' } },
     select: { isBanned: true }
   });
   return user?.isBanned || false;

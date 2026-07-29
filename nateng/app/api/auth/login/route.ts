@@ -59,22 +59,22 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Find user by email or mobile number
+    // Find user by email or mobile number (case-insensitive)
     let user;
     if (isMobile) {
-      // For mobile numbers, search by phone field (farmers) or email field (backward compatibility)
+      // For mobile numbers, search by phone field or email field (case-insensitive)
       user = await prisma.user.findFirst({
         where: {
           OR: [
             { phone: email },
-            { email: email } // Fallback for existing farmers
+            { email: { equals: email, mode: 'insensitive' } }
           ]
         }
       });
     } else {
-      // For email addresses, search by email field
-      user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
+      // For email addresses, search by email field (case-insensitive)
+      user = await prisma.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
       });
     }
 
