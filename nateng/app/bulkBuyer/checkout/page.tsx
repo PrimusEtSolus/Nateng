@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { useFetch } from "@/hooks/use-fetch"
+import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import { Loader2, ArrowLeft, ShoppingCart, MapPin, User as UserIcon, CreditCard } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -67,11 +68,12 @@ export default function BulkBuyerCheckoutPage() {
     setUser(currentUser)
   }
 
-  const total = cartItems.reduce((sum, item) => sum + (item.listing.priceCents * item.quantity), 0)
-  const totalKg = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+  const safeCartItems = cartItems || []
+  const total = safeCartItems.reduce((sum, item) => sum + (item.listing.priceCents * item.quantity), 0)
+  const totalKg = safeCartItems.reduce((sum, item) => sum + item.quantity, 0)
 
   const handlePlaceOrder = async () => {
-    if (cartItems.length === 0) {
+    if (safeCartItems.length === 0) {
       toast.error("Your cart is empty")
       return
     }
@@ -79,7 +81,7 @@ export default function BulkBuyerCheckoutPage() {
     setIsSubmitting(true)
     try {
       // Group items by seller
-      const itemsBySeller = cartItems.reduce((acc, item) => {
+      const itemsBySeller = safeCartItems.reduce((acc, item) => {
         const sellerId = item.listing.seller.id
         if (!acc[sellerId]) {
           acc[sellerId] = {
@@ -139,7 +141,7 @@ export default function BulkBuyerCheckoutPage() {
     )
   }
 
-  if (cartError || cartItems.length === 0) {
+  if (cartError || safeCartItems.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -166,7 +168,7 @@ export default function BulkBuyerCheckoutPage() {
           </Link>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
-            <p className="text-gray-600 mt-1">{cartItems.length} item(s) • {totalKg.toFixed(1)}kg total</p>
+            <p className="text-gray-600 mt-1">{safeCartItems.length} item(s) • {totalKg.toFixed(1)}kg total</p>
           </div>
         </div>
 
@@ -178,7 +180,7 @@ export default function BulkBuyerCheckoutPage() {
               Order Summary
             </h2>
             <div className="space-y-4">
-              {cartItems.map((item) => (
+              {safeCartItems.map((item) => (
                 <div key={item.id} className="flex items-center justify-between py-3 border-b last:border-b-0">
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{item.listing.product.name}</p>
@@ -199,7 +201,7 @@ export default function BulkBuyerCheckoutPage() {
             </h2>
             <div className="space-y-3">
               {Object.entries(
-                cartItems.reduce((acc, item) => {
+                safeCartItems.reduce((acc, item) => {
                   const sellerId = item.listing.seller.id
                   if (!acc[sellerId]) {
                     acc[sellerId] = item.listing.seller

@@ -29,10 +29,13 @@ export async function POST(req: NextRequest) {
     }
     email = userEmail.trim();
 
-    // Input validation
-    if (!name || !password || !role) {
+    // Input validation — name is optional in the 2-step flow (placeholder used)
+    // If name is provided, validate length; otherwise use a placeholder
+    const effectiveName = name && name.trim() ? name.trim() : 'New User';
+
+    if (!password || !role) {
       return NextResponse.json(
-        { error: 'Name, password, and role are required' },
+        { error: 'Password and role are required' },
         { status: 400 }
       );
     }
@@ -48,8 +51,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Name validation
-    if (name.length < 2 || name.length > 50) {
+    // Name validation (only if a real name was provided, not placeholder)
+    if (name && name.trim() && (name.trim().length < 2 || name.trim().length > 50)) {
       return NextResponse.json(
         { error: 'Name must be between 2 and 50 characters long' },
         { status: 400 }
@@ -109,7 +112,7 @@ export async function POST(req: NextRequest) {
     // Create user
     const user = await prisma.user.create({
       data: {
-        name,
+        name: effectiveName,
         email: storedEmail,
         password: hashedPassword,
         role,

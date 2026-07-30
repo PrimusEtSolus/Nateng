@@ -8,9 +8,29 @@ export async function GET(req: NextRequest) {
     const page = parseInt(params.get('page') || '1');
     const limit = parseInt(params.get('limit') || '20');
     const skip = (page - 1) * limit;
+    const farmerId = params.get('farmerId'); // Filter by farmer
+    const search = params.get('search'); // Search by product name
+    const sortBy = params.get('sortBy') || 'createdAt-desc'; // Sort order
+
+    // Build where clause
+    const where: Record<string, unknown> = {};
+    if (farmerId) where.farmerId = Number(farmerId);
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+
+    // Build orderBy from sortBy param
+    const orderByMap: Record<string, Record<string, 'asc' | 'desc'>> = {
+      'createdAt-desc': { createdAt: 'desc' },
+      'createdAt-asc': { createdAt: 'asc' },
+      'name-asc': { name: 'asc' },
+      'name-desc': { name: 'desc' },
+    };
+    const orderBy = orderByMap[sortBy] || { createdAt: 'desc' as const };
 
     const [products, totalCount] = await Promise.all([
       prisma.product.findMany({
+        where: Object.keys(where).length > 0 ? where as any : undefined,
         include: {
           farmer: { 
             select: { 
@@ -38,11 +58,13 @@ export async function GET(req: NextRequest) {
             take: 5 // Limit listings per product for performance
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         take: limit,
         skip: skip,
       }),
-      prisma.product.count()
+      prisma.product.count({
+        where: Object.keys(where).length > 0 ? where as any : undefined
+      })
     ]);
 
     return NextResponse.json({

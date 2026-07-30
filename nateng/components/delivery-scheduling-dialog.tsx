@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, Clock, MapPin, Truck, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
+import { logger } from "@/lib/logger"
 
 interface DeliverySchedulingDialogProps {
   open: boolean

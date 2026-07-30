@@ -26,6 +26,7 @@ export interface Product {
   id: number
   name: string
   description: string | null
+  imageUrl?: string | null
   farmerId: number
   createdAt: string
   farmer?: {
@@ -56,6 +57,10 @@ export interface Listing {
     name: string
     role: string
     email?: string
+    address?: string
+    city?: string
+    province?: string
+    country?: string
   }
 }
 
@@ -111,6 +116,7 @@ export interface Order {
     id: number
     name: string
     email?: string
+    role?: string
   }
 }
 
@@ -146,4 +152,3 @@ export interface ApiResponse<T> {
   data?: T
   error?: string
 }
-

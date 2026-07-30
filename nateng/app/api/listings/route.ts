@@ -20,13 +20,34 @@ export async function GET(req: NextRequest) {
     const productId = params.get('productId');
     const available = params.get('available');
     const userRole = params.get('userRole'); // Optional: filter for specific user role
+    const search = params.get('search'); // Search by product name
+    const sortBy = params.get('sortBy') || 'createdAt-desc'; // Default sort by newest
+    const limit = params.get('limit'); // Limit results (for dashboard widgets)
 
     const where: Record<string, unknown> = {};
     if (sellerId) where.sellerId = Number(sellerId);
     if (productId) where.productId = Number(productId);
     if (available !== null) where.available = available === 'true';
 
-    const listings = await prisma.listing.findMany({
+    // Add search filter on product name (case-insensitive)
+    if (search) {
+      where.product = {
+        name: { contains: search, mode: 'insensitive' }
+      };
+    }
+
+    // Build orderBy from sortBy param
+    const orderByMap: Record<string, Record<string, 'asc' | 'desc'>> = {
+      'createdAt-desc': { createdAt: 'desc' },
+      'createdAt-asc': { createdAt: 'asc' },
+      'price-asc': { priceCents: 'asc' },
+      'price-desc': { priceCents: 'desc' },
+      'quantity-desc': { quantity: 'desc' },
+      'quantity-asc': { quantity: 'asc' },
+    };
+    const orderBy = orderByMap[sortBy] || { createdAt: 'desc' as const };
+
+    const queryOptions: Record<string, unknown> = {
       where: Object.keys(where).length > 0 ? where : undefined,
       include: {
         product: { 
@@ -40,14 +61,24 @@ export async function GET(req: NextRequest) {
         },
         seller: { select: { id: true, name: true, role: true, email: true, minimumOrderKg: true, address: true, city: true, province: true, country: true } },
       },
-      orderBy: { createdAt: 'desc' },
-    });
+      orderBy,
+    };
+
+    // Apply limit if provided
+    if (limit) {
+      const limitNum = parseInt(limit, 10);
+      if (!isNaN(limitNum) && limitNum > 0) {
+        queryOptions.take = limitNum;
+      }
+    }
+
+    const listings = await prisma.listing.findMany(queryOptions as any);
 
     // Filter listings based on user role if provided
     let filteredListings = listings;
     if (userRole && userRole !== 'admin') {
       const allowedSellers = getAllowedSellersForBuyer(userRole as UserRole);
-      filteredListings = listings.filter(listing => 
+      filteredListings = listings.filter((listing: any) => 
         allowedSellers.includes(listing.seller.role as UserRole)
       );
     }

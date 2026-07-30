@@ -3,69 +3,17 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
-import { type User } from "@/lib/types"
+import { type User, type Listing, type Order } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { useBanEnforcement } from "@/hooks/useBanEnforcement"
-import { Package, TrendingUp, ShoppingBag, DollarSign, ArrowUpRight, Store, Users, Loader2 } from "lucide-react"
+import { Package, TrendingUp, ShoppingBag, DollarSign, Store, Leaf, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-
-interface Listing {
-  id: number
-  productId: number
-  sellerId: number
-  priceCents: number
-  quantity: number
-  available: boolean
-  product: {
-    id: number
-    name: string
-    description: string | null
-    farmer: {
-      id: number
-      name: string
-      email: string
-    }
-  }
-  seller: {
-    id: number
-    name: string
-    role: string
-  }
-}
-
-interface Order {
-  id: number
-  buyerId: number
-  sellerId: number
-  totalCents: number
-  status: string
-  createdAt: string
-  items: Array<{
-    id: number
-    quantity: number
-    priceCents: number
-    listing: {
-      id: number
-      product: {
-        id: number
-        name: string
-      }
-    }
-  }>
-  buyer?: {
-    id: number
-    name: string
-    email: string
-    role: string
-  } | null
-  seller: {
-    id: number
-    name: string
-    email?: string
-    role?: string
-  }
-}
+import { StatCard } from "@/components/dashboard/StatCard"
+import { OrderList } from "@/components/dashboard/OrderList"
+import { ProductGrid } from "@/components/dashboard/ProductGrid"
+import { OrderModal } from "@/components/dashboard/OrderModal"
+import { ProductModal } from "@/components/dashboard/ProductModal"
 
 export default function BulkBuyerDashboardPage() {
   const router = useRouter()
@@ -88,32 +36,44 @@ export default function BulkBuyerDashboardPage() {
     loadUser()
   }, [router])
 
-  // Fetch orders for the logged-in bulk buyer user (as buyer)
+  // Fetch orders as buyer (procurement)
   const { data: orders = [], loading: ordersLoading, error: ordersError } = useFetch<Order[]>(
     user ? `/api/orders?buyerId=${user.id}` : '',
     { skip: !user }
   )
 
-  // Fetch available listings (for "Fresh Wholesale" section) - filtered for bulk buyers
+  // Fetch available listings (for "Fresh Wholesale" section) — expanded with limit=8
   const { data: listings = [], loading: listingsLoading } = useFetch<Listing[]>(
-    '/api/listings?available=true&userRole=bulkBuyer'
+    '/api/listings?available=true&userRole=bulkBuyer&limit=8'
   )
 
-  // Fetch sales (as seller - orders from buyers)
+  // Fetch sales as seller
   const { data: salesOrders = [], loading: salesLoading } = useFetch<Order[]>(
     user ? `/api/orders?sellerId=${user.id}` : '',
     { skip: !user }
   )
 
-  const pendingOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "PENDING" || o.status === "CONFIRMED").length || 0 : 0
-  const totalSpent = Array.isArray(orders) ? orders.filter((o) => o.status === "DELIVERED").reduce((sum, o) => sum + o.totalCents, 0) || 0 : 0
-  const totalSales = Array.isArray(salesOrders) ? salesOrders.filter((o) => o.status === "DELIVERED").reduce((sum, o) => sum + o.totalCents, 0) || 0 : 0
+  // Compute procurement stats using reduce (no filter)
+  const pendingOrders = Array.isArray(orders)
+    ? orders.reduce((count, o) => count + (o.status === "PENDING" || o.status === "CONFIRMED" ? 1 : 0), 0)
+    : 0
 
-  const stats = [
+  const totalSpent = Array.isArray(orders)
+    ? orders.reduce((sum, o) => sum + (o.status === "DELIVERED" ? o.totalCents : 0), 0)
+    : 0
+
+  // Compute sales stats using reduce (no filter)
+  const totalSales = Array.isArray(salesOrders)
+    ? salesOrders.reduce((sum, o) => sum + (o.status === "DELIVERED" ? o.totalCents : 0), 0)
+    : 0
+
+  // Procurement stats (buying context)
+  const procurementStats = [
     {
       label: "Total Spent",
       value: `₱${(totalSpent / 100).toLocaleString()}`,
       change: `${pendingOrders} pending orders`,
+      increasing: true,
       icon: DollarSign,
       color: "bg-emerald-500",
     },
@@ -121,247 +81,217 @@ export default function BulkBuyerDashboardPage() {
       label: "Active Orders",
       value: pendingOrders.toString(),
       change: "From farmers",
+      increasing: true,
       icon: Package,
       color: "bg-blue-500",
     },
+  ]
+
+  // Sales stats (selling context)
+  const salesStats = [
     {
       label: "Total Sales",
       value: `₱${(totalSales / 100).toLocaleString()}`,
       change: "As seller",
+      increasing: true,
       icon: TrendingUp,
       color: "bg-teal-500",
     },
     {
       label: "Products Available",
-      value: (listings?.length || 0).toString(),
+      value: (Array.isArray(listings) ? listings.length : 0).toString(),
       change: "For purchase",
+      increasing: true,
       icon: ShoppingBag,
       color: "bg-purple-500",
     },
   ]
 
   return (
-    <div className="p-8">
+    <div className="p-8 space-y-10">
       {/* Header */}
-      <div className="mb-8">
+      <div>
         <h1 className="text-3xl font-bold text-foreground">Welcome, {user?.name?.split(" ")[0] || "Bulk Buyer"}</h1>
         <p className="text-muted-foreground mt-1">Buy wholesale from farmers and manage your retail inventory</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-white rounded-2xl p-6 shadow-sm border border-border hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-start justify-between">
-              <div className={`p-3 rounded-xl ${stat.color}`}>
-                <stat.icon className="w-6 h-6 text-white" />
-              </div>
-              <span className="flex items-center gap-1 text-sm font-medium text-emerald-700">
-                <ArrowUpRight className="w-4 h-4" />
-                {stat.change}
-              </span>
-            </div>
-            <div className="mt-4">
-              <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
-            </div>
+      {/* ===== PROCUREMENT DASHBOARD (Buying Context) ===== */}
+      <section>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-emerald-100 rounded-lg">
+            <ShoppingBag className="w-5 h-5 text-emerald-700" />
           </div>
-        ))}
-      </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Procurement Dashboard</h2>
+            <p className="text-sm text-muted-foreground">Your wholesale purchases from farmers</p>
+          </div>
+        </div>
 
-      {/* Two Column Layout */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Orders */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-border">
-          <div className="p-6 border-b border-border flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">My Wholesale Orders</h2>
-              <p className="text-sm text-muted-foreground">Track your bulk purchases from farmers</p>
-            </div>
+        {/* Procurement Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {procurementStats.map((stat) => (
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              change={stat.change}
+              increasing={stat.increasing}
+              icon={stat.icon}
+              color={stat.color}
+            />
+          ))}
+        </div>
+
+        {/* Wholesale Orders */}
+        <OrderList
+          orders={Array.isArray(orders) ? orders : []}
+          loading={ordersLoading}
+          onOrderClick={setSelectedOrder}
+          emptyState={{
+            icon: Package,
+            title: "No orders yet",
+            description: "Your wholesale orders from farmers will appear here.",
+          }}
+          title="My Wholesale Orders"
+          subtitle="Track your bulk purchases from farmers"
+          viewAllHref="/bulkBuyer/orders"
+          viewAllLabel="View all"
+          accentColor="text-teal-700"
+          maxItems={4}
+        />
+      </section>
+
+      {/* Visual separator */}
+      <div className="border-t border-border" />
+
+      {/* ===== SALES DASHBOARD (Selling Context) ===== */}
+      <section>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-teal-100 rounded-lg">
+            <Store className="w-5 h-5 text-teal-700" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Retail Sales Dashboard</h2>
+            <p className="text-sm text-muted-foreground">Your retail sales to buyers</p>
+          </div>
+        </div>
+
+        {/* Sales Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {salesStats.map((stat) => (
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              change={stat.change}
+              increasing={stat.increasing}
+              icon={stat.icon}
+              color={stat.color}
+            />
+          ))}
+        </div>
+
+        {/* Quick Actions for Selling */}
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-6">
+          <h3 className="font-semibold text-foreground mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Link
-              href="/bulkBuyer/orders"
-              className="text-sm font-medium text-teal-700 hover:text-teal-700 transition-colors"
+              href="/bulkBuyer/browse"
+              className="flex items-center gap-3 p-3 rounded-xl bg-teal-50 hover:bg-teal-100 transition-colors group"
             >
-              View all
+              <div className="p-2 bg-teal-500 rounded-lg group-hover:scale-105 transition-transform">
+                <ShoppingBag className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Buy Wholesale</p>
+                <p className="text-xs text-muted-foreground">Get stock from farmers</p>
+              </div>
+            </Link>
+            <Link
+              href="/bulkBuyer/inventory"
+              className="flex items-center gap-3 p-3 rounded-xl bg-muted hover:bg-muted/80 transition-colors group"
+            >
+              <div className="p-2 bg-foreground rounded-lg group-hover:scale-105 transition-transform">
+                <Store className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Manage Inventory</p>
+                <p className="text-xs text-muted-foreground">Set retail prices</p>
+              </div>
+            </Link>
+            <Link
+              href="/bulkBuyer/sales"
+              className="flex items-center gap-3 p-3 rounded-xl bg-muted hover:bg-muted/80 transition-colors group"
+            >
+              <div className="p-2 bg-emerald-500 rounded-lg group-hover:scale-105 transition-transform">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">View Sales</p>
+                <p className="text-xs text-muted-foreground">Track your earnings</p>
+              </div>
             </Link>
           </div>
-          <div className="divide-y divide-border">
-            {ordersLoading ? (
-              <div className="p-8 text-center">
-                <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-3 animate-spin" />
-                <p className="text-muted-foreground">Loading orders...</p>
-              </div>
-            ) : (orders || []).length === 0 ? (
-              <div className="p-8 text-center">
-                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">No orders yet</p>
-              </div>
-            ) : (
-              (orders || []).slice(0, 4).map((order) => {
-                const firstItem = order.items?.[0]
-                const productName = firstItem?.listing?.product?.name || "Order"
-                const sellerName = order.seller?.name || "Unknown"
-                const totalQuantity = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0
-                
-                return (
-                  <div
-                    key={order.id}
-                    className="p-4 flex items-center justify-between hover:bg-muted/30 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedOrder(order)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault()
-                        setSelectedOrder(order)
-                      }
-                    }}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
-                        <Package className="w-6 h-6 text-teal-700" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">{productName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          from {sellerName} - {totalQuantity}kg
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-foreground">₱{((order.totalCents || 0) / 100).toLocaleString()}</p>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          order.status === "PENDING"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : order.status === "CONFIRMED"
-                              ? "bg-blue-100 text-blue-700"
-                              : order.status === "SHIPPED"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {order.status}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })
-            )}
+        </div>
+      </section>
+
+      {/* Visual separator */}
+      <div className="border-t border-border" />
+
+      {/* ===== FRESH WHOLESALE SECTION (Full-width, expanded) ===== */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Fresh Wholesale</h2>
+            <p className="text-sm text-muted-foreground">Discover available produce from farmers</p>
           </div>
+          <Link href="/bulkBuyer/browse">
+            <Button variant="outline" className="gap-2">
+              <ShoppingBag className="w-4 h-4" />
+              Browse All
+            </Button>
+          </Link>
         </div>
 
-        {/* Quick Actions & Available Products */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="bg-white rounded-2xl shadow-sm border border-border p-6">
-            <h3 className="font-semibold text-foreground mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <Link
-                href="/bulkBuyer/browse"
-                className="flex items-center gap-3 p-3 rounded-xl bg-teal-50 hover:bg-teal-100 transition-colors group"
-              >
-                <div className="p-2 bg-teal-500 rounded-lg group-hover:scale-105 transition-transform">
-                  <ShoppingBag className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Buy Wholesale</p>
-                  <p className="text-xs text-muted-foreground">Get stock from farmers</p>
-                </div>
-              </Link>
-              <Link
-                href="/bulkBuyer/inventory"
-                className="flex items-center gap-3 p-3 rounded-xl bg-muted hover:bg-muted/80 transition-colors group"
-              >
-                <div className="p-2 bg-foreground rounded-lg group-hover:scale-105 transition-transform">
-                  <Store className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Manage Inventory</p>
-                  <p className="text-xs text-muted-foreground">Set retail prices</p>
-                </div>
-              </Link>
-              <Link
-                href="/bulkBuyer/sales"
-                className="flex items-center gap-3 p-3 rounded-xl bg-muted hover:bg-muted/80 transition-colors group"
-              >
-                <div className="p-2 bg-emerald-500 rounded-lg group-hover:scale-105 transition-transform">
-                  <TrendingUp className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">View Sales</p>
-                  <p className="text-xs text-muted-foreground">Track your earnings</p>
-                </div>
-              </Link>
-            </div>
-          </div>
+        <ProductGrid
+          items={Array.isArray(listings) ? listings : []}
+          loading={listingsLoading}
+          onItemClick={(item) => setSelectedListing(item as Listing)}
+          emptyState={{
+            icon: ShoppingBag,
+            title: "No products available",
+            description: "There are no wholesale products available at the moment. Check back later!",
+          }}
+          variant="list"
+          title="Available Wholesale Products"
+          subtitle="Fresh produce directly from farmers"
+        />
+      </section>
 
-          {/* Available Products */}
-          <div className="bg-white rounded-2xl shadow-sm border border-border p-6">
-            <h3 className="font-semibold text-foreground mb-4">Fresh Wholesale</h3>
-            {listingsLoading ? (
-              <div className="p-4 text-center">
-                <Loader2 className="w-6 h-6 text-muted-foreground mx-auto mb-2 animate-spin" />
-                <p className="text-xs text-muted-foreground">Loading products...</p>
-              </div>
-            ) : (listings || []).length === 0 ? (
-              <div className="p-4 text-center">
-                <ShoppingBag className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">No products available</p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-3">
-                  {(listings || []).slice(0, 4).map((listing) => {
-                    const product = listing.product
-                    const minOrder = 1
-                    
-                    return (
-                      <div
-                        key={listing.id}
-                        className="flex items-center justify-between cursor-pointer rounded-xl p-2 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2"
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setSelectedListing(listing)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault()
-                            setSelectedListing(listing)
-                          }
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                            <Package className="w-5 h-5 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{product?.name || "Product"}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Min: {minOrder}kg
-                            </p>
-                          </div>
-                        </div>
-                        <p className="font-semibold text-sm text-teal-700">
-                          ₱{((listing.priceCents || 0) / 100).toLocaleString()}/kg
-                        </p>
-                      </div>
-                    )
-                  })}
-                </div>
-                <Link
-                  href="/bulkBuyer/browse"
-                  className="block text-center text-sm font-medium text-teal-700 mt-4 hover:text-teal-700"
-                >
-                  View all products
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Order Detail Modal */}
+      <OrderModal
+        open={!!selectedOrder}
+        onOpenChange={(open) => {
+          if (!open) setSelectedOrder(null)
+        }}
+        order={selectedOrder}
+        accentColor="bg-teal-600 hover:bg-teal-700"
+        managerHref="/bulkBuyer/orders"
+        managerLabel="View all orders"
+      />
+
+      {/* Listing Detail Modal */}
+      <ProductModal
+        open={!!selectedListing}
+        onOpenChange={(open) => {
+          if (!open) setSelectedListing(null)
+        }}
+        item={selectedListing}
+        mode="listing"
+        accentColor="bg-teal-600 hover:bg-teal-700"
+        managerHref="/bulkBuyer/browse"
+        managerLabel="Browse full catalog"
+      />
     </div>
   )
 }

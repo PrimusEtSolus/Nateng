@@ -111,8 +111,9 @@ export default function BulkBuyerCartPage() {
     )
   }
 
-  const total = cartItems?.reduce((sum, item) => sum + (item.listing.priceCents * item.quantity), 0) || 0
-  const totalKg = cartItems?.reduce((sum, item) => sum + item.quantity, 0) || 0
+  const safeCartItems = cartItems || []
+  const total = safeCartItems.reduce((sum, item) => sum + (item.listing.priceCents * item.quantity), 0) || 0
+  const totalKg = safeCartItems.reduce((sum, item) => sum + item.quantity, 0) || 0
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -120,14 +121,14 @@ export default function BulkBuyerCartPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
-            <p className="text-gray-600 mt-1">{cartItems.length} item(s) • {totalKg.toFixed(1)}kg total</p>
+            <p className="text-gray-600 mt-1">{safeCartItems.length} item(s) • {totalKg.toFixed(1)}kg total</p>
           </div>
           <Link href="/bulkBuyer/browse">
             <Button variant="outline">Continue Shopping</Button>
           </Link>
         </div>
 
-        {cartItems.length === 0 ? (
+        {safeCartItems.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
             <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-2xl font-semibold mb-2">Your cart is empty</h2>
@@ -138,7 +139,7 @@ export default function BulkBuyerCartPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {cartItems.map((item) => (
+            {safeCartItems.map((item) => (
               <div key={item.id} className="bg-white rounded-2xl shadow-sm p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

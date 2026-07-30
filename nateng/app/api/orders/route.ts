@@ -24,24 +24,59 @@ export async function GET(req: NextRequest) {
     const buyerId = params.get('buyerId');
     const sellerId = params.get('sellerId');
     const status = params.get('status');
+    const sortBy = params.get('sortBy') || 'createdAt-desc';
+    const limit = params.get('limit');
 
     const where: Record<string, unknown> = {};
-    
+
     // Users can only see their own orders unless they're admin
     if (user.role !== 'admin') {
-      if (user.role === 'buyer' || user.role === 'bulkBuyer') {
+      if (user.role === 'buyer') {
         where.buyerId = user.id;
-      } else if (user.role === 'farmer' || user.role === 'bulkBuyer') {
+      } else if (user.role === 'farmer') {
         where.sellerId = user.id;
+      } else if (user.role === 'bulkBuyer') {
+        // BulkBuyers can be both buyers and sellers — allow explicit filtering
+        // If buyerId or sellerId is provided, use it; otherwise default to buyerId
+        if (buyerId && Number(buyerId) === user.id) {
+          where.buyerId = user.id;
+        } else if (sellerId && Number(sellerId) === user.id) {
+          where.sellerId = user.id;
+        } else if (!buyerId && !sellerId) {
+          where.buyerId = user.id;
+        } else {
+          // Trying to query another user's orders — block it
+          return NextResponse.json({ error: 'Cannot view other users orders' }, { status: 403 });
+        }
       }
     } else {
       // Admin can filter by any parameters
       if (buyerId) where.buyerId = Number(buyerId);
       if (sellerId) where.sellerId = Number(sellerId);
-      if (status) where.status = status;
     }
 
-    const orders = await prisma.order.findMany({
+    // Status filtering (allowed for all users — they're already scoped to their own orders)
+    if (status) {
+      // Support comma-separated statuses (e.g., ?status=PENDING,CONFIRMED)
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        where.status = statuses[0];
+      } else if (statuses.length > 1) {
+        where.status = { in: statuses };
+      }
+    }
+
+    // Build orderBy from sortBy param
+    const orderByMap: Record<string, Record<string, 'asc' | 'desc'>> = {
+      'createdAt-desc': { createdAt: 'desc' },
+      'createdAt-asc': { createdAt: 'asc' },
+      'totalCents-desc': { totalCents: 'desc' },
+      'totalCents-asc': { totalCents: 'asc' },
+    };
+    const orderBy = orderByMap[sortBy] || { createdAt: 'desc' as const };
+
+    // Build query options
+    const queryOptions: Record<string, unknown> = {
       where: Object.keys(where).length > 0 ? where : undefined,
       include: {
         items: { include: { listing: { include: { product: { include: { farmer: true } } } } } },
@@ -54,8 +89,18 @@ export async function GET(req: NextRequest) {
           }
         }
       },
-      orderBy: { createdAt: 'desc' },
-    });
+      orderBy,
+    };
+
+    // Apply limit if provided (for dashboard "recent orders")
+    if (limit) {
+      const limitNum = parseInt(limit, 10);
+      if (!isNaN(limitNum) && limitNum > 0) {
+        queryOptions.take = limitNum;
+      }
+    }
+
+    const orders = await prisma.order.findMany(queryOptions as any);
 
     return NextResponse.json(orders);
   } catch (error: unknown) {
