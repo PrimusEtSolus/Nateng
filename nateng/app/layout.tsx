@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Nunito_Sans, Source_Serif_4 } from "next/font/google"
 import { Toaster } from "@/components/ui/sonner"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import "./globals.css"
 
 const nunitoSans = Nunito_Sans({
@@ -40,6 +41,7 @@ export default function RootLayout({
       >
         {children}
         <Toaster />
+        <SpeedInsights />
       </body>
     </html>
   )
