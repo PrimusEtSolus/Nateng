@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs';
 import { logger } from '@/lib/logger';
 import { generateToken } from '@/lib/jwt';
 import { rateLimit, getRateLimitHeaders } from '@/lib/rate-limit';
+import { handleError } from '@/lib/api-error';
+import { RegisterSchema } from '@/lib/validation-schemas';
 
 export async function POST(req: NextRequest) {
   let email: string = '';
@@ -22,23 +24,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { name, email: userEmail, password, role, location, municipality, businessType } = await req.json();
-    
-    if (!userEmail) {
-      return NextResponse.json({ error: 'Email or mobile number is required' }, { status: 400 });
-    }
-    email = userEmail.trim();
+    const body = await req.json();
+    email = body?.email || '';
 
-    // Input validation — name is optional in the 2-step flow (placeholder used)
-    // If name is provided, validate length; otherwise use a placeholder
-    const effectiveName = name && name.trim() ? name.trim() : 'New User';
-
-    if (!password || !role) {
+    // ── Input validation with Zod ──
+    // RegisterSchema explicitly excludes 'admin' from allowed roles — privilege escalation prevention
+    const parsed = RegisterSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Password and role are required' },
+        { error: 'Validation failed', details: parsed.error.errors },
         { status: 400 }
       );
     }
+
+    const { name, email: userEmail, password, role, location, municipality, businessType } = parsed.data;
+
+    // Sanitize email
+    email = userEmail.trim();
+
+    // Input validation — name is optional in the 2-step flow (placeholder used)
+    const effectiveName = name && name.trim() ? name.trim() : 'New User';
 
     // Detect if input is email or mobile number (ALL roles can use either)
     const isMobile = /^09\d{9}$/.test(email);
@@ -59,13 +64,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const validRoles = ['farmer', 'buyer', 'bulkBuyer', 'admin'];
-    if (!validRoles.includes(role)) {
-      return NextResponse.json(
-        { error: `Invalid role. Must be one of: ${validRoles.join(', ')}` },
-        { status: 400 }
-      );
-    }
+    // Role is already validated by Zod — 'admin' is NOT in the allowed enum, preventing privilege escalation
 
     if (password.length < 8) {
       return NextResponse.json(
@@ -80,11 +79,9 @@ export async function POST(req: NextRequest) {
     let storedPhone: string | undefined;
 
     if (isMobile) {
-      // User registered with phone number — generate a unique placeholder email
       storedEmail = `phone_${email}@natenghub.ph`;
       storedPhone = email;
     } else {
-      // User registered with email — normalize to lowercase
       storedEmail = email.toLowerCase();
     }
 
@@ -94,7 +91,6 @@ export async function POST(req: NextRequest) {
         OR: [
           { email: { equals: storedEmail, mode: 'insensitive' } },
           ...(storedPhone ? [{ phone: storedPhone }] : []),
-          // Also check if the raw input matches an existing phone or email
           { phone: email },
           { email: { equals: email, mode: 'insensitive' } },
         ]
@@ -116,27 +112,22 @@ export async function POST(req: NextRequest) {
         email: storedEmail,
         password: hashedPassword,
         role,
-        // Save phone number if provided
         ...(storedPhone && { phone: storedPhone }),
-        // Save location data based on role
         ...(role === 'farmer' && municipality && { 
           address: municipality,
           city: municipality,
           province: 'Benguet',
           country: 'Philippines'
         }),
-        // Save location for bulkBuyer
         ...(role === 'bulkBuyer' && location && {
           address: location,
           city: location,
           province: 'Benguet',
           country: 'Philippines'
         }),
-        // Save business name for bulkBuyer
         ...(role === 'bulkBuyer' && businessType && {
           businessName: businessType
         }),
-        // Default location data for buyer
         ...(role === 'buyer' && {
           city: 'Baguio',
           province: 'Benguet', 
@@ -170,10 +161,6 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (error: unknown) {
     logger.authError('register', error, email);
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    if (message.includes('Unique constraint')) {
-      return NextResponse.json({ error: 'Email or phone number already registered' }, { status: 409 });
-    }
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleError(error, 'POST /api/auth/register');
   }
 }

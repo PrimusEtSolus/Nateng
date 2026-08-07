@@ -1,19 +1,37 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { getCurrentUser } from '@/lib/auth-server'
+import prisma from '@/lib/prisma'
 import { logger } from '@/lib/logger'
-
-const prisma = new PrismaClient()
+import { handleError } from '@/lib/api-error'
+import { AdminUnbanSchema } from '@/lib/validation-schemas'
 
 export async function POST(request: Request) {
   try {
-    const { userId, userEmail } = await request.json()
-
-    if (!userId || !userEmail) {
-      return NextResponse.json(
-        { error: 'User ID and email are required' },
-        { status: 400 }
-      )
+    // ── Authentication: admin only ──
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+
+    if (currentUser.role !== 'admin') {
+      return NextResponse.json({ error: 'Access denied — admin only' }, { status: 403 });
+    }
+
+    const body = await request.json();
+
+    // ── Input validation with Zod ──
+    const parsed = AdminUnbanSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const { userId } = parsed.data;
+
+    // Use the authenticated admin's email as the actor instead of trusting client input
+    const actorEmail = currentUser.email;
 
     // Update user in database
     const user = await prisma.user.update({
@@ -30,7 +48,7 @@ export async function POST(request: Request) {
       data: {
         userId: userId,
         action: 'unban',
-        actor: userEmail, // This should be the admin email, but we need proper auth
+        actor: actorEmail,
         reason: 'User unbanned by administrator',
         metadata: JSON.stringify({ userName: user.name, userEmail: user.email })
       }
@@ -48,11 +66,8 @@ export async function POST(request: Request) {
         banReason: user.banReason
       }
     })
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('Unban user error', { error })
-    return NextResponse.json(
-      { error: 'Failed to unban user' },
-      { status: 500 }
-    )
+    return handleError(error, 'POST /api/admin/users/unban');
   }
 }

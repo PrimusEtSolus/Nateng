@@ -1,25 +1,25 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
+import { handleError } from '@/lib/api-error';
+import { ProductCreateSchema } from '@/lib/validation-schemas';
 
 export async function GET(req: NextRequest) {
   try {
     const params = new URL(req.url).searchParams;
-    const page = parseInt(params.get('page') || '1');
-    const limit = parseInt(params.get('limit') || '20');
+    const page = parseInt(params.get('page') || '1', 10);
+    const limit = parseInt(params.get('limit') || '20', 10);
     const skip = (page - 1) * limit;
-    const farmerId = params.get('farmerId'); // Filter by farmer
-    const search = params.get('search'); // Search by product name
-    const sortBy = params.get('sortBy') || 'createdAt-desc'; // Sort order
+    const farmerId = params.get('farmerId');
+    const search = params.get('search');
+    const sortBy = params.get('sortBy') || 'createdAt-desc';
 
-    // Build where clause
     const where: Record<string, unknown> = {};
     if (farmerId) where.farmerId = Number(farmerId);
     if (search) {
       where.name = { contains: search, mode: 'insensitive' };
     }
 
-    // Build orderBy from sortBy param
     const orderByMap: Record<string, Record<string, 'asc' | 'desc'>> = {
       'createdAt-desc': { createdAt: 'desc' },
       'createdAt-asc': { createdAt: 'asc' },
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     const [products, totalCount] = await Promise.all([
       prisma.product.findMany({
-        where: Object.keys(where).length > 0 ? where as any : undefined,
+        where: Object.keys(where).length > 0 ? where : undefined,
         include: {
           farmer: { 
             select: { 
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
             },
             where: { available: true },
             orderBy: { createdAt: 'desc' },
-            take: 5 // Limit listings per product for performance
+            take: 5
           },
         },
         orderBy,
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         skip: skip,
       }),
       prisma.product.count({
-        where: Object.keys(where).length > 0 ? where as any : undefined
+        where: Object.keys(where).length > 0 ? where : undefined
       })
     ]);
 
@@ -84,25 +84,29 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Authenticate user
-    const user = await getCurrentUser();
-    if (!user) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // Only farmers and bulkBuyers can create products
-    if (user.role !== 'farmer' && user.role !== 'bulkBuyer') {
+    if (currentUser.role !== 'farmer' && currentUser.role !== 'bulkBuyer') {
       return NextResponse.json({ error: 'Only farmers and bulkBuyers can create products' }, { status: 403 });
     }
-    const body = await req.json();
-    const { name, description, farmerId, imageUrl } = body;
 
-    if (!name || !farmerId) {
-      return NextResponse.json({ error: 'missing fields: name, farmerId' }, { status: 400 });
+    const body = await req.json();
+
+    // ── Input validation with Zod ──
+    const parsed = ProductCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.errors },
+        { status: 400 }
+      );
     }
 
-    // Farmers and bulkBuyers can only create products for themselves
-    if (farmerId !== user.id) {
+    const { name, description, imageUrl, farmerId } = parsed.data;
+
+    if (farmerId !== currentUser.id) {
       return NextResponse.json({ error: 'Cannot create products for other users' }, { status: 403 });
     }
 
@@ -111,7 +115,7 @@ export async function POST(req: NextRequest) {
         name,
         description: description || '',
         farmerId: Number(farmerId),
-        ...(imageUrl && { imageUrl }),
+        ...(imageUrl ? { imageUrl } : {}),
       },
       include: {
         farmer: { select: { id: true, name: true } },

@@ -1,18 +1,25 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
+import { handleError } from '@/lib/api-error';
+import { OrderStatusSchema } from '@/lib/validation-schemas';
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate user
-    const user = await getCurrentUser();
-    if (!user) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const { id } = await params;
+    const targetId = Number(id);
+    if (isNaN(targetId) || targetId <= 0) {
+      return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
+    }
+
     const order = await prisma.order.findUnique({
-      where: { id: Number(id) },
+      where: { id: targetId },
       include: {
         items: { include: { listing: { include: { product: { include: { farmer: true } } } } } },
         buyer: { select: { id: true, name: true, email: true, role: true } },
@@ -25,43 +32,46 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     // Check if user has permission to view this order
-    if (order.buyerId !== user.id && order.sellerId !== user.id && user.role !== 'admin') {
+    if (order.buyerId !== currentUser.id && order.sellerId !== currentUser.id && currentUser.role !== 'admin') {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     return NextResponse.json(order);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return handleError(error, 'GET /api/orders/[id]');
   }
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate user
-    const user = await getCurrentUser();
-    if (!user) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const { id } = await params;
-    const body = await req.json();
-    const { status } = body;
-
-    if (!status) {
-      return NextResponse.json({ error: 'status is required' }, { status: 400 });
+    const targetId = Number(id);
+    if (isNaN(targetId) || targetId <= 0) {
+      return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
     }
 
-    const validStatuses = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
-    if (!validStatuses.includes(status)) {
+    // ── Input validation with Zod ──
+    const body = await req.json();
+    const parsed = OrderStatusSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: `invalid status. must be one of: ${validStatuses.join(', ')}` },
+        { error: 'Validation failed', details: parsed.error.errors },
         { status: 400 }
       );
     }
 
+    const { status } = parsed.data;
+
     // Get the order first to check permissions
     const existingOrder = await prisma.order.findUnique({
-      where: { id: Number(id) }
+      where: { id: targetId },
+      select: { sellerId: true, buyerId: true, status: true }
     });
 
     if (!existingOrder) {
@@ -69,17 +79,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     // Check permissions - only seller or admin can update status
-    if (existingOrder.sellerId !== user.id && user.role !== 'admin') {
+    if (existingOrder.sellerId !== currentUser.id && currentUser.role !== 'admin') {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const order = await prisma.order.update({
-      where: { id: Number(id) },
+      where: { id: targetId },
       data: { status },
       include: {
         items: { include: { listing: { include: { product: true } } } },
-        buyer: true,
-        seller: true,
+        buyer: { select: { id: true, name: true, email: true, role: true } },
+        seller: { select: { id: true, name: true, email: true, role: true } },
       },
     });
 
@@ -105,7 +115,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     if (statusMessages[status]) {
       const messages = statusMessages[status];
-      
+
       // Notify buyer
       await prisma.notification.create({
         data: {
@@ -130,23 +140,29 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     return NextResponse.json(order);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return handleError(error, 'PATCH /api/orders/[id]');
   }
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authenticate user
-    const user = await getCurrentUser();
-    if (!user) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const { id } = await params;
+    const targetId = Number(id);
+    if (isNaN(targetId) || targetId <= 0) {
+      return NextResponse.json({ error: 'Invalid order ID' }, { status: 400 });
+    }
+
     // Only allow deletion of PENDING orders
     const order = await prisma.order.findUnique({
-      where: { id: Number(id) },
+      where: { id: targetId },
+      select: { buyerId: true, sellerId: true, status: true }
     });
 
     if (!order) {
@@ -154,7 +170,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
 
     // Check permissions - only buyer or admin can delete
-    if (order.buyerId !== user.id && user.role !== 'admin') {
+    if (order.buyerId !== currentUser.id && currentUser.role !== 'admin') {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
@@ -167,7 +183,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     // Restore inventory
     const orderItems = await prisma.orderItem.findMany({
-      where: { orderId: Number(id) },
+      where: { orderId: targetId },
     });
 
     for (const item of orderItems) {
@@ -178,11 +194,11 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
 
     await prisma.order.delete({
-      where: { id: Number(id) },
+      where: { id: targetId },
     });
 
     return NextResponse.json({ message: 'order deleted' });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return handleError(error, 'DELETE /api/orders/[id]');
   }
 }

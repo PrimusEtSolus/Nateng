@@ -3,40 +3,31 @@ import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 import { canCreateListings, getAllowedSellersForBuyer } from '@/lib/marketplace-rules';
 import type { UserRole } from '@/lib/types';
-
-interface ListingBody {
-  productId: number;
-  sellerId: number;
-  priceCents: number;
-  quantity: number;
-  available?: boolean;
-}
+import { handleError } from '@/lib/api-error';
+import { ListingCreateSchema } from '@/lib/validation-schemas';
 
 export async function GET(req: NextRequest) {
   try {
-    // GET is public - no authentication required for browsing listings
     const params = new URL(req.url).searchParams;
     const sellerId = params.get('sellerId');
     const productId = params.get('productId');
     const available = params.get('available');
-    const userRole = params.get('userRole'); // Optional: filter for specific user role
-    const search = params.get('search'); // Search by product name
-    const sortBy = params.get('sortBy') || 'createdAt-desc'; // Default sort by newest
-    const limit = params.get('limit'); // Limit results (for dashboard widgets)
+    const userRole = params.get('userRole');
+    const search = params.get('search');
+    const sortBy = params.get('sortBy') || 'createdAt-desc';
+    const limit = params.get('limit');
 
     const where: Record<string, unknown> = {};
     if (sellerId) where.sellerId = Number(sellerId);
     if (productId) where.productId = Number(productId);
     if (available !== null) where.available = available === 'true';
 
-    // Add search filter on product name (case-insensitive)
     if (search) {
       where.product = {
         name: { contains: search, mode: 'insensitive' }
       };
     }
 
-    // Build orderBy from sortBy param
     const orderByMap: Record<string, Record<string, 'asc' | 'desc'>> = {
       'createdAt-desc': { createdAt: 'desc' },
       'createdAt-asc': { createdAt: 'asc' },
@@ -64,7 +55,6 @@ export async function GET(req: NextRequest) {
       orderBy,
     };
 
-    // Apply limit if provided
     if (limit) {
       const limitNum = parseInt(limit, 10);
       if (!isNaN(limitNum) && limitNum > 0) {
@@ -72,13 +62,13 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const listings = await prisma.listing.findMany(queryOptions as any);
+    const listings = await prisma.listing.findMany(queryOptions);
 
     // Filter listings based on user role if provided
     let filteredListings = listings;
     if (userRole && userRole !== 'admin') {
       const allowedSellers = getAllowedSellersForBuyer(userRole as UserRole);
-      filteredListings = listings.filter((listing: any) => 
+      filteredListings = listings.filter((listing) => 
         allowedSellers.includes(listing.seller.role as UserRole)
       );
     }
@@ -92,25 +82,29 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Authenticate user
-    const user = await getCurrentUser();
-    if (!user) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const body = await req.json();
-    const { productId, sellerId, priceCents, quantity, available }: ListingBody = body;
-    if (!productId || !sellerId || priceCents === undefined || !quantity) {
-      return NextResponse.json({ error: 'missing fields: productId, sellerId, priceCents, quantity' }, { status: 400 });
+
+    // ── Input validation with Zod ──
+    const parsed = ListingCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.errors },
+        { status: 400 }
+      );
     }
 
-    // Users can only create listings for themselves unless they're admin
-    if (user.role !== 'admin' && sellerId !== user.id) {
+    const { productId, sellerId, priceCents, quantity, available } = parsed.data;
+
+    if (currentUser.role !== 'admin' && sellerId !== currentUser.id) {
       return NextResponse.json({ error: 'Cannot create listings for other users' }, { status: 403 });
     }
 
-    // Check if user is allowed to create listings based on their role
-    const listingPermission = canCreateListings(user.role as any);
+    const listingPermission = canCreateListings(currentUser.role as UserRole);
     if (!listingPermission.allowed) {
       return NextResponse.json(
         { error: listingPermission.reason || 'Not allowed to create listings' },

@@ -1,17 +1,14 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getCurrentUser } from '@/lib/auth-server';
+import { getCurrentUser, AuthUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 import { validateMarketplaceTransaction } from '@/lib/marketplace-rules';
 import type { UserRole } from '@/lib/types';
 import { logger } from '@/lib/logger';
-
-interface OrderItem {
-  listingId: number;
-  quantity: number;
-}
+import { handleError } from '@/lib/api-error';
+import { OrderCreateSchema } from '@/lib/validation-schemas';
 
 export async function GET(req: NextRequest) {
-  let user: any = null;
+  let user: AuthUser | null = null;
   try {
     // Authenticate user
     user = await getCurrentUser();
@@ -37,7 +34,6 @@ export async function GET(req: NextRequest) {
         where.sellerId = user.id;
       } else if (user.role === 'bulkBuyer') {
         // BulkBuyers can be both buyers and sellers — allow explicit filtering
-        // If buyerId or sellerId is provided, use it; otherwise default to buyerId
         if (buyerId && Number(buyerId) === user.id) {
           where.buyerId = user.id;
         } else if (sellerId && Number(sellerId) === user.id) {
@@ -100,39 +96,37 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const orders = await prisma.order.findMany(queryOptions as any);
+    const orders = await prisma.order.findMany(queryOptions);
 
     return NextResponse.json(orders);
   } catch (error: unknown) {
     logger.apiError('GET', '/api/orders', error, user?.id?.toString());
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
-      { status: 500 }
-    );
+    return handleError(error, 'GET /api/orders');
   }
 }
 
 export async function POST(req: NextRequest) {
-  let user: any = null;
+  let user: AuthUser | null = null;
   try {
-    // Optional authentication - allow guest orders for business users
+    // ── Authentication: guest path removed — all orders require an authenticated user ──
     user = await getCurrentUser();
-    
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { buyerId, sellerId, items, deliveryAddress, scheduledDate, scheduledTime, route, isCBD, truckWeightKg, isExempt, exemptionType }: {
-      buyerId: number;
-      sellerId: number;
-      items: OrderItem[];
-      deliveryAddress?: string;
-      scheduledDate?: string;
-      scheduledTime?: string;
-      route?: string;
-      isCBD?: boolean;
-      truckWeightKg?: number;
-      isExempt?: boolean;
-      exemptionType?: string;
-    } = body;
-    
+
+    // ── Input validation with Zod ──
+    const parsed = OrderCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.errors },
+        { status: 400 }
+      );
+    }
+
+    const { buyerId, sellerId, items, deliveryAddress, scheduledDate, scheduledTime, route, isCBD, truckWeightKg, isExempt, exemptionType } = parsed.data;
+
     if (!buyerId || !sellerId || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: 'buyerId, sellerId, and items array are required' },
@@ -140,13 +134,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // If authenticated user, they can only create orders as themselves unless they're admin
-    if (user && user.role !== 'admin' && buyerId !== user.id) {
+    // Authenticated user can only create orders as themselves unless admin
+    if (user.role !== 'admin' && buyerId !== user.id) {
       return NextResponse.json({ error: 'Cannot create orders for other users' }, { status: 403 });
     }
-    
-    // If no authentication, allow the order to proceed (for business users)
-    // This enables guest checkout functionality
 
     // Get seller information to validate marketplace rules
     const seller = await prisma.user.findUnique({
@@ -158,25 +149,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Seller not found' }, { status: 404 });
     }
 
-    // Validate marketplace transaction rules
-    let buyer;
-    if (user) {
-      buyer = user.role === 'admin' 
-        ? await prisma.user.findUnique({ where: { id: Number(buyerId) }, select: { role: true } })
-        : user;
-    } else {
-      // For guest orders, fetch buyer from database
-      buyer = await prisma.user.findUnique({ where: { id: Number(buyerId) }, select: { role: true } });
-    }
-
-    if (!buyer) {
-      return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
-    }
-
     // Validate marketplace rules
     const validationResult = validateMarketplaceTransaction(
       seller.role as UserRole,
-      buyer.role as UserRole
+      user.role as UserRole
     );
 
     if (!validationResult.allowed) {
@@ -187,10 +163,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Create order and update listings in a transaction
-    const order = await prisma.$transaction(async (tx: any) => {
-      // Calculate total price
+    const order = await prisma.$transaction(async (tx) => {
       let calculatedTotalCents = 0;
-      const orderItems = [];
+      const orderItems: Array<{ listingId: number; quantity: number; priceCents: number }> = [];
 
       for (const item of items) {
         const listing = await tx.listing.findUnique({
@@ -207,7 +182,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Validate minimum order requirements
-        if (buyer.role === 'bulkBuyer' && listing.product.minimumOrderKg) {
+        if (user.role === 'bulkBuyer' && listing.product.minimumOrderKg) {
           const totalKgNeeded = item.quantity;
           if (totalKgNeeded < listing.product.minimumOrderKg) {
             throw new Error(`Minimum order requirement not met for ${listing.product.name}`);
@@ -259,7 +234,7 @@ export async function POST(req: NextRequest) {
                 include: {
                   product: {
                     include: {
-                      farmer: true
+                      farmer: { select: { id: true, name: true } }
                     }
                   }
                 }
@@ -296,7 +271,7 @@ export async function POST(req: NextRequest) {
             userId: Number(sellerId),
             type: 'order_placed',
             title: 'New Order Received',
-            message: `You have a new order #${order.id} from ${user?.name || 'a customer'}`,
+            message: `You have a new order #${order.id} from ${user.name}`,
             link: `/orders/${order.id}`,
           },
           {
@@ -326,9 +301,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(order);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.apiError('POST', '/api/orders', error, user?.id?.toString());
-    const message = typeof error?.message === 'string' ? error.message : 'Internal server error';
+    const message = error instanceof Error ? error.message : 'Internal server error';
     const isBusinessError =
       typeof message === 'string' &&
       (message.includes('minimum order requirement not met') ||

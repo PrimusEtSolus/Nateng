@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-server'
+import prisma from '@/lib/prisma'
+import { handleError } from '@/lib/api-error'
 
 export async function DELETE(
   request: NextRequest,
@@ -36,7 +37,7 @@ export async function DELETE(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: unknown) {
+    return handleError(error, 'DELETE /api/favorites/[id]')
   }
 }

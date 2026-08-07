@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyToken } from '@/lib/jwt';
 
+
 export async function GET(request: NextRequest) {
   try {
     // Get token from httpOnly cookie
@@ -19,17 +20,27 @@ export async function GET(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: payload.userId }
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        profilePhotoUrl: true,
+        createdAt: true,
+        businessName: true,
+        isBanned: true,
+      }
     });
 
     if (!user) {
       return NextResponse.json({ user: null });
     }
 
-    // Return user without password
-    const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json({ user: userWithoutPassword });
-  } catch (error) {
+    // Never return password — select above explicitly omits it
+    return NextResponse.json({ user });
+  } catch (error: unknown) {
+    // Don't leak error details on auth endpoints
     return NextResponse.json({ user: null });
   }
 }
