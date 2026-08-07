@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     };
     const orderBy = orderByMap[sortBy] || { createdAt: 'desc' as const };
 
-    const queryOptions: Record<string, unknown> = {
+    const queryOptions = {
       where: Object.keys(where).length > 0 ? where : undefined,
       include: {
         product: { 
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     if (limit) {
       const limitNum = parseInt(limit, 10);
       if (!isNaN(limitNum) && limitNum > 0) {
-        queryOptions.take = limitNum;
+        (queryOptions as Record<string, unknown>).take = limitNum;
       }
     }
 
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     if (userRole && userRole !== 'admin') {
       const allowedSellers = getAllowedSellersForBuyer(userRole as UserRole);
       filteredListings = listings.filter((listing) => 
-        allowedSellers.includes(listing.seller.role as UserRole)
+        listing.seller && allowedSellers.includes(listing.seller.role as UserRole)
       );
     }
 

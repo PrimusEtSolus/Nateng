@@ -127,7 +127,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     // ── Prevent privilege escalation: strip role unless current user is admin ──
-    let validatedData = { ...parsed.data };
+    const validatedData = { ...parsed.data };
     if (validatedData.role && currentUser.role !== 'admin') {
       delete validatedData.role;
     }

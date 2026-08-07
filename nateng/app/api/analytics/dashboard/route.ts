@@ -190,8 +190,8 @@ export async function GET(request: NextRequest) {
         count: item._count,
       })),
     })
-  } catch (error) {
-    logger.error('Failed to fetch analytics dashboard', { error })
+  } catch (_error) {
+    logger.error('Failed to fetch analytics dashboard', { error: _error })
     return NextResponse.json(
       { error: 'Failed to fetch analytics' },
       { status: 500 }

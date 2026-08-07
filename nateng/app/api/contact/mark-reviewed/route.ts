@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       success: true,
       message: 'Message marked as reviewed successfully'
     })
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to mark message as reviewed' },
       { status: 500 }

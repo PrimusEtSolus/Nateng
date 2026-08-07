@@ -22,7 +22,7 @@ export function apiError(error: unknown, fallback = 'Internal server error'): st
 }
 
 /** Helper that converts a Prisma / Zod / generic error into the right HTTP response. */
-export function handleError(error: unknown, endpoint: string): NextResponse {
+export function handleError(error: unknown, _endpoint: string): NextResponse {
   const message = apiError(error)
 
   // Prisma: unique-constraint violation → 409

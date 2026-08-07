@@ -3,9 +3,9 @@ import type { UserRole } from '@/lib/types'
 
 // Reusable base schemas
 const idParam = z.coerce.number().int().positive()
-const paginationQuery = z.object({
-  page: z.coerce.number().int().positive().optional().default(() => 1),
-  limit: z.coerce.number().int().positive().max(100).optional().default(() => 20),
+const _paginationQuery = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
 })
 
 // ─── User Schemas ─────────────────────────────────────────────────────────
