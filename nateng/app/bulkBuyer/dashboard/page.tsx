@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { type User, type Listing, type Order } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { useBanEnforcement } from "@/hooks/useBanEnforcement"
-import { Package, TrendingUp, ShoppingBag, DollarSign, Store, Leaf, LayoutDashboard, Search, Loader2, MapPin, User as UserIcon } from "lucide-react"
+import { Package, TrendingUp, ShoppingBag, DollarSign, Store, LayoutDashboard, Search, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +16,6 @@ import { ProductGrid } from "@/components/dashboard/ProductGrid"
 import { OrderModal } from "@/components/dashboard/OrderModal"
 import { ProductModal } from "@/components/dashboard/ProductModal"
 import { useDebounce } from "@/hooks/use-debounce"
-import { toast } from "sonner"
 
 type TabName = "overview" | "wholesale" | "inventory" | "orders"
 
@@ -53,8 +52,8 @@ export default function BulkBuyerDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
   
-  // Check if user is banned and enforce restrictions
-  const { banStatus, isLoading: banLoading } = useBanEnforcement()
+// Check if user is banned and enforce restrictions
+  useBanEnforcement()
 
   useEffect(() => {
     const loadUser = async () => {
@@ -69,7 +68,7 @@ export default function BulkBuyerDashboardPage() {
   }, [router])
 
   // Fetch orders as buyer (procurement)
-  const { data: orders = [], loading: ordersLoading, refetch: refetchOrders } = useFetch<Order[]>(
+const { data: orders = [], loading: ordersLoading } = useFetch<Order[]>(
     user ? `/api/orders?buyerId=${user.id}` : '',
     { skip: !user }
   )
@@ -82,7 +81,7 @@ export default function BulkBuyerDashboardPage() {
   )
 
   // Fetch sales as seller
-  const { data: salesOrders = [], loading: salesLoading } = useFetch<Order[]>(
+const { data: salesOrders = [] } = useFetch<Order[]>(
     user ? `/api/orders?sellerId=${user.id}` : '',
     { skip: !user }
   )

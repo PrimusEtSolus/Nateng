@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
-import { handleError } from '@/lib/api-error';
 import { ProductCreateSchema } from '@/lib/validation-schemas';
 
 export async function GET(req: NextRequest) {

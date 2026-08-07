@@ -6,10 +6,8 @@ import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { ordersAPI } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Package, Check, X, Truck, Clock, Building2, UserIcon, Loader2, Calendar, MessageSquare, CheckCircle, XCircle, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
-import { DeliveryScheduler } from "@/components/delivery-scheduler"
 import { DeliverySchedulingDialog } from "@/components/delivery-scheduling-dialog"
 import { ScheduleConfirmationDialog } from "@/components/schedule-confirmation-dialog"
 import { ViewScheduleDialog } from "@/components/view-schedule-dialog"
@@ -64,9 +62,7 @@ interface Order {
 
 export default function FarmerOrdersPage() {
   const [user, setUser] = useState<User | null>(null)
-  const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
-  const [schedulingOrderId, setSchedulingOrderId] = useState<number | null>(null)
-  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false)
+const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
   const [cancelOrderId, setCancelOrderId] = useState<number | null>(null)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   
@@ -141,7 +137,7 @@ export default function FarmerOrdersPage() {
     setSchedulingDialogOpen(true)
   }
 
-  const handleScheduleProposed = (schedule: any) => {
+const handleScheduleProposed = (_schedule: any) => {
     toast.success("Delivery schedule proposed", {
       description: "Waiting for the other party to confirm",
     })
@@ -184,7 +180,7 @@ export default function FarmerOrdersPage() {
     setProposalsDialogOpen(true)
   }
 
-  const handleProposalAgreed = (schedule: any) => {
+const handleProposalAgreed = (_schedule: any) => {
     toast.success("Schedule confirmed", {
       description: "Both parties have agreed on the schedule",
     })
@@ -203,8 +199,7 @@ export default function FarmerOrdersPage() {
   const OrderCard = ({ order }: { order: Order }) => {
     const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
     const isUpdating = updatingStatus === order.id
-    const latestSchedule = order.deliverySchedule // Get the schedule (singular)
-    const isBusinessBuyer = order.buyer.role === "business"
+const latestSchedule = order.deliverySchedule // Get the schedule (singular)
 
     return (
       <div className="bg-white rounded-xl border border-border p-4 shadow-sm hover:shadow-md transition-shadow">

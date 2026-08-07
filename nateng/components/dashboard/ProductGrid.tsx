@@ -1,7 +1,7 @@
 "use client"
 
 import { type ReactNode } from "react"
-import { Package, Leaf, Star, MapPin, Store, BadgeCheck, AlertTriangle } from "lucide-react"
+import { Star, MapPin, Store, BadgeCheck, AlertTriangle } from "lucide-react"
 import { type Listing, type Product } from "@/lib/types"
 import { ProductCardSkeleton, ProductGridSkeleton } from "@/components/loading-skeletons"
 import { EmptyState } from "@/components/empty-state"
@@ -64,40 +64,12 @@ function getProductImage(item: Listing | Product): string | null {
   return (item as Product).imageUrl || null
 }
 
-function getPriceDisplay(item: Listing | Product): string | null {
-  if (isListing(item)) {
-    return `₱${(item.priceCents / 100).toLocaleString()}/kg`
-  }
-  // Product: show price range from listings
-  const product = item as Product
-  if (product.listings && product.listings.length > 0) {
-    const prices = product.listings.filter(l => l.available).map(l => l.priceCents)
-    if (prices.length > 0) {
-      const min = Math.min(...prices)
-      const max = Math.max(...prices)
-      return min === max ? `₱${(min / 100).toLocaleString()}/kg` : `₱${(min / 100).toLocaleString()} - ₱${(max / 100).toLocaleString()}/kg`
-    }
-  }
-  return null
-}
-
 function getQuantityDisplay(item: Listing | Product): string {
   const qty = getLowStockQuantity(item)
   if (isListing(item)) return `${qty}kg available`
   const product = item as Product
   const totalListings = product.listings?.length || 0
   return `${qty}kg available${totalListings > 0 ? ` (${totalListings} listing${totalListings !== 1 ? 's' : ''})` : ''}`
-}
-
-function getSellerName(item: Listing | Product): string | null {
-  if (isListing(item)) return item.seller?.name || null
-  const product = item as Product
-  return product.farmer?.name || null
-}
-
-function getSellerRole(item: Listing | Product): string | null {
-  if (isListing(item)) return item.seller?.role || null
-  return "farmer"
 }
 
 function getSellerLocation(item: Listing | Product): string | null {
@@ -117,9 +89,7 @@ export function ProductGrid({
   variant,
   showTrustSignals = false,
   title,
-  subtitle,
-  accentColor = "text-farmer",
-  accentHoverColor = "hover:bg-farmer",
+subtitle,
   actionSlot,
   children,
 }: ProductGridProps) {
@@ -159,8 +129,7 @@ export function ProductGrid({
           </div>
         )}
         <div className="space-y-3">
-          {items.map((item) => {
-            const qty = getLowStockQuantity(item)
+{items.map((item) => {
             const stockLow = isLowStock(item)
             const stockOut = isOutOfStock(item)
 

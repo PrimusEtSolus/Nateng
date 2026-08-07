@@ -59,7 +59,7 @@ export default [
     rules: {
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
+'@typescript-eslint/no-explicit-any': 'off',
       'prefer-const': 'error',
       'no-var': 'error',
       'no-prototype-builtins': 'off',

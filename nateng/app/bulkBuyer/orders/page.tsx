@@ -38,8 +38,8 @@ export default function BulkBuyerOrdersPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   
-  // Check if user is banned and enforce restrictions
-  const { banStatus, isLoading: banLoading } = useBanEnforcement()
+// Check if user is banned and enforce restrictions
+  useBanEnforcement()
 
   useEffect(() => {
     const loadUser = async () => {

@@ -1,30 +1,16 @@
+
+
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, Users, Package, BarChart3, Search, Edit2, Trash2, Plus, Database, Table, Eye, Settings, Ban, ShieldCheck, MessageSquare, AlertTriangle, Wifi, WifiOff, Circle, Calendar, Truck, TrendingUp, PieChart } from "lucide-react"
+import { Shield, Users, Package, BarChart3, Search, Trash2, Database, Table, Eye, Settings, Ban, ShieldCheck, MessageSquare, AlertTriangle, Wifi, Calendar } from "lucide-react"
 import { toast } from "sonner"
-import { addBannedUser, removeBannedUser, isUserBanned } from "@/lib/banned-users"
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart as RePieChart,
-  Pie,
-  Cell,
-  Legend
-} from "recharts"
+import { addBannedUser, removeBannedUser } from "@/lib/banned-users"
 
 interface User {
   id: number
@@ -129,7 +115,7 @@ const [users, setUsers] = useState<User[]>([])
   const [appeals, setAppeals] = useState<Appeal[]>([])
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([])
   const [deliverySchedules, setDeliverySchedules] = useState<DeliverySchedule[]>([])
-  const [analyticsData, setAnalyticsData] = useState<{
+const [, setAnalyticsData] = useState<{
     monthlyRevenue: any[]
     userRoles: any[]
     topProducts: any[]
@@ -148,8 +134,7 @@ const [users, setUsers] = useState<User[]>([])
     onlineUsers: 0,
     bannedUsers: 0
   })
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     // Check if already authenticated via session (admin access controlled by JWT role, not hostname)
@@ -244,9 +229,9 @@ const [users, setUsers] = useState<User[]>([])
         setDeliverySchedules([])
       }
 
-      // Process analytics data
+// Process analytics data
       processAnalyticsData(users, products, orders)
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch data")
       // Reset to empty arrays on error
       setUsers([])
@@ -362,9 +347,9 @@ const [users, setUsers] = useState<User[]>([])
         }
       } else {
         const error = await response.json()
-        toast.error(error.error || "Invalid username or password")
+toast.error(error.error || "Invalid username or password")
       }
-    } catch (error) {
+    } catch {
       toast.error("Login failed")
     } finally {
       setIsLoading(false)
@@ -381,7 +366,7 @@ const [users, setUsers] = useState<User[]>([])
       setUsername("")
       setPassword("")
       toast.success("Logged out successfully")
-    } catch (error) {
+    } catch {
       toast.error("Logout failed")
     }
   }
@@ -394,8 +379,8 @@ const [users, setUsers] = useState<User[]>([])
       return
     }
 
-    try {
-      const response = await fetch('/api/admin/users/ban', {
+try {
+      await fetch('/api/admin/users/ban', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, userEmail, reason })
@@ -405,7 +390,7 @@ const [users, setUsers] = useState<User[]>([])
       
       toast.success(`User ${userName} has been banned and access restricted`)
       fetchData()
-    } catch (error) {
+    } catch {
       toast.error('Failed to ban user')
     }
   }
@@ -416,7 +401,7 @@ const [users, setUsers] = useState<User[]>([])
     }
 
     try {
-      const response = await fetch('/api/admin/users/unban', {
+      await fetch('/api/admin/users/unban', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, userEmail })
@@ -426,7 +411,7 @@ const [users, setUsers] = useState<User[]>([])
       
       toast.success(`User ${userName} has been unbanned and access restored`)
       fetchData()
-    } catch (error) {
+    } catch {
       toast.error('Failed to unban user')
     }
   }
@@ -434,7 +419,7 @@ const [users, setUsers] = useState<User[]>([])
   const handleDeleteUser = async (userId: number) => {
     if (!confirm('Are you sure you want to delete this user?')) return
 
-    try {
+try {
       const response = await fetch('/api/admin/users', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -447,12 +432,12 @@ const [users, setUsers] = useState<User[]>([])
       } else {
         toast.error('Failed to delete user')
       }
-    } catch (error) {
+    } catch {
       toast.error('Error deleting user')
     }
   }
 
-  const handleApproveAppeal = async (appealId: string, userEmail: string) => {
+  const handleApproveAppeal = async (appealId: string, _userEmail: string) => {
     if (!confirm('Are you sure you want to approve this appeal? This will unban the user.')) {
       return
     }
@@ -475,7 +460,7 @@ const [users, setUsers] = useState<User[]>([])
       } else {
         toast.error('Failed to approve appeal')
       }
-    } catch (error) {
+    } catch {
       toast.error('Error approving appeal')
     }
   }
@@ -501,7 +486,7 @@ const [users, setUsers] = useState<User[]>([])
       } else {
         toast.error('Failed to reject appeal')
       }
-    } catch (error) {
+    } catch {
       toast.error('Error rejecting appeal')
     }
   }
@@ -520,13 +505,13 @@ const [users, setUsers] = useState<User[]>([])
       } else {
         toast.error('Failed to mark message as reviewed')
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to mark message as reviewed')
     }
   }
 
   // Simulate online status (in production, use real-time system)
-  const getOnlineStatus = (user: any) => {
+  const getOnlineStatus = (_user: any) => {
     return false
   }
 

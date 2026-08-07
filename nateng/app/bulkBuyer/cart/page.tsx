@@ -1,217 +1,142 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { getCurrentUser } from "@/lib/auth"
-import { useFetch } from "@/hooks/use-fetch"
-import { Loader2, Trash2, Plus, Minus, ShoppingCart, ArrowRight } from "lucide-react"
-import Link from "next/link"
+import { useCart } from "@/lib/cart-context"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { ShoppingCart, Trash2, Plus, Minus, ArrowRight } from "lucide-react"
+import Link from "next/link"
 import { toast } from "sonner"
 
-interface CartItem {
-  id: number
-  listingId: number
-  quantity: number
-  listing: {
-    id: number
-    priceCents: number
-    quantity: number
-    available: boolean
-    product: {
-      id: number
-      name: string
-      farmer: {
-        id: number
-        name: string
-      }
-    }
-  }
-}
-
 export default function BulkBuyerCartPage() {
-  const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { items, removeFromCart, updateQuantity, totalPrice, clearCart } = useCart()
 
-  const { data: cartItems = [], loading: cartLoading, error: cartError, refetch } = useFetch<CartItem[]>('/api/cart')
-
-  useEffect(() => {
-    loadUser()
-  }, [])
-
-  const loadUser = async () => {
-    const currentUser = await getCurrentUser()
-    if (!currentUser || currentUser.role !== 'bulkBuyer') {
-      router.push('/login')
-      return
-    }
-    setUser(currentUser)
-    setIsLoading(false)
-  }
-
-  const updateQuantity = async (listingId: number, newQuantity: number) => {
-    try {
-      const response = await fetch('/api/cart', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingId, quantity: newQuantity }),
-        credentials: 'include'
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to update cart')
-      }
-
-      refetch()
-      toast.success('Cart updated')
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update cart')
-    }
-  }
-
-  const removeItem = async (listingId: number) => {
-    try {
-      const response = await fetch(`/api/cart?listingId=${listingId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to remove item')
-      }
-
-      refetch()
-      toast.success('Item removed from cart')
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to remove item')
-    }
-  }
-
-  const handleCheckout = () => {
-    router.push('/buyer/checkout')
-  }
-
-  if (isLoading || cartLoading) {
+  if (items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-teal-700" />
-      </div>
-    )
-  }
-
-  if (cartError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600">Failed to load cart</p>
-          <Button onClick={refetch} className="mt-4">Retry</Button>
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-2xl mx-auto text-center py-16 px-4">
+          <div className="w-24 h-24 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <ShoppingCart className="w-12 h-12 text-teal-700" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h1>
+          <p className="text-gray-600 mb-6">Start browsing wholesale products from farmers to add items</p>
+          <Link href="/bulkBuyer/browse">
+            <Button className="bg-teal-600 hover:bg-teal-700 text-white">Browse Products</Button>
+          </Link>
         </div>
       </div>
     )
   }
 
-  const safeCartItems = cartItems || []
-  const total = safeCartItems.reduce((sum, item) => sum + (item.listing.priceCents * item.quantity), 0) || 0
-  const totalKg = safeCartItems.reduce((sum, item) => sum + item.quantity, 0) || 0
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50 min-h-screen">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
-            <p className="text-gray-600 mt-1">{safeCartItems.length} item(s) • {totalKg.toFixed(1)}kg total</p>
+            <p className="text-gray-600 mt-1">{items.length} item(s) in your cart</p>
           </div>
-          <Link href="/bulkBuyer/browse">
-            <Button variant="outline">Continue Shopping</Button>
-          </Link>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (confirm("Are you sure you want to clear your cart?")) {
+                clearCart()
+                toast.success("Cart cleared")
+              }
+            }}
+            className="text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Clear Cart
+          </Button>
         </div>
 
-        {safeCartItems.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-sm p-12 text-center">
-            <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold mb-2">Your cart is empty</h2>
-            <p className="text-gray-600 mb-6">Start browsing wholesale products to add items to your cart</p>
-            <Link href="/bulkBuyer/browse">
-              <Button className="bg-teal-600 hover:bg-teal-700">Browse Products</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {safeCartItems.map((item) => (
-              <div key={item.id} className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="space-y-6">
+          {items.map((item, index) => {
+            const itemId = item.listingId || index
+            const productName = item.productName || "Product"
+            const sellerName = item.sellerName || "Seller"
+            const pricePerKg = item.priceCents ? item.priceCents / 100 : 0
+            const itemTotal = pricePerKg * item.quantity
+
+            return (
+              <div key={itemId} className="bg-white rounded-2xl shadow-sm p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900">{item.listing.product.name}</h3>
-                    <p className="text-sm text-gray-600">From {item.listing.product.farmer.name}</p>
-                    <p className="text-lg font-bold text-teal-700 mt-2">₱{(item.listing.priceCents / 100).toFixed(2)}/kg</p>
-                    {item.listing.quantity < item.quantity && (
-                      <p className="text-sm text-red-600 mt-1">Only {item.listing.quantity}kg available</p>
-                    )}
+                    <h3 className="text-lg font-semibold text-gray-900">{productName}</h3>
+                    <p className="text-sm text-gray-600">From {sellerName}</p>
+                    <p className="text-lg font-bold text-teal-700 mt-2">₱{pricePerKg.toFixed(2)}/kg</p>
                   </div>
+                  <button
+                    onClick={() => removeFromCart(itemId)}
+                    className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                    aria-label="Remove item"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </button>
+                </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(item.listingId, Math.max(0.1, item.quantity - 0.1))}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <input
-                        type="number"
-                        value={item.quantity}
-                        onChange={(e) => updateQuantity(item.listingId, parseFloat(e.target.value) || 0)}
-                        className="w-20 text-center border rounded-lg py-2"
-                        min="0.1"
-                        max={item.listing.quantity}
-                        step="0.1"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateQuantity(item.listingId, Math.min(item.listing.quantity, item.quantity + 0.1))}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-
+                <div className="flex items-center justify-between mt-4">
+                  <div className="flex items-center gap-2">
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       size="sm"
-                      onClick={() => removeItem(item.listingId)}
+                      onClick={() => updateQuantity(itemId, Math.max(0.1, item.quantity - 0.1))}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Minus className="w-4 h-4" />
                     </Button>
+                    <Input
+                      type="number"
+                      value={item.quantity.toFixed(1)}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0
+                        if (value <= 0) {
+                          removeFromCart(itemId)
+                          return
+                        }
+                        updateQuantity(itemId, value)
+                      }}
+                      className="w-20 text-center"
+                      min="0.1"
+                      step="0.1"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => updateQuantity(itemId, item.quantity + 0.1)}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                    <span className="ml-2 text-sm text-gray-500">kg</span>
                   </div>
+                  <p className="text-lg font-semibold text-teal-700">₱{itemTotal.toFixed(2)}</p>
                 </div>
               </div>
-            ))}
+            )
+          })}
 
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm text-gray-600">Total Quantity</p>
-                  <p className="text-xl font-bold text-gray-900">{totalKg.toFixed(1)}kg</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">Total Amount</p>
-                  <p className="text-2xl font-bold text-teal-700">₱{(total / 100).toFixed(2)}</p>
-                </div>
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-gray-600">Total Quantity</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {items.reduce((sum, item) => sum + item.quantity, 0).toFixed(1)}kg
+                </p>
               </div>
-              <Button
-                onClick={handleCheckout}
-                className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white"
-              >
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Total Amount</p>
+                <p className="text-2xl font-bold text-teal-700">₱{totalPrice.toFixed(2)}</p>
+              </div>
+            </div>
+            <Link href="/bulkBuyer/checkout">
+              <Button className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white">
                 Proceed to Checkout
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
-            </div>
+            </Link>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
 }
+

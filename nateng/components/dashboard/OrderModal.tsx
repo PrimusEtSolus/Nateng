@@ -1,6 +1,5 @@
 "use client"
 
-import { Package } from "lucide-react"
 import { type Order } from "@/lib/types"
 import { formatDate } from "@/lib/date-utils"
 import {

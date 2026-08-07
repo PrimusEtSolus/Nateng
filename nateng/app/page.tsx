@@ -2,7 +2,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { Leaf, ShoppingCart, Store, TrendingUp, Users, Truck } from "lucide-react"
+import { Leaf, ShoppingCart, Store } from "lucide-react"
 
 export default function HomePage() {
   return (

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Plus, Search, Edit2, Trash2, Package, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -43,7 +42,7 @@ export default function FarmerCropsPage() {
     quantity: "",
     imageUrl: "",
   })
-  const [newProductPhoto, setNewProductPhoto] = useState<File | null>(null)
+const [_newProductPhoto, setNewProductPhoto] = useState<File | null>(null)
   const [newPhotoPreview, setNewPhotoPreview] = useState<string | null>(null)
   const [editCrop, setEditCrop] = useState({
     name: "",
@@ -52,7 +51,7 @@ export default function FarmerCropsPage() {
     quantity: "",
     imageUrl: "",
   })
-  const [productPhoto, setProductPhoto] = useState<File | null>(null)
+  const [_productPhoto, setProductPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
 
@@ -227,73 +226,7 @@ export default function FarmerCropsPage() {
     }
   }
 
-  const handleNewPhotoUpload = async () => {
-    if (!newProductPhoto) return
-    
-    setIsUploadingPhoto(true)
-    try {
-      // Create FormData for upload
-      const formData = new FormData()
-      formData.append('image', newProductPhoto)
-      formData.append('type', 'products')
-
-      // Upload to server
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Upload failed')
-      }
-
-      const { imageUrl } = await response.json()
-      setNewCrop({ ...newCrop, imageUrl })
-      setNewProductPhoto(null)
-      
-      toast.success("Photo uploaded successfully!")
-    } catch (error: any) {
-      toast.error(error.message || "Failed to upload photo")
-    } finally {
-      setIsUploadingPhoto(false)
-    }
-  }
-
-  const handlePhotoUpload = async () => {
-    if (!productPhoto) return
-    
-    setIsUploadingPhoto(true)
-    try {
-      // Create FormData for upload
-      const formData = new FormData()
-      formData.append('image', productPhoto)
-      formData.append('type', 'products')
-
-      // Upload to server
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Upload failed')
-      }
-
-      const { imageUrl } = await response.json()
-      setEditCrop({ ...editCrop, imageUrl })
-      setProductPhoto(null)
-      
-      toast.success("Photo uploaded successfully!")
-    } catch (error: any) {
-      toast.error(error.message || "Failed to upload photo")
-    } finally {
-      setIsUploadingPhoto(false)
-    }
-  }
-
-  const handleUpdateCrop = async () => {
+const handleUpdateCrop = async () => {
     if (!user || !editingProduct || !editCrop.name || !editCrop.priceCents || !editCrop.quantity) {
       toast.error("Please fill in all required fields")
       return

@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       message: 'Appeal submitted successfully. Your case is under review.',
       appealId: appeal.id
     })
-  } catch (_error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to submit appeal' },
       { status: 500 }

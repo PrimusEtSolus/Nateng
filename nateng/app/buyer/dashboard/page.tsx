@@ -10,14 +10,14 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { type User, type Listing, type Order } from "@/lib/types"
-import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import BannedUserDashboard from "@/components/banned-user-dashboard"
-import { Search, ShoppingCart, Plus, Minus, Filter, MapPin, LayoutDashboard, Package, ClipboardList, Loader2, Trash2, ArrowRight, TrendingUp, Clock, CheckCircle, Truck, Star } from "lucide-react"
+import { Search, ShoppingCart, Plus, Minus, Filter, MapPin, LayoutDashboard, Package, ClipboardList, Loader2, Trash2, ArrowRight, TrendingUp, Clock, CheckCircle, Truck } from "lucide-react"
 import Link from "next/link"
 import { EmptyState } from "@/components/empty-state"
 import { ProductImage } from "@/components/product-image"
 import { toast } from "sonner"
 import { ProductGrid } from "@/components/dashboard/ProductGrid"
+import { OrderModal } from "@/components/dashboard/OrderModal"
 import { StatCard } from "@/components/dashboard/StatCard"
 import { formatDateWithMonth } from "@/lib/date-utils"
 import {
@@ -62,14 +62,12 @@ export default function BuyerDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
   const [selectedCategory, setSelectedCategory] = useState("All")
-  const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
+const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [dialogQuantity, setDialogQuantity] = useState("0.2")
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name" | "quantity">("name")
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [filter, setFilter] = useState<string>("all")
   const { addToCart, updateQuantity, items, removeFromCart, totalPrice, clearCart } = useCart()
-
-  const { banStatus, isLoading: banLoading } = useBanEnforcement()
 
   useEffect(() => {
     const loadUser = async () => {
@@ -147,7 +145,8 @@ export default function BuyerDashboardPage() {
   return (
     <>
       {user?.isBanned && <BannedUserDashboard />}
-      {!user?.isBanned && (
+{!user?.isBanned && (
+        <>
         <div className="p-8">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-foreground">Welcome, {user?.name?.split(" ")[0] || "Buyer"}</h1>
@@ -482,11 +481,22 @@ export default function BuyerDashboardPage() {
                       </div>
                     </div>
                   ))}
-                </div>
+</div>
               )}
             </div>
           )}
         </div>
+
+        {/* Order Detail Modal */}
+        <OrderModal
+          open={!!selectedOrder}
+          onOpenChange={(open) => { if (!open) setSelectedOrder(null) }}
+          order={selectedOrder}
+          accentColor="bg-buyer hover:bg-buyer-light"
+          managerHref="/buyer/orders"
+          managerLabel="View all orders"
+        />
+        </>
       )}
     </>
   )}

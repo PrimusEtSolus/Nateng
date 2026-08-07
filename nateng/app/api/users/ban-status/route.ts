@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       }
     })
 
-    if (!user) {
+if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       bannedAt: user.bannedAt?.toISOString(),
       banReason: user.banReason
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to check ban status' },
       { status: 500 }

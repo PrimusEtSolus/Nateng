@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
-import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import { Loader2, Package, Search } from "lucide-react"
@@ -36,12 +35,11 @@ interface Listing {
 }
 
 export default function BulkBuyerBrowsePage() {
-  const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
+const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   
   // Check if user is banned and enforce restrictions
-  const { banStatus, isLoading: banLoading } = useBanEnforcement()
+  useBanEnforcement()
 
   useEffect(() => {
     const loadUser = async () => {
@@ -50,7 +48,6 @@ export default function BulkBuyerBrowsePage() {
         router.push('/login')
         return
       }
-      setUser(currentUser)
     }
     loadUser()
   }, [router])
@@ -59,7 +56,7 @@ export default function BulkBuyerBrowsePage() {
 
   // Fetch available listings - server-side filtering for bulk buyers
   // Search is done via API ?search= param (no client-side .filter())
-  const { data: listings = [], loading: listingsLoading, error: listingsError } = useFetch<Listing[]>(
+  const { data: listings = [], loading: listingsLoading } = useFetch<Listing[]>(
     debouncedSearchTerm
       ? `/api/listings?available=true&userRole=bulkBuyer&search=${encodeURIComponent(debouncedSearchTerm)}`
       : '/api/listings?available=true&userRole=bulkBuyer'

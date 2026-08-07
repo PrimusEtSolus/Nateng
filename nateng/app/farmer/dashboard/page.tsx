@@ -7,12 +7,11 @@ import { type User, type Product, type Order } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { useBanEnforcement } from "@/hooks/useBanEnforcement"
 import BannedUserDashboard from "@/components/banned-user-dashboard"
-import { Package, TrendingUp, Leaf, DollarSign, BarChart3, LayoutDashboard, Clock, Check, Truck, Loader2, Search, Edit2, Trash2, Plus, X, XCircle, CheckCircle, RotateCcw, MessageSquare, Calendar, Building2, UserIcon, ShoppingBag } from "lucide-react"
+import { Package, TrendingUp, Leaf, DollarSign, BarChart3, LayoutDashboard, Clock, Check, Truck, Loader2, Search, Edit2, Trash2, Plus, X, Building2, UserIcon } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
 import { StatCardSkeleton } from "@/components/loading-skeletons"
 import { StatCard } from "@/components/dashboard/StatCard"
 import { OrderList } from "@/components/dashboard/OrderList"
@@ -20,15 +19,9 @@ import { ProductGrid } from "@/components/dashboard/ProductGrid"
 import { OrderModal } from "@/components/dashboard/OrderModal"
 import { ProductModal } from "@/components/dashboard/ProductModal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { productsAPI, listingsAPI } from "@/lib/api-client"
 import { toast } from "sonner"
-import { DeliverySchedulingDialog } from "@/components/delivery-scheduling-dialog"
-import { ScheduleConfirmationDialog } from "@/components/schedule-confirmation-dialog"
-import { ViewScheduleDialog } from "@/components/view-schedule-dialog"
-import { MessageDialog } from "@/components/message-dialog"
 import { ConfirmationDialog } from "@/components/confirmation-dialog"
-import { ProposalsListDialog } from "@/components/proposals-list-dialog"
 import {
   BarChart,
   Bar,
@@ -76,8 +69,8 @@ export default function FarmerDashboardPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   
-  // Check if user is banned and enforce restrictions
-  const { banStatus, isLoading: banLoading } = useBanEnforcement()
+// Check if user is banned and enforce restrictions
+  useBanEnforcement()
 
   useEffect(() => {
     const loadUser = async () => {
@@ -125,19 +118,19 @@ export default function FarmerDashboardPage() {
   )
 
   // Fetch all orders for orders tab kanban display - use server-side status filtering
-  const { data: pendingOrdersFull, loading: pendingFullLoading } = useFetch<Order[]>(
+const { data: pendingOrdersFull } = useFetch<Order[]>(
     user ? `/api/orders?sellerId=${user.id}&status=PENDING` : '',
     { skip: !user }
   )
-  const { data: confirmedOrders, loading: confirmedOrdersLoading } = useFetch<Order[]>(
+  const { data: confirmedOrders } = useFetch<Order[]>(
     user ? `/api/orders?sellerId=${user.id}&status=CONFIRMED` : '',
     { skip: !user }
   )
-  const { data: shippedOrders, loading: shippedOrdersLoading } = useFetch<Order[]>(
+  const { data: shippedOrders } = useFetch<Order[]>(
     user ? `/api/orders?sellerId=${user.id}&status=SHIPPED` : '',
     { skip: !user }
   )
-  const { data: deliveredOrders, loading: deliveredOrdersLoading } = useFetch<Order[]>(
+  const { data: deliveredOrders } = useFetch<Order[]>(
     user ? `/api/orders?sellerId=${user.id}&status=DELIVERED` : '',
     { skip: !user }
   )
@@ -246,16 +239,8 @@ export default function FarmerDashboardPage() {
     }
   }
 
-  // ===== ORDERS TAB STATE =====
+// ===== ORDERS TAB STATE =====
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null)
-  const [schedulingDialogOpen, setSchedulingDialogOpen] = useState(false)
-  const [proposingScheduleOrderId, setProposingScheduleOrderId] = useState<number | null>(null)
-  const [confirmingSchedule, setConfirmingSchedule] = useState<any>(null)
-  const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false)
-  const [viewingSchedule, setViewingSchedule] = useState<any>(null)
-  const [viewDialogOpen, setViewDialogOpen] = useState(false)
-  const [proposalsListOrderId, setProposalsListOrderId] = useState<number | null>(null)
-  const [proposalsDialogOpen, setProposalsDialogOpen] = useState(false)
   const [cancelOrderId, setCancelOrderId] = useState<number | null>(null)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
 

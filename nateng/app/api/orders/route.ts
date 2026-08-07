@@ -303,7 +303,7 @@ export async function POST(req: NextRequest) {
           }
         ]
       });
-    } catch (_notificationError) {
+    } catch {
       // Notifications are non-critical; continue even if they fail
     }
 
@@ -316,7 +316,7 @@ export async function POST(req: NextRequest) {
           metadata: JSON.stringify({ orderId: order.id, sellerId: Number(sellerId), totalCents: order.totalCents, itemCount: items.length }),
         },
       });
-    } catch (_analyticsError) {
+    } catch {
       // Analytics are non-critical; continue even if they fail
     }
 

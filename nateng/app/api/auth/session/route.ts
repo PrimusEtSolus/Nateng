@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     // Never return password — select above explicitly omits it
     return NextResponse.json({ user });
-  } catch (_error: unknown) {
+  } catch {
     // Don't leak error details on auth endpoints
     return NextResponse.json({ user: null });
   }

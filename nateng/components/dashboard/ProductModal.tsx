@@ -1,6 +1,6 @@
 "use client"
 
-import { Package, Store, MapPin } from "lucide-react"
+import { Store, MapPin } from "lucide-react"
 import { type Listing, type Product } from "@/lib/types"
 import {
   Dialog,

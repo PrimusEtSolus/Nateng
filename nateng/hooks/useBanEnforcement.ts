@@ -57,7 +57,7 @@ export function useBanEnforcement() {
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Error checking ban status - will return isBanned: false
       } finally {
         setIsLoading(false)
@@ -86,7 +86,7 @@ export async function checkUserBanStatus(email: string): Promise<BanStatus> {
     }
     
     return { isBanned: false }
-  } catch (error) {
+  } catch {
     return { isBanned: false }
   }
 }

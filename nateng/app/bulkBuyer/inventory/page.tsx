@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { useFetch } from "@/hooks/use-fetch"
 import { useBanEnforcement } from "@/hooks/useBanEnforcement"
-import { Loader2, Package, Store } from "lucide-react"
+import { Loader2, Store } from "lucide-react"
 
 interface Listing {
   id: number
@@ -31,8 +31,8 @@ export default function BulkBuyerInventoryPage() {
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   
-  // Check if user is banned and enforce restrictions
-  const { banStatus, isLoading: banLoading } = useBanEnforcement()
+// Check if user is banned and enforce restrictions
+  useBanEnforcement()
 
   useEffect(() => {
     const loadUser = async () => {

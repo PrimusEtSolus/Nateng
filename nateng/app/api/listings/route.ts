@@ -3,7 +3,6 @@ import { getCurrentUser } from '@/lib/auth-server';
 import prisma from '@/lib/prisma';
 import { canCreateListings, getAllowedSellersForBuyer } from '@/lib/marketplace-rules';
 import type { UserRole } from '@/lib/types';
-import { handleError } from '@/lib/api-error';
 import { ListingCreateSchema } from '@/lib/validation-schemas';
 
 export async function GET(req: NextRequest) {

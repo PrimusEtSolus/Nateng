@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { getCurrentUser, logout } from "@/lib/auth"
+import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
 import { usersAPI } from "@/lib/api-client"
 import { UserIcon, MapPin, Lock, Check, Loader2, Eye, EyeOff } from "lucide-react"
@@ -56,12 +56,7 @@ export default function BulkBuyerSettingsPage() {
     loadUser()
   }, [])
 
-  const handleLogout = async () => {
-    await logout()
-    window.location.href = "/login"
-  }
-
-  const handleChangePassword = async () => {
+const handleChangePassword = async () => {
     if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
       toast.error("All password fields are required")
       return

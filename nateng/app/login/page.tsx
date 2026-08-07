@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ArrowLeft, Eye, EyeOff } from "lucide-react"
 import { login, getRedirectPath } from "@/lib/auth"
-import { toast } from "sonner"
 
 export default function LoginPage() {
   const router = useRouter()

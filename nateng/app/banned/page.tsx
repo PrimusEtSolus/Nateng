@@ -44,7 +44,7 @@ function BannedPageContent() {
         const error = await response.json()
         toast.error(error.error || 'Failed to submit appeal')
       }
-    } catch (error) {
+} catch {
       toast.error('Error submitting appeal')
     } finally {
       setIsSubmitting(false)

@@ -39,7 +39,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     })
 
     return user
-  } catch (error) {
+  } catch {
     return null
   }
 }

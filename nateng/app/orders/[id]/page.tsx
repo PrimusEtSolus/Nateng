@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react"
 export default function OrderDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
 
   useEffect(() => {
     const redirectBasedOnRole = async () => {
@@ -34,7 +34,7 @@ export default function OrderDetailPage() {
           default:
             router.push("/")
         }
-      } catch (error) {
+} catch {
         router.push("/login")
       } finally {
         setLoading(false)

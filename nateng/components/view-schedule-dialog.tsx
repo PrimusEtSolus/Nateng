@@ -14,8 +14,7 @@ interface ViewScheduleDialogProps {
 export function ViewScheduleDialog({ 
   open, 
   onOpenChange, 
-  schedule, 
-  user 
+  schedule
 }: ViewScheduleDialogProps) {
   if (!schedule) return null
 

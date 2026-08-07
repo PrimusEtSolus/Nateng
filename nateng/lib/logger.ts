@@ -26,14 +26,15 @@ class Logger {
   private log(level: LogLevel, message: string, context?: Record<string, any>) {
     if (!this.shouldLog(level)) return;
 
-    const logEntry: LogEntry = {
+const logEntry: LogEntry = {
       level,
       message,
       timestamp: new Date().toISOString(),
       context,
     }
+    void logEntry; // Reserved for future log service integration
 
-    const logMethod = level === LogLevel.ERROR ? 'error' : 
+    const logMethod = level === LogLevel.ERROR ? 'error' :
                      level === LogLevel.WARN ? 'warn' : 
                      level === LogLevel.INFO ? 'info' : 'log'
     

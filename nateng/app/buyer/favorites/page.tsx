@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Heart, ShoppingCart, Star, Loader2 } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
@@ -41,9 +40,8 @@ export default function BuyerFavoritesPage() {
   const { addToCart } = useCart()
   const { data: favorites, loading, error } = useFetch<FavoriteListing[]>('/api/favorites')
 
-  const handleAddToCart = (favorite: FavoriteListing) => {
+const handleAddToCart = (favorite: FavoriteListing) => {
     const listing = favorite.listing
-    const pricePerKg = listing.priceCents / 100
     
     addToCart({
       listingId: listing.id,

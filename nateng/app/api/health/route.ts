@@ -9,7 +9,7 @@ export async function GET() {
       productsInDatabase: count,
       message: 'Database connection successful'
     });
-  } catch (_error: unknown) {
+  } catch {
     return NextResponse.json({ 
       status: 'error', 
       error: 'Database connection failed'

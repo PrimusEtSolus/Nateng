@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
 
     // Create notification for the other party
     const notificationRecipientId = isBuyer ? order.sellerId : order.buyerId
-    const recipientRole = isBuyer ? 'seller' : 'buyer'
+    
     
     await prisma.notification.create({
       data: {

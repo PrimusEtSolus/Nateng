@@ -26,7 +26,7 @@ export function Header() {
       try {
         const currentUser = await getCurrentUser()
         setUser(currentUser)
-      } catch (error) {
+} catch {
         setUser(null)
       }
     }

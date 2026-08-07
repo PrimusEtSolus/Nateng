@@ -52,7 +52,7 @@ export default function BulkBuyerBrowseDetailPage({ params }: { params: Promise<
   const [quantity, setQuantity] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  const { banStatus, isLoading: banLoading } = useBanEnforcement()
+const { isLoading: banLoading } = useBanEnforcement()
 
   useEffect(() => {
     const loadUser = async () => {
@@ -96,12 +96,12 @@ export default function BulkBuyerBrowseDetailPage({ params }: { params: Promise<
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          buyerId: user.id,
+          sellerId: listing.sellerId,
           items: [{
             listingId: listing.id,
             quantity: orderQuantity,
-            priceCents: listing.priceCents,
           }],
-          sellerId: listing.sellerId,
           notes: `Bulk order from ${listing.product.name}`,
         }),
       })

@@ -105,7 +105,7 @@ export function ScheduleConfirmationDialog({
               }
             }
           }
-        } catch (error) {
+        } catch {
           // Fallback failed, continue with attempt
         }
       }
@@ -167,7 +167,7 @@ export function ScheduleConfirmationDialog({
     }
   }
 
-  const otherParty = schedule.proposer.id === user.id ? schedule.confirmer : schedule.proposer
+  const _otherParty = schedule.proposer.id === user.id ? schedule.confirmer : schedule.proposer
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

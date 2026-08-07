@@ -56,10 +56,10 @@ export default function BuyerCartPage() {
         <div className="lg:col-span-2 space-y-4">
           {items.map((item, index) => {
             // Support both old format (product) and new format (listingId)
-            const itemId = item.listingId || index || index
-            const productName = item.productName || item.productName || "Product"
+const itemId = item.listingId || index
+            const productName = item.productName || "Product"
             const sellerName = item.sellerName || "Seller"
-            const pricePerKg = item.priceCents ? item.priceCents / 100 : (0 || 0)
+            const pricePerKg = item.priceCents ? item.priceCents / 100 : 0
             const totalPrice = pricePerKg * item.quantity
 
             return (

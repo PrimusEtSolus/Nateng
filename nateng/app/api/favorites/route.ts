@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-server'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const currentUser = await getCurrentUser()
     if (!currentUser) {
@@ -45,10 +45,10 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: { createdAt: 'desc' }
-    })
+})
 
     return NextResponse.json(favorites)
-  } catch (error: unknown) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(favorite, { status: 201 })
-  } catch (error: unknown) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

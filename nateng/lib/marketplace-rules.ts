@@ -2,11 +2,11 @@
  * Marketplace transaction rules enforcement
  * 
  * Rules:
- * - Farmers may sell to Buyers and BulkBuyers
- * - BulkBuyers may sell only to Buyers
- * - Buyers may purchase from Farmers or BulkBuyers
- * - BulkBuyers may purchase only from Farmers
- * - Admin can do anything
+ * - Farmers sells only to BulkBuyers
+ * - BulkBuyers sells only to Buyers
+ * - Buyers purchase only from BulkBuyers
+ * - BulkBuyers purchase only from Farmers
+ * - Admin secures everything
  */
 
 import type { UserRole } from '@/lib/types';
@@ -26,15 +26,15 @@ export function canSellTo(sellerRole: UserRole, buyerRole: UserRole): Marketplac
     return { allowed: true }
   }
 
-  // Farmers may sell to Buyers and BulkBuyers
+  // Farmers sell only to BulkBuyers
   if (sellerRole === 'farmer') {
-    const allowedBuyers = ['buyer', 'bulkBuyer']
+    const allowedBuyers = ['bulkBuyer']
     return {
       allowed: allowedBuyers.includes(buyerRole),
       allowedRoles: allowedBuyers,
-      reason: allowedBuyers.includes(buyerRole) 
-        ? undefined 
-        : `Farmers can only sell to Buyers and BulkBuyers, not ${buyerRole}`
+      reason: allowedBuyers.includes(buyerRole)
+        ? undefined
+        : `Farmers can only sell to BulkBuyers, not ${buyerRole}`
     }
   }
 
@@ -70,15 +70,15 @@ export function canBuyFrom(buyerRole: UserRole, sellerRole: UserRole): Marketpla
     return { allowed: true }
   }
 
-  // Buyers may purchase from Farmers or BulkBuyers
+  // Buyers purchase only from BulkBuyers
   if (buyerRole === 'buyer') {
-    const allowedSellers = ['farmer', 'bulkBuyer']
+    const allowedSellers = ['bulkBuyer']
     return {
       allowed: allowedSellers.includes(sellerRole),
       allowedRoles: allowedSellers,
       reason: allowedSellers.includes(sellerRole)
         ? undefined
-        : `Buyers can only purchase from Farmers or BulkBuyers, not ${sellerRole}`
+        : `Buyers can only purchase from BulkBuyers, not ${sellerRole}`
     }
   }
 

@@ -118,8 +118,7 @@ export default function BuyerCheckoutPage() {
     // Validate seller minimum order requirements
     for (const item of items) {
       if (!item.sellerId || !item.listingId) continue
-      const seller = sellerInfo[item.sellerId]
-      const listingPrice = item.priceCents ? item.priceCents / 100 : 0
+const seller = sellerInfo[item.sellerId]
       
       if (seller && seller.minimumOrderKg && seller.minimumOrderKg > 0 && item.quantity < seller.minimumOrderKg) {
         toast.error("Minimum order not met", {
@@ -514,10 +513,10 @@ export default function BuyerCheckoutPage() {
               <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
 
               <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                {items.map((item, index) => {
-                  const itemId = item.listingId || index || index
-                  const productName = item.productName || item.productName || "Product"
-                  const pricePerKg = item.priceCents ? item.priceCents / 100 : (0 || 0)
+{items.map((item, index) => {
+                  const itemId = item.listingId || index
+                  const productName = item.productName || "Product"
+                  const pricePerKg = item.priceCents ? item.priceCents / 100 : 0
                   const itemTotal = pricePerKg * item.quantity
 
                   return (

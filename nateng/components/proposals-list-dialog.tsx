@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Calendar, Clock, MapPin, Truck, User, CheckCircle, XCircle, MessageSquare } from "lucide-react"
+import { Calendar, Clock, MapPin, User, CheckCircle, XCircle, MessageSquare } from "lucide-react"
 import { toast } from "sonner"
 import { logger } from "@/lib/logger"
 
@@ -21,7 +21,6 @@ export function ProposalsListDialog({
   open, 
   onOpenChange, 
   orderId, 
-  user, 
   onProposalAgreed 
 }: ProposalsListDialogProps) {
   const [proposals, setProposals] = useState<any[]>([])

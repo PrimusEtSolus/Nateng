@@ -1,6 +1,6 @@
 "use client"
 
-import { Package, Clock, CheckCircle, Truck, PackageCheck, Loader2 } from "lucide-react"
+import { Package, Clock, CheckCircle, Truck, PackageCheck } from "lucide-react"
 import { type Order } from "@/lib/types"
 import { OrderCardSkeleton } from "@/components/loading-skeletons"
 import { EmptyState } from "@/components/empty-state"

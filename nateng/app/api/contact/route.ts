@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         : 'Message sent successfully. We will get back to you soon.',
       id: created.id
     })
-  } catch (error: unknown) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to send message. Please try again later.' },
       { status: 500 }
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // No auth required here - the admin page handles frontend auth
     const messages = await prisma.contactMessage.findMany({
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({ messages })
-  } catch (error: unknown) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch messages' },
       { status: 500 }

@@ -16,8 +16,6 @@ import {
   getAvailableWindowTimes,
   getExemptionTypes,
   formatTime,
-  isInTruckBanWindow,
-  type DeliverySchedule,
   type TruckBanZone,
 } from "@/lib/truck-ban"
 
@@ -143,7 +141,7 @@ export function DeliveryScheduler({ orderId, onSchedule, initialSchedule }: Deli
           throw new Error(errorMessage)
         }
 
-        const result = await response.json()
+        await response.json()
         toast.success("Delivery scheduled successfully!")
       }
     } catch (error: any) {
