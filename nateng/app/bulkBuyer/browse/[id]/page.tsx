@@ -69,7 +69,7 @@ export default function BulkBuyerBrowseDetailPage({ params }: { params: Promise<
   const { data: listing, loading, error } = useFetch<ListingDetail>(`/api/listings/${id}`)
 
   const handleAddToCart = async () => {
-    if (!listing) return
+    if (!listing || !user) return
     
     const orderQuantity = parseFloat(quantity)
     if (!orderQuantity || orderQuantity <= 0) {
@@ -90,10 +90,36 @@ export default function BulkBuyerBrowseDetailPage({ params }: { params: Promise<
 
     setIsSubmitting(true)
     try {
-      toast.success(`Order request for ${orderQuantity}kg submitted!`)
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: [{
+            listingId: listing.id,
+            quantity: orderQuantity,
+            priceCents: listing.priceCents,
+          }],
+          sellerId: listing.sellerId,
+          notes: `Bulk order from ${listing.product.name}`,
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create order')
+      }
+
+      toast.success(`Order request for ${orderQuantity}kg submitted to ${listing.product.farmer.name}!`)
       setQuantity("")
+      
+      // Redirect to orders page after short delay
+      setTimeout(() => {
+        router.push('/bulkBuyer/orders')
+      }, 1500)
     } catch (err: any) {
-      toast.error(err.message || "Failed to add to cart")
+      toast.error(err.message || "Failed to submit order")
     } finally {
       setIsSubmitting(false)
     }
@@ -221,12 +247,12 @@ export default function BulkBuyerBrowseDetailPage({ params }: { params: Promise<
                     />
                   </div>
                   <div className="flex items-end">
-                    <Button
+<Button
                       onClick={handleAddToCart}
                       disabled={isSubmitting || !quantity}
                       className="h-12 px-8 bg-teal-600 hover:bg-teal-700"
                     >
-                      {isSubmitting ? "Processing..." : "Add to Cart"}
+                      {isSubmitting ? "Processing..." : "Order Now"}
                     </Button>
                   </div>
                 </div>

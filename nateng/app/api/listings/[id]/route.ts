@@ -8,7 +8,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       where: { id: Number(id) },
       include: {
         product: { include: { farmer: { select: { id: true, name: true, email: true, minimumOrderKg: true } } } },
-        seller: { select: { id: true, name: true, role: true, email: true, minimumOrderKg: true } },
+        seller: { select: { id: true, name: true, role: true, email: true, minimumOrderKg: true, address: true, city: true, province: true, country: true } },
       },
     });
 

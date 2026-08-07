@@ -63,9 +63,11 @@ export function BulkBuyerSidebar() {
               <span>{user?.businessName?.charAt(0) || "B"}</span>
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-foreground truncate">{user?.businessName || "My Store"}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.name || "Owner"}</p>
+<div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-foreground truncate">{user?.businessName || user?.name || "My Store"}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {[user?.city, user?.province].filter(Boolean).join(", ") || "Benguet, Philippines"}
+            </p>
           </div>
         </div>
       </div>

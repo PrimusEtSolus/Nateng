@@ -59,8 +59,14 @@ export default function FarmerAnalyticsPage() {
     loadUser()
   }, [])
 
-  // Fetch farmer's orders (as seller)
-  const { data: orders, loading: ordersLoading } = useFetch<Order[]>(
+// Fetch completed orders (server-side filtered) for analytics
+  const { data: completedOrders, loading: ordersLoading } = useFetch<Order[]>(
+    user ? `/api/orders?sellerId=${user.id}&status=CONFIRMED,SHIPPED,DELIVERED` : '',
+    { skip: !user }
+  )
+
+  // Fetch all orders for total count
+  const { data: allOrders, loading: allOrdersLoading } = useFetch<Order[]>(
     user ? `/api/orders?sellerId=${user.id}` : '',
     { skip: !user }
   )
@@ -74,7 +80,7 @@ export default function FarmerAnalyticsPage() {
   // Extract products from response
   const products = productsResponse?.products || null
 
-  if (ordersLoading || productsLoading) {
+  if (ordersLoading || allOrdersLoading || productsLoading) {
     return (
       <div className="p-8 space-y-8">
         <div>
@@ -91,18 +97,16 @@ export default function FarmerAnalyticsPage() {
     )
   }
 
-  const completedOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "CONFIRMED" || o.status === "SHIPPED" || o.status === "DELIVERED") || [] : []
-  const totalRevenue = completedOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
-  const totalOrders = Array.isArray(orders) ? orders.length || 0 : 0
-  const avgOrderValue = completedOrders.length > 0 ? Math.round(totalRevenue / completedOrders.length) : 0
+  const totalRevenue = Array.isArray(completedOrders) ? completedOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100 : 0
+  const totalOrders = Array.isArray(allOrders) ? allOrders.length : 0
+  const avgOrderValue = Array.isArray(completedOrders) && completedOrders.length > 0 ? Math.round(totalRevenue / completedOrders.length) : 0
 
-  // Aggregate crop sales from real data
+  // Aggregate crop sales from real data (small dataset - farmer's products)
   const cropSales: (Product & { totalRevenue: number; totalQuantity: number; orderCount: number })[] =
-    Array.isArray(products) ? products.filter((p) => p.farmerId === user?.id).map((product) => {
-        const productOrders = Array.isArray(orders) ? orders.filter((o) => 
-          (o.status === "CONFIRMED" || o.status === "SHIPPED" || o.status === "DELIVERED") &&
+    Array.isArray(products) && Array.isArray(completedOrders) ? products.filter((p) => p.farmerId === user?.id).map((product) => {
+        const productOrders = completedOrders.filter((o) => 
           o.items.some((item) => item.listing.product.id === product.id)
-        ) || [] : []
+        ) || []
         const revenue = productOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
         const quantity = productOrders.reduce((sum, o) => 
           sum + o.items
@@ -118,8 +122,8 @@ export default function FarmerAnalyticsPage() {
       .filter((crop) => crop.orderCount > 0)
       .sort((a, b) => b.totalRevenue - a.totalRevenue) : []
 
-  // Generate monthly data from real orders
-  const monthlyData = Array.from({ length: 6 }, (_, i) => {
+  // Generate monthly data from real orders (small dataset - already filtered)
+  const monthlyData = Array.isArray(completedOrders) ? Array.from({ length: 6 }, (_, i) => {
     const date = new Date()
     date.setMonth(date.getMonth() - (5 - i))
     const monthName = date.toLocaleDateString('en-US', { month: 'short' })
@@ -130,10 +134,10 @@ export default function FarmerAnalyticsPage() {
     const revenue = monthOrders.reduce((sum, o) => sum + o.totalCents, 0) / 100
     const orderCount = monthOrders.length
     return { month: monthName, revenue, orderCount }
-  })
+  }) : []
 
   // Generate buyer type distribution data
-  const buyerTypeData = completedOrders.reduce((acc, order) => {
+  const buyerTypeData = Array.isArray(completedOrders) ? completedOrders.reduce((acc, order) => {
     const buyerType = order.buyer.role
     const existing = acc.find(item => item.type === buyerType)
     if (existing) {
@@ -143,7 +147,7 @@ export default function FarmerAnalyticsPage() {
       acc.push({ type: buyerType, count: 1, revenue: order.totalCents / 100 })
     }
     return acc
-  }, [] as { type: string; count: number; revenue: number }[])
+  }, [] as { type: string; count: number; revenue: number }[]) : []
 
   // Colors for pie chart
   const COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444']
@@ -154,25 +158,25 @@ export default function FarmerAnalyticsPage() {
   const currentYear = new Date().getFullYear()
   const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear
 
-  const currentMonthRevenue = completedOrders
+  const currentMonthRevenue = Array.isArray(completedOrders) ? completedOrders
     .filter(o => {
       const date = new Date(o.createdAt)
       return date.getMonth() === currentMonth && date.getFullYear() === currentYear
     })
-    .reduce((sum, o) => sum + o.totalCents, 0) / 100
+    .reduce((sum, o) => sum + o.totalCents, 0) / 100 : 0
 
-  const previousMonthRevenue = completedOrders
+  const previousMonthRevenue = Array.isArray(completedOrders) ? completedOrders
     .filter(o => {
       const date = new Date(o.createdAt)
       return date.getMonth() === previousMonth && date.getFullYear() === previousYear
     })
-    .reduce((sum, o) => sum + o.totalCents, 0) / 100
+    .reduce((sum, o) => sum + o.totalCents, 0) / 100 : 0
 
   const revenueGrowth = previousMonthRevenue > 0 
     ? ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue * 100).toFixed(1)
     : '0'
 
-  const uniqueBuyers = new Set(completedOrders.map((o) => o.buyerId)).size
+  const uniqueBuyers = Array.isArray(completedOrders) ? new Set(completedOrders.map((o) => o.buyerId)).size : 0
 
   return (
     <div className="p-8">

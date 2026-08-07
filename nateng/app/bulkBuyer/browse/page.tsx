@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { type User } from "@/lib/types"
@@ -57,19 +57,13 @@ export default function BulkBuyerBrowsePage() {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
 
-  // Fetch available listings - filtered for bulk buyers
+  // Fetch available listings - server-side filtering for bulk buyers
+  // Search is done via API ?search= param (no client-side .filter())
   const { data: listings = [], loading: listingsLoading, error: listingsError } = useFetch<Listing[]>(
-    '/api/listings?available=true&userRole=bulkBuyer'
+    debouncedSearchTerm
+      ? `/api/listings?available=true&userRole=bulkBuyer&search=${encodeURIComponent(debouncedSearchTerm)}`
+      : '/api/listings?available=true&userRole=bulkBuyer'
   )
-
-  const filteredListings = useMemo(() => {
-    if (!Array.isArray(listings)) return []
-    
-    return listings.filter((listing) => {
-      const matchesSearch = listing.product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-      return matchesSearch && listing.available && listing.quantity > 0
-    })
-  }, [listings, debouncedSearchTerm])
 
   return (
     <div className="p-8">
@@ -91,7 +85,7 @@ export default function BulkBuyerBrowsePage() {
         </div>
         {debouncedSearchTerm && (
           <p className="text-sm text-muted-foreground mt-2">
-            Found {filteredListings.length} result{filteredListings.length !== 1 ? 's' : ''} for "{debouncedSearchTerm}"
+            Found {Array.isArray(listings) ? listings.length : 0} result{Array.isArray(listings) && listings.length !== 1 ? 's' : ''} for "{debouncedSearchTerm}"
           </p>
         )}
       </div>
@@ -101,7 +95,7 @@ export default function BulkBuyerBrowsePage() {
           <Loader2 className="w-8 h-8 text-muted-foreground mx-auto mb-3 animate-spin" />
           <p className="text-muted-foreground">Loading products...</p>
         </div>
-      ) : filteredListings.length === 0 ? (
+      ) : !Array.isArray(listings) || listings.length === 0 ? (
         <div className="p-8 text-center">
           <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground">
@@ -121,7 +115,7 @@ export default function BulkBuyerBrowsePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredListings.map((listing) => (
+          {listings.map((listing) => (
             <div
               key={listing.id}
               className="bg-white rounded-2xl border border-border p-6 hover:shadow-md transition-shadow"

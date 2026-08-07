@@ -6,6 +6,8 @@ pnpm-lock.yaml
 
 # Next.js / build
 .next/
+.next/cache/
+.previewinfo
 out/
 dist/
 

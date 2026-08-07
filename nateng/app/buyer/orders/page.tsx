@@ -68,23 +68,13 @@ export default function BuyerOrdersPage() {
     setUser(getCurrentUser())
   }, [])
 
-  // Fetch buyer's orders
+  // Fetch buyer's orders - use API filtering per status
   const { data: orders, loading: ordersLoading } = useFetch<Order[]>(
-    user ? `/api/orders?buyerId=${user.id}` : '',
+    user ? `/api/orders?buyerId=${user.id}${filter !== 'all' ? `&status=${filter}` : ''}` : '',
     { skip: !user }
   )
 
-  const filteredOrders = Array.isArray(orders) ? orders.filter((order) => {
-    if (filter === "all") return true
-    // Map database statuses to filter
-    const statusMap: Record<string, string> = {
-      "processing": "PENDING",
-      "confirmed": "CONFIRMED",
-      "in_transit": "SHIPPED",
-      "delivered": "DELIVERED",
-    }
-    return order.status === statusMap[filter] || order.status === filter
-  }) || [] : []
+  const filteredOrders = Array.isArray(orders) ? orders : []
 
   return (
     <div className="p-8">

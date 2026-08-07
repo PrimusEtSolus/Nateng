@@ -61,9 +61,11 @@ export function FarmerSidebar() {
               <span>{user?.name?.charAt(0) || "F"}</span>
             )}
           </div>
-          <div className="flex-1 min-w-0">
+<div className="flex-1 min-w-0">
             <p className="font-medium text-sm text-foreground truncate">{user?.name || "Farmer"}</p>
-            <p className="text-xs text-muted-foreground truncate">Benguet</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {[user?.city, user?.province].filter(Boolean).join(", ") || "Benguet, Philippines"}
+            </p>
           </div>
         </div>
       </div>

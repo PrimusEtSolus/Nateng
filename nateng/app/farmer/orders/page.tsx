@@ -88,9 +88,21 @@ export default function FarmerOrdersPage() {
     loadUser()
   }, [])
 
-  // Fetch farmer's orders (as seller)
-  const { data: orders, loading: ordersLoading, refetch: refetchOrders } = useFetch<Order[]>(
-    user ? `/api/orders?sellerId=${user.id}` : '',
+  // Fetch orders per status using server-side filtering
+  const { data: pendingOrders, loading: pendingLoading, refetch: refetchOrders } = useFetch<Order[]>(
+    user ? `/api/orders?sellerId=${user.id}&status=PENDING` : '',
+    { skip: !user }
+  )
+  const { data: confirmedOrders, loading: confirmedLoading } = useFetch<Order[]>(
+    user ? `/api/orders?sellerId=${user.id}&status=CONFIRMED` : '',
+    { skip: !user }
+  )
+  const { data: shippedOrders, loading: shippedLoading } = useFetch<Order[]>(
+    user ? `/api/orders?sellerId=${user.id}&status=SHIPPED` : '',
+    { skip: !user }
+  )
+  const { data: deliveredOrders, loading: deliveredLoading } = useFetch<Order[]>(
+    user ? `/api/orders?sellerId=${user.id}&status=DELIVERED` : '',
     { skip: !user }
   )
 
@@ -187,12 +199,7 @@ export default function FarmerOrdersPage() {
     refetchOrders()
   }
 
-  // Map database statuses to display
-  const pendingOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "PENDING") || [] : []
-  const confirmedOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "CONFIRMED") || [] : []
-  const shippedOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "SHIPPED") || [] : []
-  const deliveredOrders = Array.isArray(orders) ? orders.filter((o) => o.status === "DELIVERED") || [] : []
-
+  // Data is already filtered server-side via ?status= query params above
   const OrderCard = ({ order }: { order: Order }) => {
     const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
     const isUpdating = updatingStatus === order.id
@@ -481,13 +488,13 @@ export default function FarmerOrdersPage() {
   }
 
   const columns = [
-    { title: "Pending", orders: pendingOrders, icon: Clock, color: "text-yellow-600" },
-    { title: "Confirmed", orders: confirmedOrders, icon: Check, color: "text-blue-600" },
-    { title: "Shipped", orders: shippedOrders, icon: Truck, color: "text-green-600" },
-    { title: "Delivered", orders: deliveredOrders, icon: Package, color: "text-gray-600" },
+    { title: "Pending", orders: pendingOrders ?? [], icon: Clock, color: "text-yellow-600" },
+    { title: "Confirmed", orders: confirmedOrders ?? [], icon: Check, color: "text-blue-600" },
+    { title: "Shipped", orders: shippedOrders ?? [], icon: Truck, color: "text-green-600" },
+    { title: "Delivered", orders: deliveredOrders ?? [], icon: Package, color: "text-gray-600" },
   ]
 
-  if (ordersLoading) {
+  if (pendingLoading || confirmedLoading || shippedLoading || deliveredLoading) {
     return (
       <div className="p-8">
         <div className="text-center py-12">
@@ -556,11 +563,11 @@ export default function FarmerOrdersPage() {
       />
 
       {/* Collaborative Scheduling Dialogs */}
-      {proposingScheduleOrderId && (
+{proposingScheduleOrderId && (
         <DeliverySchedulingDialog
           open={schedulingDialogOpen}
           onOpenChange={setSchedulingDialogOpen}
-          order={orders?.find(o => o.id === proposingScheduleOrderId)}
+          order={[...(Array.isArray(pendingOrders) ? pendingOrders : []), ...(Array.isArray(confirmedOrders) ? confirmedOrders : []), ...(Array.isArray(shippedOrders) ? shippedOrders : []), ...(Array.isArray(deliveredOrders) ? deliveredOrders : [])].find(o => o.id === proposingScheduleOrderId)}
           user={user}
           onScheduleProposed={handleScheduleProposed}
         />

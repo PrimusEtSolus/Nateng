@@ -1,2 +1,10 @@
 .vercel
 .env*
+
+# Next.js build artifacts and caches
+.next/
+.next/cache/
+.previewinfo
+
+# Prisma / build cache directories
+.prisma/
